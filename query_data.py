@@ -57,6 +57,7 @@ def get_chain(
 
     qa = ChatVectorDBChain(
         vectorstore=vectorstore,
+        verbose=True,
         combine_docs_chain=doc_chain,
         question_generator=question_generator,
         callback_manager=manager,

@@ -1,0 +1,4 @@
+how is cluster linking different from replicator? Can they both be used to replicate messages between clusters in different data centers?
+Will adding a cluster link result in throttling consumers on the source cluster? 
+explain how cluster linking works
+how can I resize my dedicated cluster?
