@@ -52,6 +52,12 @@
       .form-message {
         margin-top: 10px;
       }
+      .form-control {
+        background-color: #776e6e;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
     </style>
     <script>
       var endpoint = "ws://localhost:9000/chat";
@@ -134,6 +140,16 @@
           Ask a question of the documentation at
           <a href="https://docs.confluent.io">https://docs.confluent.io</a>
         </p>
+        <!-- <div class="form-group">
+          <label for="openai-api-key">OpenAI API Key:</label>
+          <input
+            type="password"
+            class="form-control"
+            name="openai-api-key"
+            id="openai-api-key"
+            placeholder="sk-****************************"
+          />
+        </div> -->
         <hr class="border-gray-500 mb-5" style="margin-top: 20px" />
         <div
           id="messages"
