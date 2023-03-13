@@ -20,7 +20,7 @@ The app leverages LangChain's streaming support and async API to update the page
    2. activate the virtual environment: `source _venv/bin/activate`
    3. install dependencies: `pip install -r requirements.txt`
 3. Set up an OpenAI API Key:
-   1. you can use the [OpenAI API](https://openai.com/docs/developer-quickstart/api-key) documentation to set up an API key.
+   1. you can use the [OpenAI API](https://openai.com/product#made-for-developers) documentation to set up an API key.
    2. export the API key as an environment variable: `export OPENAI_API_KEY=<your_api_key>`
 4. Setup a vectorstore:
    1. option 1: Use the existing vectorstore:
