@@ -46,7 +46,7 @@ The app leverages LangChain's streaming support and async API to update the page
 1. Pull html from the [Confluent documentation](https://docs.confluent.io/) using `sitemap.xml` and BeautifulSoup to clean the html.
 2. Load the data into DocumentStore using LangChain's [UstructuredHTML Loader](https://langchain.readthedocs.io/en/latest/modules/document_loaders/examples/html.html).
 3. Chunk the documents into smaller chunks using LangChain's [TextSplitter](https://langchain.readthedocs.io/en/latest/reference/modules/text_splitter.html).
-4. Create embeddings for each chunk using OpenAI's [ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis).
+4. Create embeddings for each chunk using OpenAI's [OpenAI Embeddings](https://platform.openai.com/docs/guides/embeddings).
 5. Load the embeddings into a vectorstore using LangChain's [vectorstore wrapper](https://langchain.readthedocs.io/en/latest/reference/modules/vectorstore.html).
    1. FAISS is used as the vectorstore in this example. More information on FAISS can be found [here](https://ai.facebook.com/tools/faiss/).
 
