@@ -15,7 +15,7 @@ The app leverages LangChain's streaming support and async API to update the page
 
 1. Clone the repo:
    1. `git clone git@github.com:mvfolino68/KafkaGPT.git`
-2. Install dependencies:
+2. Install dependencies: ***tested on Python 3.10.9***
    1. from within the repo, setup a virtual environment: `python3 -m venv _venv`
    2. activate the virtual environment: `source _venv/bin/activate`
    3. install dependencies: `pip install -r requirements.txt`
