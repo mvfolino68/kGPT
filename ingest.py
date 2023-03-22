@@ -12,7 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.pinecone import Pinecone
 
-from sitemapParser import parseSitemap
+from sitemap_parser import parseSitemap
 
 load_dotenv()
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
