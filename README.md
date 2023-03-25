@@ -15,7 +15,7 @@ The app leverages LangChain's streaming support and async API to update the page
 
 1. Clone the repo:
    1. `git clone git@github.com:mvfolino68/KafkaGPT.git`
-2. Install dependencies: ***tested on Python 3.10.9***
+2. Install dependencies: **_tested on Python 3.10.9_**
    1. from within the repo, setup a virtual environment: `python3 -m venv _venv`
    2. activate the virtual environment: `source _venv/bin/activate`
    3. install dependencies: `pip install -r requirements.txt`
@@ -32,6 +32,17 @@ The app leverages LangChain's streaming support and async API to update the page
 5. Run the app: `make start`
 6. Open [localhost:9000](http://localhost:9000) in your browser.
 7. Ask a question! 🎉
+
+## 🐳 Running locally (Docker)
+
+This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/).
+
+
+```shell
+docker build -t kafkagpt .
+docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
+```
+
 
 ## 📸 Screenshots
 
@@ -59,28 +70,10 @@ The app leverages LangChain's streaming support and async API to update the page
    3. Pass the standalone question and relevant documents to ChatGPT to generate a final answer.
 3. Return the final answer to the web app and add the answer to the chat history.
 
-
 Diagram:
 ![diagram](./templates/KafkaGPT.png)
 
-## 📚 Technical description
-
-There are two components: ingestion and question-answering.
-
-Ingestion has the following steps:
-
-1. Pull html from documentation site
-2. Load html with LangChain's [UstructuredHTML Loader](https://langchain.readthedocs.io/en/latest/modules/document_loaders/examples/html.html)
-3. Split documents with LangChain's [TextSplitter](https://langchain.readthedocs.io/en/latest/reference/modules/text_splitter.html)
-4. Create a vectorstore of embeddings, using LangChain's [vectorstore wrapper](https://langchain.readthedocs.io/en/latest/reference/modules/vectorstore.html) (with OpenAI's embeddings and FAISS vectorstore).
-
-Question-Answering has the following steps, all handled by [ChatVectorDBChain](https://langchain.readthedocs.io/en/latest/modules/indexes/chain_examples/chat_vector_db.html):
-
-1. Given the chat history and new user input, determine what a standalone question would be (using ChatGPT).
-2. Given that standalone question, look up relevant documents from the vectorstore.
-3. Pass the standalone question and relevant documents to ChatGPT to generate a final answer.
-
-## 🚀 Important Links
+## 🚀 Helpful Links
 
 Blog Posts:
 

@@ -1,0 +1,8 @@
+.env
+.env.local
+Makefile
+README.md
+example.txt
+ingest.py
+.gitignore
+_venv/
