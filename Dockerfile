@@ -9,7 +9,7 @@ WORKDIR /app
 # Copy everything from ./src directory to /app in the container
 COPY . .
 # Install the dependencies
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Expose the required port
 EXPOSE 9000

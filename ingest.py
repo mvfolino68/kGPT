@@ -24,7 +24,6 @@ PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
 def ingest_docs():
     """Get documents from web pages."""
     urls = parseSitemap("https://docs.confluent.io/home/sitemap.xml")
-    urls = urls
     loader = UnstructuredURLLoader(urls=urls)
     raw_documents = loader.load()
 

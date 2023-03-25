@@ -1,15 +1,41 @@
 """Create a ChatVectorDBChain for question/answering."""
-from langchain.callbacks.base import AsyncCallbackManager, CallbackManager
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+import os
+
+from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.tracers import LangChainTracer
 from langchain.chains import ChatVectorDBChain
-from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
+from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.schema import HumanMessage
+from langchain.prompts.prompt import PromptTemplate
 from langchain.vectorstores.base import VectorStore
+from pydantic import Field
+
+doc_template = """--- document start ---
+content:{page_content}
+--- document end ---
+"""
+
+CONFLUENT_DOC_PROMPT = PromptTemplate(
+    template=doc_template, input_variables=["page_content"]
+)
+
+prompt_template = """You are an AI assistant for Confluent and Kafka documentation. 
+You are given the following extracted parts of a long document and a question. Your task is to answer the question the best you can. Pretend you are a human answering the question.
+The docs may not have an exact answer to the question, but you should try to answer the question as best you can. Your job is to help the user find the answer to the question.
+If the question includes a request for code, provide a fenced code block directly from the documentation.
+Question: {question}
+Documents:
+=========
+{context}
+=========
+Answer in Markdown:"""
+
+QA_PROMPT = PromptTemplate(
+    template=prompt_template, input_variables=["context", "question"]
+)
 
 
 def get_chain(
@@ -29,15 +55,11 @@ def get_chain(
         stream_manager.add_handler(tracer)
 
     question_gen_llm = OpenAI(
-        temperature=0,
+        model_name="gpt-3.5-turbo",
+        max_tokens=520,
+        temperature=0.1,
         verbose=True,
         callback_manager=question_manager,
-    )
-    streaming_llm = OpenAI(
-        streaming=True,
-        callback_manager=stream_manager,
-        verbose=True,
-        temperature=0,
     )
     streaming_llm = ChatOpenAI(
         streaming=True,
@@ -52,6 +74,7 @@ def get_chain(
         streaming_llm,
         chain_type="stuff",
         prompt=QA_PROMPT,
+        document_prompt=CONFLUENT_DOC_PROMPT,
         callback_manager=manager,
     )
 
