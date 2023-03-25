@@ -92,3 +92,8 @@ I'm happy to accept contributions to this project. Please open an issue or a pul
 - Include more documentation sites.
 - Tune the ChatVectorDBChain to improve the quality of the answers.
 - Produce the chat history as a Kafka topic.
+
+## Follow me on Twitter & LinkedIn
+
+Twitter: [@mvfolino68](https://twitter.com/mvfolino68)
+LinkedIn: [mfolino](https://www.linkedin.com/in/mfolino/)
