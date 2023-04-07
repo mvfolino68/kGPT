@@ -64,9 +64,9 @@ def get_chain(
         stream_manager.add_handler(tracer)
 
     question_gen_llm = OpenAI(
-        model_name="text-davinci-003",
-        max_tokens=520,
-        temperature=0.1,
+        model_name="gpt-3.5-turbo",
+        max_tokens=1000,
+        temperature=0,
         verbose=True,
         callback_manager=question_manager,
     )
@@ -81,7 +81,7 @@ def get_chain(
     )
     doc_chain = load_qa_chain(
         streaming_llm, chain_type="stuff", 
-        prompt=QA_PROMPT, 
+        # prompt=QA_PROMPT, 
         callback_manager=manager
     )
 
