@@ -1,17 +1,26 @@
 """Create a ChatVectorDBChain for question/answering."""
 import os
+from typing import List
 
 from langchain.callbacks.base import AsyncCallbackManager
 from langchain.callbacks.tracers import LangChainTracer
-from langchain.chains import ChatVectorDBChain
-from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.prompts.prompt import PromptTemplate
-from langchain.vectorstores.base import VectorStore
+from langchain.schema import Document
+from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
 from pydantic import Field
+
+
+async def aget_relevant_documents(self, query: str) -> List[Document]:
+    return self.get_relevant_documents(query)
+
+
+VectorStoreRetriever.aget_relevant_documents = aget_relevant_documents
 
 doc_template = """--- document start ---
 content:{page_content}
@@ -33,16 +42,16 @@ Documents:
 =========
 Answer in Markdown:"""
 
-QA_PROMPT = PromptTemplate(
-    template=prompt_template, input_variables=["context", "question"]
-)
+# QA_PROMPT = PromptTemplate(
+#     template=prompt_template, input_variables=["context", "question"]
+# )
 
 
 def get_chain(
     vectorstore: VectorStore, question_handler, stream_handler, tracing: bool = False
-) -> ChatVectorDBChain:
-    """Create a ChatVectorDBChain for question/answering."""
-    # Construct a ChatVectorDBChain with a streaming llm for combine docs
+) -> ConversationalRetrievalChain:
+    """Create a ConversationalRetrievalChain for question/answering."""
+    # Construct a ConversationalRetrievalChain with a streaming llm for combine docs
     # and a separate, non-streaming llm for question generation
     manager = AsyncCallbackManager([])
     question_manager = AsyncCallbackManager([question_handler])
@@ -55,7 +64,7 @@ def get_chain(
         stream_manager.add_handler(tracer)
 
     question_gen_llm = OpenAI(
-        model_name="gpt-3.5-turbo",
+        model_name="text-davinci-003",
         max_tokens=520,
         temperature=0.1,
         verbose=True,
@@ -71,20 +80,16 @@ def get_chain(
         llm=question_gen_llm, prompt=CONDENSE_QUESTION_PROMPT, callback_manager=manager
     )
     doc_chain = load_qa_chain(
-        streaming_llm,
-        chain_type="stuff",
-        # prompt=QA_PROMPT,
-        document_prompt=CONFLUENT_DOC_PROMPT,
-        callback_manager=manager,
+        streaming_llm, chain_type="stuff", 
+        prompt=QA_PROMPT, 
+        callback_manager=manager
     )
 
-    qa = ChatVectorDBChain(
-        vectorstore=vectorstore,
-        verbose=True,
+    qa = ConversationalRetrievalChain(
+        retriever=vectorstore.as_retriever(),
         combine_docs_chain=doc_chain,
         question_generator=question_generator,
         callback_manager=manager,
-        top_k_docs_for_context=6,
     )
 
     return qa

@@ -8,14 +8,11 @@ import pinecone
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain.vectorstores import VectorStore
 from langchain.vectorstores.pinecone import Pinecone
-from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 
 from callback import QuestionGenCallbackHandler, StreamingLLMCallbackHandler
-from query_data import get_chain
-from schemas import ChatResponse
-
 from constants import (
     EMBEDDING_MODEL,
     EMBEDDING_MODEL_TYPE,
@@ -25,6 +22,8 @@ from constants import (
     PINECONE_INDEX,
     VECTORSTORE_TYPE,
 )
+from query_data import get_chain
+from schemas import ChatResponse
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
