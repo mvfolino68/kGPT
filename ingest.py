@@ -1,59 +1,69 @@
-"""Load html from files, clean up, split, ingest into Weaviate."""
-import os
 import pickle
-from typing import List
 
+import nest_asyncio
 import pinecone
-from dotenv import load_dotenv
-from langchain import OpenAI, VectorDBQA
-from langchain.document_loaders import UnstructuredURLLoader
-from langchain.embeddings import FakeEmbeddings, HuggingFaceEmbeddings
+from langchain.document_loaders.sitemap import SitemapLoader
+from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 from langchain.vectorstores.pinecone import Pinecone
 
-from sitemap_parser import parseSitemap
+from constants import (
+    EMBEDDING_MODEL,
+    EMBEDDING_MODEL_TYPE,
+    FILTER,
+    OPENAI_API_KEY,
+    PINECONE_API_KEY,
+    PINECONE_ENVIRONMENT,
+    PINECONE_INDEX,
+    VECTORSTORE_TYPE,
+)
 
-load_dotenv()
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY")
-PINECONE_INDEX = os.environ.get("PINECONE_INDEX")
-PINECONE_ENVIRONMENT = os.environ.get("PINECONE_ENVIRONMENT")
+nest_asyncio.apply()
 
 
-def ingest_docs():
-    """Get documents from web pages."""
-    urls = parseSitemap("https://docs.confluent.io/home/sitemap.xml")
-    loader = UnstructuredURLLoader(urls=urls)
-    raw_documents = loader.load()
+def ingest_docs(
+    vectorstore_type=VECTORSTORE_TYPE, embedding_model_type=EMBEDDING_MODEL_TYPE, filter=FILTER
+):
+    """Ingest documents from Confluent docs into a vectorstore"""
+    sitemap_loader = SitemapLoader(
+        web_path="https://docs.confluent.io/home/sitemap.xml"
+    )
+    raw_documents = sitemap_loader.load()
 
+    # Split documents into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
         chunk_overlap=200,
     )
     documents = text_splitter.split_documents(raw_documents)
-    # embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-    # embeddings = FakeEmbeddings(size=768)
 
-    model_name = "sentence-transformers/all-mpnet-base-v2"
-    embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    # Create Embeddings
+    if embedding_model_type == "HUGGINGFACE":
+        # Use hugging face embeddings for free
+        model_name = EMBEDDING_MODEL
+        embeddings = HuggingFaceEmbeddings(model_name=model_name)
 
-    # Save vectorstore
-    # initialize pinecone
-    # pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+    elif embedding_model_type == "OPENAI":
+        # Use OpenAI embeddings at a cost
+        embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 
-    # index_name = PINECONE_INDEX
+    # Create vectorstore
+    if vectorstore_type == "PINECONE":
+        # Uinitialize Pinecone and create index
+        pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+        index_name = PINECONE_INDEX
+        vectorstore = Pinecone.from_documents(
+            documents, embeddings, index_name=index_name
+        )
 
-    # vectorstore = Pinecone.from_documents(documents, embeddings, index_name=index_name)
+    elif vectorstore_type == "FAISS":
+        # Use FAISS vectorstore
+        vectorstore = FAISS.from_documents(documents, embeddings)
 
-    vectorstore = FAISS.from_documents(documents, embeddings)
-
-    # Save vectorstore
-    with open("vectorstore.pkl", "wb") as f:
-        pickle.dump(vectorstore, f)
-    # query = "How Do I Use the Kafka Connect REST API?"
-    # docs = vectorstore.similarity_search(query)
-    # print(docs[0].page_content)
+        # Save FAISS vectorstore
+        with open("vectorstore.pkl", "wb") as f:
+            pickle.dump(vectorstore, f)
 
 
 if __name__ == "__main__":

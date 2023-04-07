@@ -4,17 +4,28 @@ import pickle
 from pathlib import Path
 from typing import Optional
 
-from dotenv import load_dotenv
+import pinecone
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from langchain.vectorstores import VectorStore
+from langchain.vectorstores.pinecone import Pinecone
+from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 
 from callback import QuestionGenCallbackHandler, StreamingLLMCallbackHandler
 from query_data import get_chain
 from schemas import ChatResponse
 
-load_dotenv()
+from constants import (
+    EMBEDDING_MODEL,
+    EMBEDDING_MODEL_TYPE,
+    OPENAI_API_KEY,
+    PINECONE_API_KEY,
+    PINECONE_ENVIRONMENT,
+    PINECONE_INDEX,
+    VECTORSTORE_TYPE,
+)
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -23,12 +34,31 @@ vectorstore: Optional[VectorStore] = None
 
 @app.on_event("startup")
 async def startup_event():
+    vectorstore_type = VECTORSTORE_TYPE
+    embedding_model_type = EMBEDDING_MODEL_TYPE
+    global vectorstore
+
     logging.info("loading vectorstore")
-    if not Path("vectorstore.pkl").exists():
-        raise ValueError("vectorstore.pkl does not exist, please run ingest.py first")
-    with open("vectorstore.pkl", "rb") as f:
-        global vectorstore
-        vectorstore = pickle.load(f)
+    if vectorstore_type == "PINECONE":
+        if embedding_model_type == "OPENAI":
+            embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+        elif embedding_model_type == "HUGGINGFACE":
+            embeddings = embedding_model_type == HuggingFaceEmbeddings(
+                model_name=EMBEDDING_MODEL
+            )
+        pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENVIRONMENT)
+        index_name = PINECONE_INDEX
+        vectorstore = Pinecone.from_existing_index(
+            index_name=index_name, embedding=embeddings
+        )
+
+    elif vectorstore_type == "FAISS":
+        if not Path("vectorstore.pkl").exists():
+            raise ValueError(
+                "vectorstore.pkl does not exist, please run ingest.py first"
+            )
+        with open("vectorstore.pkl", "rb") as f:
+            vectorstore = pickle.load(f)
 
 
 @app.get("/")

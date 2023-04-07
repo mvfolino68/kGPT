@@ -73,7 +73,7 @@ def get_chain(
     doc_chain = load_qa_chain(
         streaming_llm,
         chain_type="stuff",
-        prompt=QA_PROMPT,
+        # prompt=QA_PROMPT,
         document_prompt=CONFLUENT_DOC_PROMPT,
         callback_manager=manager,
     )
