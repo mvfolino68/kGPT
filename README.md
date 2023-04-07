@@ -73,6 +73,18 @@ docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
 Diagram:
 ![diagram](./templates/KafkaGPT.png)
 
+## Troubleshooting
+
+If you receive an error like this:
+
+```shell
+WARNING:/Users/<user>/Documents/KafkaGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
+
+```
+
+[Check here to see the fix](https://github.com/hwchase17/chat-langchain/issues/14)
+
+
 ## 🚀 Helpful Links
 
 Blog Posts:
