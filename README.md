@@ -37,12 +37,10 @@ The app leverages LangChain's streaming support and async API to update the page
 
 This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/).
 
-
 ```shell
 docker build -t kafkagpt .
 docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
 ```
-
 
 ## 📸 Screenshots
 
@@ -64,7 +62,7 @@ docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
 ### 📝 Question-Answering
 
 1. User accesses text input box and chat history via the web app.
-2. The web app sends the chat history and user input to the backend. The backend uses LangChain's [ChatVectorDBChain](https://langchain.readthedocs.io/en/latest/modules/indexes/chain_examples/chat_vector_db.html) to:
+2. The web app sends the chat history and user input to the backend. The backend uses LangChain's [ConversationalRetrievalChain](https://langchain.readthedocs.io/en/latest/modules/indexes/chain_examples/chat_vector_db.html) to:
    1. Determine what a standalone question would be (using ChatGPT).
    2. Look up relevant documents from the vectorstore.
    3. Pass the standalone question and relevant documents to ChatGPT to generate a final answer.
@@ -75,15 +73,24 @@ Diagram:
 
 ## Troubleshooting
 
-If you receive an error like this:
+1. If you receive an error like this:
 
-```shell
-WARNING:/Users/<user>/Documents/KafkaGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
+   ```shell
+   WARNING:/Users/<user>/Documents/KafkaGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
 
-```
+   ```
 
-[Check here to see the fix](https://github.com/hwchase17/chat-langchain/issues/14)
+   [Check here to see the fix](https://github.com/hwchase17/chat-langchain/issues/14)
 
+2. If you receive this error when using the download vectorstore:
+
+   ```shell
+
+   ERROR:root:IndexFlat.search() missing 3 required positional arguments: 'k', 'distances', and 'labels'
+
+   ```
+
+   Rerun the `ingest.py` script to create a new vectorstore.
 
 ## 🚀 Helpful Links
 
