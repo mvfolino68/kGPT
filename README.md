@@ -1,4 +1,4 @@
-# KafkaGPT
+# kGPT formerly known as kGPT
 
 **What if you could ask a question and get an answer from the Confluent documentation?**
 
@@ -14,7 +14,7 @@ The app leverages LangChain's streaming support and async API to update the page
 **Note: this app requires OpenAI's ChatGPT API. It costs money to use the API.** More information here: [OpenAI ChatGPT](https://openai.com/pricing)
 
 1. Clone the repo:
-   1. `git clone git@github.com:mvfolino68/KafkaGPT.git`
+   1. `git clone git@github.com:mvfolino68/kGPT.git`
 2. Install dependencies: **_tested on Python 3.10.9_**
    1. from within the repo, setup a virtual environment: `python3 -m venv _venv`
    2. activate the virtual environment: `source _venv/bin/activate`
@@ -38,13 +38,13 @@ The app leverages LangChain's streaming support and async API to update the page
 This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/).
 
 ```shell
-docker build -t kafkagpt .
-docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
+docker build -t kgpt .
+docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kgpt
 ```
 
 ## 📸 Screenshots
 
-![gif](./assets/../templates/kafkagpt.gif)
+![gif](./assets/../templates/kgpt.gif)
 
 ---
 
@@ -69,14 +69,14 @@ docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kafkagpt
 3. Return the final answer to the web app and add the answer to the chat history.
 
 Diagram:
-![diagram](./templates/KafkaGPT.png)
+![diagram](./templates/kGPT.png)
 
 ## Troubleshooting
 
 1. If you receive an error like this:
 
    ```shell
-   WARNING:/Users/<user>/Documents/KafkaGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
+   WARNING:/Users/<user>/Documents/kGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
 
    ```
 
@@ -100,7 +100,7 @@ Blog Posts:
 - [OpenAI ChatGPT](https://blog.langchain.dev/openai-chatgpt/)
 - [Video Explaination](https://www.youtube.com/watch?v=prbloUGlvLE)
 
-## Contributing to KafkaGPT
+## Contributing to kGPT
 
 I'm happy to accept contributions to this project. Please open an issue or a pull request.
 
@@ -110,7 +110,7 @@ I'm happy to accept contributions to this project. Please open an issue or a pul
 - Allow users to input their own OpenAI API key in the frontend.
 - Include more documentation sites.
 - Tune the ChatVectorDBChain to improve the quality of the answers.
-- Produce the chat history as a Kafka topic.
+- Produce the chat history as a topic.
 
 ## Follow me on Twitter & LinkedIn
 
