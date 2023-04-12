@@ -1,5 +1,4 @@
-"""Create a ChatVectorDBChain for question/answering."""
-import os
+"""Create a ConversationalRetrievalChain for question/answering."""
 from typing import List
 
 from langchain.callbacks.base import AsyncCallbackManager
@@ -8,12 +7,12 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.chains.chat_vector_db.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
 from langchain.chains.llm import LLMChain
 from langchain.chains.question_answering import load_qa_chain
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
+from langchain.llms import OpenAI, AzureOpenAI
 from langchain.prompts.prompt import PromptTemplate
 from langchain.schema import Document
 from langchain.vectorstores.base import VectorStore, VectorStoreRetriever
-from pydantic import Field
+from constants import AZURE_OPENAI_DEPLOYMENT_NAME, AZURE_OPENAI_MODEL, OPENAI_API_TYPE
 
 
 async def aget_relevant_documents(self, query: str) -> List[Document]:
@@ -62,27 +61,50 @@ def get_chain(
         manager.add_handler(tracer)
         question_manager.add_handler(tracer)
         stream_manager.add_handler(tracer)
+    if OPENAI_API_TYPE == "azure":
+        question_gen_llm = AzureOpenAI(
+            # this model is in preview and is only available in East US and South Central US
+            # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability
+            model_name=AZURE_OPENAI_MODEL,
+            deployment_name=AZURE_OPENAI_DEPLOYMENT_NAME,
+            max_tokens=1000,
+            temperature=0,
+            verbose=True,
+            callback_manager=question_manager,
+        )
+        streaming_llm = AzureChatOpenAI(
+            # this model is in preview and is only available in East US and South Central US
+            # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability
+            model_name=AZURE_OPENAI_MODEL,
+            deployment_name=AZURE_OPENAI_DEPLOYMENT_NAME,
+            streaming=True,
+            callback_manager=stream_manager,
+            verbose=True,
+            temperature=0,
+        )
+    else:
+        question_gen_llm = OpenAI(
+            model_name="gpt-3.5-turbo",
+            max_tokens=1000,
+            temperature=0,
+            verbose=True,
+            callback_manager=question_manager,
+        )
+        streaming_llm = ChatOpenAI(
+            streaming=True,
+            callback_manager=stream_manager,
+            verbose=True,
+            temperature=0,
+        )
 
-    question_gen_llm = OpenAI(
-        model_name="gpt-3.5-turbo",
-        max_tokens=1000,
-        temperature=0,
-        verbose=True,
-        callback_manager=question_manager,
-    )
-    streaming_llm = ChatOpenAI(
-        streaming=True,
-        callback_manager=stream_manager,
-        verbose=True,
-        temperature=0,
-    )
     question_generator = LLMChain(
         llm=question_gen_llm, prompt=CONDENSE_QUESTION_PROMPT, callback_manager=manager
     )
     doc_chain = load_qa_chain(
-        streaming_llm, chain_type="stuff", 
-        # prompt=QA_PROMPT, 
-        callback_manager=manager
+        streaming_llm,
+        chain_type="stuff",
+        # prompt=QA_PROMPT,
+        callback_manager=manager,
     )
 
     qa = ConversationalRetrievalChain(

@@ -1,4 +1,4 @@
-# kGPT formerly known as kGPT
+# kGPT formerly known as kafkaGPT
 
 **What if you could ask a question and get an answer from the Confluent documentation?**
 
@@ -21,7 +21,7 @@ The app leverages LangChain's streaming support and async API to update the page
    3. install dependencies: `pip install -r requirements.txt`
 3. Set up an OpenAI API Key:
    1. you can use the [OpenAI API](https://openai.com/product#made-for-developers) documentation to set up an API key.
-   2. export the API key as an environment variable: `export OPENAI_API_KEY=<your_api_key>`
+   2. set the environment variables for your API key. See [Environment Variables](#environment-variables) for more information.
 4. Setup a vectorstore:
    1. option 1: Use the existing vectorstore:
       1. download the vectorstore from here and place it in the root directory of the repo. [download here](https://drive.google.com/uc?export=download&id=1HPa7FX282_1Lzbkhupoh8BibtN2xXEZ5)
@@ -33,13 +33,48 @@ The app leverages LangChain's streaming support and async API to update the page
 6. Open [localhost:9000](http://localhost:9000) in your browser.
 7. Ask a question! 🎉
 
+## Environment Variables
+
+You can set these environment variables in a `.env` file in the root directory of the project. See the `.env.example` file for an example.
+
+### If Using OpenAI API Directly Set these Variables:
+
+| Variable | Description | Link |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Your OpenAI API key. | [OpenAI Authentication](https://beta.openai.com/docs/api-reference/authentication) |
+| `OPENAI_API_TYPE` | `"open_ai"` if using OpenAI API. | - |
+| `OPENAI_API_BASE` | Leave this blank if using OpenAI API directly. | - |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | Leave this blank if using OpenAI API directly. | - |
+| `AZURE_OPENAI_MODEL` | Leave this blank if using OpenAI API directly. | - |
+| `OPENAI_API_VERSION` | Leave this blank if using OpenAI API directly. | - |
+
+### If Using Azure OpenAI Set these Variables:
+
+| Variable | Description | Link |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Your Azure OpenAI API key. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python#retrieve-key-and-endpoint) |
+| `OPENAI_API_TYPE` | Set this to `"azure"` if using Azure OpenAI. | - |
+| `OPENAI_API_BASE` | The base URL for your Azure OpenAI resource. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python) |
+| `AZURE_OPENAI_DEPLOYMENT_NAME` | The name of your Azure OpenAI deployment. | - |
+| `AZURE_OPENAI_MODEL` | The name of the model you are using. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python) |
+| `OPENAI_API_VERSION` | The OpenAI API version and should align with the model you are using. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability) |
+
+### If Using Pinecone As Vectorstore Set these Variables:
+
+| Variable | Description | Link |
+| --- | --- | --- |
+| `PINECONE_API_KEY` | Your Pinecone API key. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
+| `PINECONE_ENVIRONMENT` | The name of your Pinecone environment. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
+| `PINECONE_INDEX` | The name of the Pinecone index. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
+
+
 ## 🐳 Running locally (Docker)
 
-This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/).
+This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/). This setup assumes that you set up your environment variables in a `.env` file in the root directory of the project.
 
 ```shell
 docker build -t kgpt .
-docker run -e OPENAI_API_KEY=xxxxxxxx -p 9000:9000 kgpt
+docker run --env-file .env -p 9000:9000 kgpt
 ```
 
 ## 📸 Screenshots
