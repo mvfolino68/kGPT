@@ -79,7 +79,7 @@ docker run --env-file .env -p 9000:9000 kgpt
 
 ## 📸 Screenshots
 
-![gif](./assets/../templates/kgpt.gif)
+![gif](./static/kafkagpt.gif)
 
 ---
 
