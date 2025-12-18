@@ -179,7 +179,7 @@ async def validate_api_key(request: ValidateKeyRequest) -> ValidateKeyResponse:
         elif provider == "openrouter":
             return await _validate_openrouter_key(api_key)
         elif provider == "ollama":
-            return await _validate_ollama()
+            return await _validate_ollama(host=request.ollama_host)
         else:
             return ValidateKeyResponse(
                 valid=False,
@@ -208,34 +208,35 @@ async def _validate_openai_key(api_key: str) -> ValidateKeyResponse:
 
             if response.status_code == 200:
                 data = response.json()
-                # Filter to chat models
-                chat_models = [
-                    m["id"]
-                    for m in data.get("data", [])
-                    if "gpt" in m["id"] or m["id"].startswith("o1") or m["id"].startswith("o3")
+                # Heuristic: surface likely chat-capable models without hardcoding a fixed list.
+                # Prefer "newest first" using the provider's timestamps, then fall back to ids.
+                raw = [m for m in data.get("data", []) if isinstance(m, dict)]
+                chat_like = [
+                    m
+                    for m in raw
+                    if isinstance(m.get("id"), str)
+                    and (
+                        m["id"].startswith("gpt-")
+                        or m["id"].startswith("o1")
+                        or m["id"].startswith("o3")
+                        or m["id"].startswith("chatgpt-")
+                    )
                 ]
-                # Sort with preferred models first
-                preferred = [
-                    "gpt-4o",
-                    "gpt-4o-mini",
-                    "o3-mini",
-                    "o1-preview",
-                    "o1-mini",
-                    "gpt-4-turbo",
-                ]
-                sorted_models = []
-                for p in preferred:
-                    if p in chat_models:
-                        sorted_models.append(p)
-                for m in sorted(chat_models):
-                    if m not in sorted_models:
-                        sorted_models.append(m)
+                chosen = chat_like or raw
+                chosen.sort(key=lambda m: int(m.get("created") or 0), reverse=True)
+                models = []
+                seen = set()
+                for m in chosen:
+                    mid = m.get("id")
+                    if isinstance(mid, str) and mid and mid not in seen:
+                        seen.add(mid)
+                        models.append(mid)
 
                 return ValidateKeyResponse(
                     valid=True,
                     provider="openai",
                     message="API key is valid",
-                    models=sorted_models[:20],  # Limit to top 20
+                    models=models[:50],  # keep UI usable
                 )
             elif response.status_code == 401:
                 return ValidateKeyResponse(
@@ -264,39 +265,39 @@ async def _validate_openai_key(api_key: str) -> ValidateKeyResponse:
 
 
 async def _validate_anthropic_key(api_key: str) -> ValidateKeyResponse:
-    """Validate Anthropic API key."""
+    """Validate Anthropic API key by fetching available models."""
     import httpx
 
     try:
-        # Anthropic doesn't have a models endpoint, so we try a minimal request
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                "https://api.anthropic.com/v1/messages",
+            # Prefer the official models listing endpoint so the UI always reflects what's available.
+            response = await client.get(
+                "https://api.anthropic.com/v1/models",
                 headers={
                     "x-api-key": api_key,
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json",
                 },
-                json={
-                    "model": "claude-3-5-haiku-latest",
-                    "max_tokens": 1,
-                    "messages": [{"role": "user", "content": "hi"}],
-                },
             )
 
             # 200 means valid, 401 means invalid key
             if response.status_code == 200:
-                models = [
-                    "claude-sonnet-4-20250514",
-                    "claude-opus-4-20250514",
-                    "claude-3-7-sonnet-latest",
-                    "claude-3-5-haiku-latest",
-                ]
+                data = response.json()
+                raw = [m for m in data.get("data", []) if isinstance(m, dict)]
+                # created_at is ISO8601; lexicographic sort works for full timestamps
+                raw.sort(key=lambda m: str(m.get("created_at") or ""), reverse=True)
+                models = []
+                seen = set()
+                for m in raw:
+                    mid = m.get("id")
+                    if isinstance(mid, str) and mid and mid not in seen:
+                        seen.add(mid)
+                        models.append(mid)
                 return ValidateKeyResponse(
                     valid=True,
                     provider="anthropic",
                     message="API key is valid",
-                    models=models,
+                    models=models[:50],
                 )
             elif response.status_code == 401:
                 return ValidateKeyResponse(
@@ -305,18 +306,10 @@ async def _validate_anthropic_key(api_key: str) -> ValidateKeyResponse:
                     message="Invalid API key",
                 )
             else:
-                # Other errors (rate limit, etc) mean key is probably valid
-                models = [
-                    "claude-sonnet-4-20250514",
-                    "claude-opus-4-20250514",
-                    "claude-3-7-sonnet-latest",
-                    "claude-3-5-haiku-latest",
-                ]
                 return ValidateKeyResponse(
-                    valid=True,
+                    valid=False,
                     provider="anthropic",
-                    message="API key appears valid",
-                    models=models,
+                    message=f"API error: {response.status_code}",
                 )
     except httpx.TimeoutException:
         return ValidateKeyResponse(
@@ -345,33 +338,20 @@ async def _validate_openrouter_key(api_key: str) -> ValidateKeyResponse:
 
             if response.status_code == 200:
                 data = response.json()
-                # Get model IDs
-                models = [m["id"] for m in data.get("data", [])]
-                # Filter to popular models
-                popular_prefixes = [
-                    "anthropic/claude",
-                    "openai/gpt",
-                    "openai/o1",
-                    "openai/o3",
-                    "google/gemini",
-                    "meta-llama/llama",
-                    "deepseek/deepseek",
-                ]
-                filtered = []
-                for prefix in popular_prefixes:
-                    for m in models:
-                        if m.startswith(prefix) and m not in filtered:
-                            filtered.append(m)
-                            if len(filtered) >= 25:
-                                break
-                    if len(filtered) >= 25:
-                        break
-
+                ids = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
+                ids = [m for m in ids if isinstance(m, str) and m]
+                # Keep provider ordering if any; de-dupe without re-sorting.
+                models = []
+                seen = set()
+                for mid in ids:
+                    if mid not in seen:
+                        seen.add(mid)
+                        models.append(mid)
                 return ValidateKeyResponse(
                     valid=True,
                     provider="openrouter",
                     message="API key is valid",
-                    models=filtered if filtered else models[:25],
+                    models=models[:50],
                 )
             elif response.status_code == 401:
                 return ValidateKeyResponse(
@@ -399,12 +379,12 @@ async def _validate_openrouter_key(api_key: str) -> ValidateKeyResponse:
         )
 
 
-async def _validate_ollama() -> ValidateKeyResponse:
+async def _validate_ollama(host: str | None = None) -> ValidateKeyResponse:
     """Check if Ollama is available and get models."""
     import httpx
 
     db = get_db()
-    ollama_host = db.get_setting("ollama_host") or settings.ollama_host
+    ollama_host = host or db.get_setting("ollama_host") or settings.ollama_host
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -412,12 +392,14 @@ async def _validate_ollama() -> ValidateKeyResponse:
 
             if response.status_code == 200:
                 data = response.json()
-                models = [m["name"] for m in data.get("models", [])]
+                raw = [m for m in data.get("models", []) if isinstance(m, dict)]
+                raw.sort(key=lambda m: str(m.get("modified_at") or ""), reverse=True)
+                models = [m["name"] for m in raw if isinstance(m.get("name"), str)]
                 return ValidateKeyResponse(
                     valid=True,
                     provider="ollama",
                     message=f"Connected to Ollama at {ollama_host}",
-                    models=models if models else ["llama3.3", "llama3.2", "mistral"],
+                    models=models,
                 )
             else:
                 return ValidateKeyResponse(

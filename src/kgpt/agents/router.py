@@ -155,14 +155,16 @@ async def router_node(state: AgentState) -> dict:
                 needs_retrieval = True
                 route = "retrieval"
 
+        reasoning = result.get("reasoning", "")
         logger.info(
             f"Router decision: route={route}, needs_cluster={needs_cluster}, "
-            f"needs_retrieval={needs_retrieval}, needs_admin={needs_admin}, sub_goals={result.get('sub_goals')}"
+            f"needs_retrieval={needs_retrieval}, needs_admin={needs_admin}, sub_goals={result.get('sub_goals')}, reasoning={reasoning}"
         )
 
         return {
             "route": route,
             "sub_goals": result.get("sub_goals", [state["question"]]),
+            "reasoning": reasoning,
             "needs_cluster_context": needs_cluster,
             "needs_retrieval": needs_retrieval,
             "needs_admin_operation": needs_admin,

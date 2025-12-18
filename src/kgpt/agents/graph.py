@@ -1,6 +1,7 @@
 """LangGraph orchestration for the multi-agent system."""
 
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, StateGraph
@@ -13,6 +14,66 @@ from kgpt.agents.router import route_decision, router_node
 from kgpt.agents.state import AgentState
 from kgpt.agents.synthesis import synthesis_node
 from kgpt.agents.validation import validation_node
+
+
+def extract_text_from_chunk(chunk: Any) -> str | None:
+    """
+    Extract text content from an LLM streaming chunk.
+
+    Handles various formats:
+    - Plain string content
+    - List of content blocks [{"type": "text", "text": "..."}] (Claude format)
+    - AIMessageChunk with string or list content
+    - Other formats that might contain text
+
+    Returns:
+        The extracted text string, or None if no text could be extracted.
+    """
+    # Get the content from the chunk
+    if hasattr(chunk, "content"):
+        content = chunk.content
+    else:
+        content = chunk
+
+    # Handle None or empty
+    if content is None:
+        return None
+
+    # Handle plain strings
+    if isinstance(content, str):
+        return content if content else None
+
+    # Handle list of content blocks (Claude format)
+    if isinstance(content, list):
+        texts = []
+        for item in content:
+            if isinstance(item, dict):
+                # {"type": "text", "text": "..."} format
+                if "text" in item and isinstance(item["text"], str):
+                    texts.append(item["text"])
+                # {"content": "..."} format
+                elif "content" in item and isinstance(item["content"], str):
+                    texts.append(item["content"])
+            elif isinstance(item, str):
+                texts.append(item)
+            # Skip any non-string items that couldn't be extracted
+        return "".join(texts) if texts else None
+
+    # Handle dict with text/content keys
+    if isinstance(content, dict):
+        if "text" in content and isinstance(content["text"], str):
+            return content["text"]
+        if "content" in content and isinstance(content["content"], str):
+            return content["content"]
+        # Don't log warning for every dict - just return None
+        return None
+
+    # Handle numbers
+    if isinstance(content, (int, float)):
+        return str(content)
+
+    # Skip unhandled types silently
+    return None
 
 
 def create_agent_graph() -> StateGraph:
@@ -189,14 +250,21 @@ class AgentOrchestrator:
         chat_history: list | None = None,
     ) -> AsyncGenerator[str | dict, None]:
         """
-        Process a question with streaming output and stage updates.
+        Process a question with streaming output, stage updates, and agent activity events.
 
         Yields:
             - {"stage": "..."} for thinking stage updates
+            - {"agent_event": {...}} for agent activity (start/complete/error)
+            - {"routing_decision": {...}} for routing info
+            - {"retrieval_results": {...}} for retrieved docs
+            - {"validation_results": {...}} for validation info
             - {"cluster_context": {...}} for cluster info
+            - {"admin_result": {...}} for admin operation result
             - str for content tokens
             - {"citations": [...]} for final citations
         """
+        import time
+
         logger.info(f"Processing question (streaming): {question[:100]}...")
 
         messages = []
@@ -243,15 +311,51 @@ class AgentOrchestrator:
             )
             from kgpt.llm import get_llm
 
+            # ================================================================
             # Step 1: Router - determine what we need
+            # ================================================================
             yield {"stage": "Understanding your question..."}
+            yield {
+                "agent_event": {
+                    "agent": "router",
+                    "status": "started",
+                    "description": "Analyzing query intent and determining route",
+                }
+            }
+
+            router_start = time.time()
             router_result = await router_node(initial_state)
+            router_duration = int((time.time() - router_start) * 1000)
+
             state = {**initial_state, **router_result}
 
             route = state.get("route", "retrieval")
             needs_cluster = state.get("needs_cluster_context", False)
             needs_retrieval = state.get("needs_retrieval", True)
             needs_admin = state.get("needs_admin_operation", False)
+            sub_goals = state.get("sub_goals", [])
+            reasoning = state.get("reasoning", "")
+
+            # Emit routing decision for educational visibility
+            yield {
+                "routing_decision": {
+                    "route": route,
+                    "reasoning": reasoning,
+                    "sub_goals": sub_goals,
+                    "needs_cluster": needs_cluster,
+                    "needs_retrieval": needs_retrieval,
+                    "needs_admin": needs_admin,
+                }
+            }
+
+            yield {
+                "agent_event": {
+                    "agent": "router",
+                    "status": "completed",
+                    "duration_ms": router_duration,
+                    "result": {"route": route, "sub_goals": sub_goals},
+                }
+            }
 
             logger.info(
                 f"Route: {route}, cluster={needs_cluster}, retrieval={needs_retrieval}, admin={needs_admin}"
@@ -260,17 +364,25 @@ class AgentOrchestrator:
             # Handle help route - provide canned response about capabilities
             if route == "help":
                 yield {"stage": ""}
-                help_response = """## 🚀 What I Can Do
+                yield {
+                    "agent_event": {
+                        "agent": "synthesis",
+                        "status": "started",
+                        "description": "Generating help response",
+                    }
+                }
+
+                help_response = """## What I Can Do
 
 I'm your Kafka assistant! Here's what I can help you with:
 
-### 📊 Query & Explore
+### Query and Explore
 - **Check cluster status** - View brokers, topics, and consumer groups
 - **List topics** - See all topics with their partition counts
 - **Describe topics** - Get detailed topic configuration
 - **Consumer lag** - Check consumer group lag and offsets
 
-### ⚡ Admin Operations
+### Admin Operations
 I can execute these operations directly on your connected cluster:
 
 | Operation | Example Command |
@@ -281,30 +393,67 @@ I can execute these operations directly on your connected cluster:
 | **Add partitions** | "Increase partitions to 6 for topic events" |
 | **Delete consumer group** | "Delete consumer group my-consumer-group" |
 
-### 📚 Documentation
+### Documentation
 - Ask about Kafka concepts, best practices, and configurations
 - Get help with producers, consumers, and Streams
 - Learn about security, monitoring, and troubleshooting
 
-### 💡 Tips
+### Tips
 - Connect to a cluster first in the **Cluster** page
 - Use natural language - I understand requests like "delete my orders topic"
 - Ask follow-up questions for more details
 
 **Try asking:** "List all topics in my cluster" or "Create a topic called events with 5 partitions"
 """
-                # Stream the help response character by character for nice effect
+                # Stream the help response
                 for char in help_response:
                     yield char
 
+                yield {
+                    "agent_event": {
+                        "agent": "synthesis",
+                        "status": "completed",
+                    }
+                }
                 yield {"citations": []}
                 return
 
+            # ================================================================
             # Handle admin operations
+            # ================================================================
             if needs_admin and not state.get("error"):
                 yield {"stage": "Analyzing your request..."}
+                yield {
+                    "agent_event": {
+                        "agent": "admin",
+                        "status": "started",
+                        "description": "Analyzing admin operation request",
+                    }
+                }
+
+                admin_start = time.time()
                 admin_result = await admin_node(state)
+                admin_duration = int((time.time() - admin_start) * 1000)
+
                 state = {**state, **admin_result}
+
+                yield {
+                    "agent_event": {
+                        "agent": "admin",
+                        "status": "completed",
+                        "duration_ms": admin_duration,
+                        "result": {
+                            "operation": state.get("admin_result", {}).get("operation"),
+                            "status": (
+                                "needs_info"
+                                if state.get("admin_result", {}).get("needs_info")
+                                else "pending"
+                                if state.get("admin_result", {}).get("pending")
+                                else "ready"
+                            ),
+                        },
+                    }
+                }
 
                 # Send cluster context and admin result to frontend
                 if state.get("cluster_context"):
@@ -332,8 +481,16 @@ I can execute these operations directly on your connected cluster:
                     yield {"citations": []}
                     return
 
-                # Otherwise (shouldn't happen often), generate a response
+                # Otherwise, generate a response with synthesis
                 yield {"stage": "Generating response..."}
+                yield {
+                    "agent_event": {
+                        "agent": "synthesis",
+                        "status": "started",
+                        "description": "Generating response for admin result",
+                    }
+                }
+
                 admin_section = format_admin_result(admin_res)
                 cluster_section = format_cluster_context(state.get("cluster_context"))
 
@@ -354,36 +511,178 @@ I can execute these operations directly on your connected cluster:
                         "cluster_section": cluster_section,
                     }
                 ):
-                    if hasattr(chunk, "content") and chunk.content:
-                        yield chunk.content
+                    text = extract_text_from_chunk(chunk)
+                    if text:
+                        yield text
 
+                yield {
+                    "agent_event": {
+                        "agent": "synthesis",
+                        "status": "completed",
+                    }
+                }
                 yield {"citations": []}
                 return
 
+            # ================================================================
             # Step 2: Kafka context (if needed)
+            # ================================================================
             if needs_cluster and not state.get("error"):
                 yield {"stage": "Fetching cluster info..."}
+                yield {
+                    "agent_event": {
+                        "agent": "kafka",
+                        "status": "started",
+                        "description": "Retrieving cluster metadata",
+                    }
+                }
+
+                kafka_start = time.time()
                 kafka_result = await kafka_node(state)
+                kafka_duration = int((time.time() - kafka_start) * 1000)
+
                 state = {**state, **kafka_result}
 
-                # Send cluster context to frontend
-                if state.get("cluster_context"):
-                    yield {"cluster_context": state["cluster_context"]}
+                cluster_ctx = state.get("cluster_context", {})
+                yield {
+                    "agent_event": {
+                        "agent": "kafka",
+                        "status": "completed",
+                        "duration_ms": kafka_duration,
+                        "result": {
+                            "broker_count": cluster_ctx.get("broker_count", 0),
+                            "topic_count": cluster_ctx.get("topic_count", 0),
+                        },
+                    }
+                }
 
+                # Send cluster context to frontend
+                if cluster_ctx:
+                    yield {"cluster_context": cluster_ctx}
+
+            # ================================================================
             # Step 3: Retrieval (only if needed!)
+            # ================================================================
             if needs_retrieval and not state.get("error"):
                 yield {"stage": "Searching documentation..."}
+                yield {
+                    "agent_event": {
+                        "agent": "retrieval",
+                        "status": "started",
+                        "description": "Searching vector store for relevant documents",
+                    }
+                }
+
+                retrieval_start = time.time()
                 retrieval_result = await retrieval_node(state)
+                retrieval_duration = int((time.time() - retrieval_start) * 1000)
+
                 state = {**state, **retrieval_result}
 
+                # Build retrieval results for frontend visibility
+                docs = state.get("retrieved_docs", [])
+                retrieval_items = []
+                reranked = False
+                reranking_model = None
+
+                for doc in docs[:10]:  # Limit to 10 for display
+                    metadata = doc.metadata or {}
+                    rerank_score = metadata.get("rerank_score")
+                    if rerank_score is not None:
+                        reranked = True
+                        reranking_model = metadata.get("reranking_model")
+
+                    retrieval_items.append(
+                        {
+                            "source": metadata.get("source", ""),
+                            "source_name": metadata.get("source_name", "Unknown"),
+                            "content_preview": doc.page_content[:200] + "..."
+                            if len(doc.page_content) > 200
+                            else doc.page_content,
+                            "similarity_score": metadata.get("relevance_score", 0),
+                            "rerank_score": rerank_score,
+                            "collection": metadata.get("collection", ""),
+                            "search_query": metadata.get("search_query", ""),
+                        }
+                    )
+
+                yield {
+                    "retrieval_results": {
+                        "docs": retrieval_items,
+                        "total": len(docs),
+                        "queries_expanded": len(state.get("sub_goals", [])) + 1,
+                        "reranked": reranked,
+                        "reranking_model": reranking_model,
+                    }
+                }
+
+                yield {
+                    "agent_event": {
+                        "agent": "retrieval",
+                        "status": "completed",
+                        "duration_ms": retrieval_duration,
+                        "result": {
+                            "docs_found": len(docs),
+                            "reranked": reranked,
+                        },
+                    }
+                }
+
+                # ============================================================
                 # Step 4: Validation (only if we retrieved docs)
-                if state.get("retrieved_docs"):
+                # ============================================================
+                if docs:
                     yield {"stage": "Validating sources..."}
+                    yield {
+                        "agent_event": {
+                            "agent": "validation",
+                            "status": "started",
+                            "description": "Filtering and validating document relevance",
+                        }
+                    }
+
+                    validation_start = time.time()
                     validation_result = await validation_node(state)
+                    validation_duration = int((time.time() - validation_start) * 1000)
+
                     state = {**state, **validation_result}
 
+                    validated_docs = state.get("validated_docs", [])
+                    filtered_count = len(docs) - len(validated_docs)
+
+                    yield {
+                        "validation_results": {
+                            "validated": len(validated_docs),
+                            "filtered": filtered_count,
+                            "results": [],  # Simplified - could add per-doc validation results
+                        }
+                    }
+
+                    yield {
+                        "agent_event": {
+                            "agent": "validation",
+                            "status": "completed",
+                            "duration_ms": validation_duration,
+                            "result": {
+                                "validated": len(validated_docs),
+                                "filtered": filtered_count,
+                            },
+                        }
+                    }
+
+            # ================================================================
             # Step 5: Streaming synthesis
+            # ================================================================
             yield {"stage": "Generating response..."}
+            yield {
+                "agent_event": {
+                    "agent": "synthesis",
+                    "status": "started",
+                    "description": "Generating final response",
+                }
+            }
+
+            synthesis_start = time.time()
             docs = state.get("validated_docs", []) or state.get("retrieved_docs", [])
             documents_text = format_documents(docs)
             cluster_section = format_cluster_context(state.get("cluster_context"))
@@ -406,16 +705,34 @@ I can execute these operations directly on your connected cluster:
                     "documents": documents_text,
                 }
             ):
-                if hasattr(chunk, "content") and chunk.content:
-                    yield chunk.content
+                text = extract_text_from_chunk(chunk)
+                if text:
+                    yield text
+
+            synthesis_duration = int((time.time() - synthesis_start) * 1000)
+            yield {
+                "agent_event": {
+                    "agent": "synthesis",
+                    "status": "completed",
+                    "duration_ms": synthesis_duration,
+                }
+            }
 
             # Yield final citations (only if we have docs)
             citations = extract_citations(docs) if docs else []
             yield {"citations": citations}
 
         except Exception as e:
-            logger.error(f"Streaming error: {e}")
-            yield f"Error: {str(e)}"
+            error_msg = str(e) if e else "Unknown error"
+            logger.error(f"Streaming error: {error_msg}")
+            yield {
+                "agent_event": {
+                    "agent": "error",
+                    "status": "error",
+                    "result": {"error": error_msg},
+                }
+            }
+            yield f"Error: {error_msg}"
 
 
 # Singleton orchestrator

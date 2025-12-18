@@ -215,7 +215,7 @@ def generate_suggested_actions(
 async def generate_sse_stream(
     message: str, history: list[dict], session_id: str | None = None
 ) -> AsyncGenerator[str, None]:
-    """Generate SSE events for streaming chat response with thinking stages."""
+    """Generate SSE events for streaming chat response with agent activity visibility."""
     from kgpt.agents import get_orchestrator
 
     orchestrator = get_orchestrator()
@@ -235,12 +235,32 @@ async def generate_sse_stream(
         # Send initial thinking stage
         yield f"data: {json.dumps({'stage': 'Analyzing query...'})}\n\n"
 
-        # Use the streaming query method with stage updates
+        # Use the streaming query method with stage updates and agent events
         async for chunk in orchestrator.query_stream_with_stages(message, history):
             if isinstance(chunk, dict):
                 # Handle stage updates
-                if chunk.get("stage"):
+                if chunk.get("stage") is not None:
                     yield f"data: {json.dumps({'stage': chunk['stage']})}\n\n"
+                    continue
+
+                # Handle agent events (for educational sidebar)
+                if chunk.get("agent_event"):
+                    yield f"data: {json.dumps({'agent_event': chunk['agent_event']})}\n\n"
+                    continue
+
+                # Handle routing decision (for educational visibility)
+                if chunk.get("routing_decision"):
+                    yield f"data: {json.dumps({'routing_decision': chunk['routing_decision']})}\n\n"
+                    continue
+
+                # Handle retrieval results (for educational visibility)
+                if chunk.get("retrieval_results"):
+                    yield f"data: {json.dumps({'retrieval_results': chunk['retrieval_results']})}\n\n"
+                    continue
+
+                # Handle validation results (for educational visibility)
+                if chunk.get("validation_results"):
+                    yield f"data: {json.dumps({'validation_results': chunk['validation_results']})}\n\n"
                     continue
 
                 # Handle cluster context
@@ -256,39 +276,81 @@ async def generate_sse_stream(
                     continue
 
                 # Final chunk with citations
-                if chunk.get("citations"):
+                if chunk.get("citations") is not None:
                     citations = chunk["citations"]
 
-                # Send finish event
-                finish_event = {
-                    "id": response_id,
-                    "object": "chat.completion.chunk",
-                    "created": created,
-                    "model": "kgpt",
-                    "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
-                }
-                yield f"data: {json.dumps(finish_event)}\n\n"
+                    # Send citations to frontend
+                    if citations:
+                        yield f"data: {json.dumps({'citations': citations})}\n\n"
 
-                # Generate and send suggested actions
-                actions = generate_suggested_actions(message, cluster_context, admin_result)
-                if actions:
-                    yield f"data: {json.dumps({'actions': actions})}\n\n"
+                    # Send finish event
+                    finish_event = {
+                        "id": response_id,
+                        "object": "chat.completion.chunk",
+                        "created": created,
+                        "model": "kgpt",
+                        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+                    }
+                    yield f"data: {json.dumps(finish_event)}\n\n"
 
-                yield "data: [DONE]\n\n"
+                    # Generate and send suggested actions
+                    actions = generate_suggested_actions(message, cluster_context, admin_result)
+                    if actions:
+                        yield f"data: {json.dumps({'actions': actions})}\n\n"
 
-                # Save assistant response to session
-                if session_id and full_response:
-                    db = get_db()
-                    db.add_chat_message(session_id, "assistant", full_response, citations)
+                    yield "data: [DONE]\n\n"
+
+                    # Save assistant response to session
+                    if session_id and full_response:
+                        db = get_db()
+                        db.add_chat_message(session_id, "assistant", full_response, citations)
             else:
-                # Regular text chunk
-                full_response += chunk
+                # Regular text chunk - ensure it's ALWAYS a string
+                text_chunk = ""
+
+                if isinstance(chunk, str):
+                    text_chunk = chunk
+                elif isinstance(chunk, (int, float)):
+                    text_chunk = str(chunk)
+                elif hasattr(chunk, "content"):
+                    # Handle AIMessageChunk or similar objects
+                    content = chunk.content
+                    if isinstance(content, str):
+                        text_chunk = content
+                    elif isinstance(content, list):
+                        # Handle content block format [{"type": "text", "text": "..."}]
+                        texts = []
+                        for item in content:
+                            if isinstance(item, str):
+                                texts.append(item)
+                            elif isinstance(item, dict):
+                                # Extract text from dict, ensuring it's a string
+                                if "text" in item and isinstance(item["text"], str):
+                                    texts.append(item["text"])
+                                elif "content" in item and isinstance(item["content"], str):
+                                    texts.append(item["content"])
+                        text_chunk = "".join(texts)
+                    elif isinstance(content, dict):
+                        # Handle dict content
+                        if "text" in content and isinstance(content["text"], str):
+                            text_chunk = content["text"]
+                        elif "content" in content and isinstance(content["content"], str):
+                            text_chunk = content["content"]
+                    # Skip any other content types silently
+                # Skip unrecognized chunk types silently
+
+                if not text_chunk:
+                    continue
+
+                full_response += text_chunk
                 event = {
                     "id": response_id,
                     "object": "chat.completion.chunk",
                     "created": created,
                     "model": "kgpt",
-                    "choices": [{"index": 0, "delta": {"content": chunk}, "finish_reason": None}],
+                    "choices": [
+                        {"index": 0, "delta": {"content": text_chunk}, "finish_reason": None}
+                    ],
                 }
                 yield f"data: {json.dumps(event)}\n\n"
 
@@ -456,6 +518,14 @@ async def execute_admin_operation(request: AdminOperationRequest) -> AdminOperat
     try:
         result = await execute_confirmed_operation(request.operation, request.params)
 
+        # Handle partitions - can be int or list depending on operation
+        partitions = result.get("partitions")
+        partition_count = result.get("partition_count")
+
+        # For describe_topic, partitions is a list of partition details
+        if isinstance(partitions, list):
+            partition_count = len(partitions)
+
         return AdminOperationResponse(
             success=result.get("success", False),
             operation=request.operation,
@@ -463,8 +533,11 @@ async def execute_admin_operation(request: AdminOperationRequest) -> AdminOperat
             error=result.get("error"),
             topic=result.get("topic"),
             group_id=result.get("group_id"),
-            partitions=result.get("partitions"),
+            partitions=partitions,
+            partition_count=partition_count,
             replication_factor=result.get("replication_factor"),
+            configuration=result.get("configuration"),
+            all_configs=result.get("all_configs"),
         )
     except Exception as e:
         logger.error(f"Admin operation execution error: {e}")

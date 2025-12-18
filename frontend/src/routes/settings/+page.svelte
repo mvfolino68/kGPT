@@ -36,8 +36,9 @@
 		ollama: { configured: false, source: null, validating: false, valid: false, models: [], selectedModel: '', error: null }
 	});
 
-	// For adding new keys
+	// For adding/updating keys
 	let showAddKey = $state<string | null>(null);
+	let isUpdatingKey = $state(false);
 	let newKeyInput = $state('');
 	let newKeyValidating = $state(false);
 	let newKeyError = $state<string | null>(null);
@@ -132,7 +133,10 @@
 		providerConfigs = { ...providerConfigs, [provider]: { ...providerConfigs[provider], validating: true, error: null } };
 
 		try {
-			const result = await validateApiKey(provider, '__USE_STORED__');
+			const result =
+				provider === 'ollama'
+					? await validateApiKey(provider, '__USE_STORED__', { ollama_host: ollamaHost })
+					: await validateApiKey(provider, '__USE_STORED__');
 			providerConfigs = {
 				...providerConfigs,
 				[provider]: {
@@ -195,7 +199,10 @@
 		newKeyError = null;
 
 		try {
-			const result = await validateApiKey(showAddKey, newKeyInput.trim());
+			const result =
+				showAddKey === 'ollama'
+					? await validateApiKey(showAddKey, newKeyInput.trim(), { ollama_host: ollamaHost })
+					: await validateApiKey(showAddKey, newKeyInput.trim());
 			if (result.valid) {
 				newKeyModels = result.models;
 				newKeySelectedModel = result.models[0] || '';
@@ -239,6 +246,16 @@
 
 	function cancelAddKey() {
 		showAddKey = null;
+		isUpdatingKey = false;
+		newKeyInput = '';
+		newKeyError = null;
+		newKeyModels = [];
+		newKeySelectedModel = '';
+	}
+
+	function startUpdateKey(provider: string) {
+		showAddKey = provider;
+		isUpdatingKey = true;
 		newKeyInput = '';
 		newKeyError = null;
 		newKeyModels = [];
@@ -413,9 +430,22 @@
 				{#if activeProvider && providerConfigs[activeProvider]?.valid}
 					{@const config = providerConfigs[activeProvider]}
 					<section class="bg-surface-800 border border-emerald-700/50 rounded">
-						<div class="px-4 py-2 border-b border-emerald-700/30 bg-emerald-900/10 flex items-center gap-2">
-							<span class="font-mono text-surface-100">{PROVIDERS[activeProvider].name}</span>
-							<span class="text-xs px-1.5 py-0.5 bg-emerald-600 text-white rounded font-mono">active</span>
+						<div class="px-4 py-2 border-b border-emerald-700/30 bg-emerald-900/10 flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<span class="font-mono text-surface-100">{PROVIDERS[activeProvider].name}</span>
+								<span class="text-xs px-1.5 py-0.5 bg-emerald-600 text-white rounded font-mono">active</span>
+								{#if config.source}
+									<span class="text-xs px-1.5 py-0.5 rounded font-mono {config.source === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
+										{config.source === 'env' ? 'env' : 'saved'}
+									</span>
+								{/if}
+							</div>
+							{#if activeProvider !== 'ollama'}
+								<button onclick={() => startUpdateKey(activeProvider)}
+									class="px-2 py-1 text-xs font-mono text-surface-400 hover:text-surface-200 hover:bg-surface-700 rounded transition-colors">
+									update key
+								</button>
+							{/if}
 						</div>
 						<div class="p-4">
 							<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
@@ -472,12 +502,24 @@
 												class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-mono text-xs">
 												switch
 											</button>
+											{#if key !== 'ollama'}
+												<button onclick={() => startUpdateKey(key)}
+													class="px-2 py-1 text-xs font-mono text-surface-500 hover:text-surface-300 hover:bg-surface-700 rounded transition-colors">
+													update
+												</button>
+											{/if}
 										{:else if config.configured && !config.valid && !config.validating}
 											<span class="text-xs font-mono text-red-400">{config.error || 'error'}</span>
 											<button onclick={() => validateProvider(key)}
 												class="px-3 py-1 bg-surface-700 hover:bg-surface-600 text-surface-300 rounded font-mono text-xs">
 												retry
 											</button>
+											{#if key !== 'ollama'}
+												<button onclick={() => startUpdateKey(key)}
+													class="px-2 py-1 text-xs font-mono text-surface-500 hover:text-surface-300 hover:bg-surface-700 rounded transition-colors">
+													update
+												</button>
+											{/if}
 										{:else if !config.configured}
 											<button onclick={() => { showAddKey = key; }}
 												class="px-3 py-1 bg-surface-700 hover:bg-surface-600 text-surface-300 rounded font-mono text-xs">
@@ -552,14 +594,16 @@
 		</div>
 	</div>
 
-	<!-- Add Key Modal -->
+	<!-- Add/Update Key Modal -->
 	{#if showAddKey && !isOnboarding}
 		{@const provider = PROVIDERS[showAddKey]}
 		<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
 			<div class="bg-surface-800 border border-surface-700 rounded w-full max-w-md">
 				<div class="px-4 py-3 border-b border-surface-700 flex items-center justify-between">
 					<div class="flex items-center gap-2">
-						<span class="font-mono text-surface-100">{showAddKey === 'ollama' ? 'Configure Ollama' : `Add ${provider.name} Key`}</span>
+						<span class="font-mono text-surface-100">
+							{showAddKey === 'ollama' ? 'Configure Ollama' : isUpdatingKey ? `Update ${provider.name} Key` : `Add ${provider.name} Key`}
+						</span>
 					</div>
 					<button onclick={cancelAddKey} class="text-surface-500 hover:text-surface-300 text-xl leading-none">&times;</button>
 				</div>
@@ -595,6 +639,9 @@
 							<input id="modal-api-key" type="password" bind:value={newKeyInput} placeholder={provider.keyPrefix + '...'}
 								class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500" />
 							<a href={provider.docsUrl} target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">get key →</a>
+							{#if isUpdatingKey && providerConfigs[showAddKey]?.source === 'env'}
+								<p class="text-xs font-mono text-amber-400 mt-2"># will override the environment variable key</p>
+							{/if}
 						</div>
 						{#if newKeyError}
 							<p class="text-sm font-mono text-red-400">{newKeyError}</p>
@@ -615,7 +662,7 @@
 								</select>
 								<button onclick={saveNewKey} disabled={saving}
 									class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
-									{saving ? 'saving...' : 'save & switch'}
+									{saving ? 'saving...' : isUpdatingKey ? 'update & switch' : 'save & switch'}
 								</button>
 							</div>
 						{/if}

@@ -2,11 +2,14 @@
 
 import os
 
+# Suppress LiteLLM verbose output (must be set before importing litellm)
+os.environ.setdefault("LITELLM_LOG", "ERROR")
+
 import httpx
 import litellm
-from langchain_community.chat_models import ChatLiteLLM
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
+from langchain_litellm import ChatLiteLLM
 from loguru import logger
 
 from kgpt.config import EmbeddingProvider, LLMProvider, settings
@@ -78,25 +81,9 @@ def _get_db_setting(key: str, default: str | None = None) -> str | None:
         return default
 
 
-# Default/fallback models per provider
-DEFAULT_MODELS = {
-    LLMProvider.OPENAI: ["gpt-4o", "gpt-4o-mini", "o3-mini", "o1-preview"],
-    LLMProvider.ANTHROPIC: [
-        "claude-3-7-sonnet-20250219",
-        "claude-3-5-sonnet-latest",
-        "claude-3-5-haiku-latest",
-    ],
-    LLMProvider.OLLAMA: ["llama3.3", "llama3.2", "mistral-small", "deepseek-r1:14b"],
-    LLMProvider.OPENROUTER: [
-        "anthropic/claude-3.7-sonnet",
-        "google/gemini-2.0-flash-001",
-        "deepseek/deepseek-chat",
-        "openai/gpt-4o-mini",
-    ],
-}
-
-# For backwards compatibility
-AVAILABLE_MODELS = DEFAULT_MODELS
+# Backwards compatibility export: historically this module exposed a static model list.
+# We now prefer dynamic discovery via provider APIs, so this remains an empty mapping.
+AVAILABLE_MODELS: dict[LLMProvider, list[str]] = {}
 
 # Embedding model dimensions
 EMBEDDING_DIMENSIONS = {
@@ -250,7 +237,7 @@ def get_llm(
 def fetch_openai_models(api_key: str | None = None) -> list[str]:
     key = api_key or settings.openai_api_key
     if not key:
-        return DEFAULT_MODELS[LLMProvider.OPENAI]
+        return []
     try:
         response = httpx.get(
             "https://api.openai.com/v1/models",
@@ -259,38 +246,61 @@ def fetch_openai_models(api_key: str | None = None) -> list[str]:
         )
         response.raise_for_status()
         data = response.json()
-        return sorted(
-            [
-                m["id"]
-                for m in data["data"]
-                if "gpt" in m["id"] or "o1" in m["id"] or "o3" in m["id"]
-            ]
-        )
+        ids = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
+        ids = [m for m in ids if isinstance(m, str) and m]
+        return sorted(set(ids))
     except Exception as e:
         logger.warning(f"Failed to fetch OpenAI models: {e}")
-        return DEFAULT_MODELS[LLMProvider.OPENAI]
+        return []
 
 
-def fetch_openrouter_models() -> list[str]:
+def fetch_openrouter_models(api_key: str | None = None) -> list[str]:
     try:
-        response = httpx.get("https://openrouter.ai/api/v1/models", timeout=10)
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else None
+        response = httpx.get("https://openrouter.ai/api/v1/models", headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
-        return [m["id"] for m in data["data"]]
+        ids = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
+        ids = [m for m in ids if isinstance(m, str) and m]
+        return sorted(set(ids))
     except Exception as e:
         logger.warning(f"Failed to fetch OpenRouter models: {e}")
-        return DEFAULT_MODELS[LLMProvider.OPENROUTER]
+        return []
 
 
 def fetch_ollama_models(host: str | None = None) -> list[str]:
-    ollama_host = host or settings.ollama_host
+    ollama_host = host or _get_db_setting("ollama_host", settings.ollama_host)
     try:
         response = httpx.get(f"{ollama_host}/api/tags", timeout=5)
         response.raise_for_status()
         return [m["name"] for m in response.json().get("models", [])]
     except Exception as e:
         logger.warning(f"Failed to fetch Ollama models: {e}")
-        return DEFAULT_MODELS[LLMProvider.OLLAMA]
+        return []
+
+
+def fetch_anthropic_models(api_key: str | None = None) -> list[str]:
+    key = api_key or settings.anthropic_api_key
+    if not key:
+        return []
+    try:
+        response = httpx.get(
+            "https://api.anthropic.com/v1/models",
+            headers={
+                "x-api-key": key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+        data = response.json()
+        ids = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
+        ids = [m for m in ids if isinstance(m, str) and m]
+        return sorted(set(ids))
+    except Exception as e:
+        logger.warning(f"Failed to fetch Anthropic models: {e}")
+        return []
 
 
 def get_available_models(
@@ -306,12 +316,14 @@ def get_available_models(
 
     if provider == LLMProvider.OPENAI:
         models = fetch_openai_models(api_key)
+    elif provider == LLMProvider.ANTHROPIC:
+        models = fetch_anthropic_models(api_key)
     elif provider == LLMProvider.OPENROUTER:
-        models = fetch_openrouter_models()
+        models = fetch_openrouter_models(api_key)
     elif provider == LLMProvider.OLLAMA:
         models = fetch_ollama_models()
     else:
-        models = DEFAULT_MODELS.get(provider, [])
+        models = []
 
     if not hasattr(get_available_models, "_cache"):
         get_available_models._cache = {}

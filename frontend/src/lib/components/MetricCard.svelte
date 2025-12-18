@@ -12,3 +12,4 @@
 	<p class="text-3xl font-bold text-surface-100 font-mono mb-1">{value}</p>
 	<span class="text-xs text-surface-500 uppercase tracking-wider">{label}</span>
 </div>
+

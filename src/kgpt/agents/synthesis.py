@@ -142,8 +142,15 @@ def format_cluster_context(context: dict | None) -> str:
 
     sections = ["Kafka Cluster Context:"]
 
-    if "brokers" in context:
-        sections.append(f"- Brokers: {context['brokers']}")
+    # Use broker_count if available, otherwise count broker entries
+    if "broker_count" in context:
+        sections.append(f"- Brokers: {context['broker_count']}")
+    elif "brokers" in context:
+        brokers = context["brokers"]
+        if isinstance(brokers, int):
+            sections.append(f"- Brokers: {brokers}")
+        elif isinstance(brokers, dict):
+            sections.append(f"- Brokers: {len(brokers)}")
 
     if "topics" in context:
         topics = context["topics"]
@@ -153,10 +160,31 @@ def format_cluster_context(context: dict | None) -> str:
                 sections.append(f"  ... and {len(topics) - 10} more")
 
     if "topic_configs" in context:
-        sections.append(f"- Topic Configuration: {context['topic_configs']}")
+        configs = context["topic_configs"]
+        if isinstance(configs, dict):
+            # Format config dict nicely
+            config_items = [f"{k}={v}" for k, v in list(configs.items())[:5]]
+            sections.append(f"- Topic Configuration: {', '.join(config_items)}")
+            if len(configs) > 5:
+                sections.append(f"  ... and {len(configs) - 5} more settings")
+        else:
+            sections.append(f"- Topic Configuration: {configs}")
 
     if "consumer_groups" in context:
-        sections.append(f"- Consumer Groups: {context['consumer_groups']}")
+        groups = context["consumer_groups"]
+        if isinstance(groups, list):
+            if groups and isinstance(groups[0], dict):
+                # Extract group IDs from list of dicts
+                group_ids = [g.get("group_id", str(g)) for g in groups]
+                sections.append(f"- Consumer Groups ({len(groups)}): {', '.join(group_ids[:10])}")
+                if len(groups) > 10:
+                    sections.append(f"  ... and {len(groups) - 10} more")
+            else:
+                sections.append(
+                    f"- Consumer Groups ({len(groups)}): {', '.join(str(g) for g in groups[:10])}"
+                )
+        else:
+            sections.append(f"- Consumer Groups: {groups}")
 
     if "cluster_id" in context:
         sections.append(f"- Cluster ID: {context['cluster_id']}")

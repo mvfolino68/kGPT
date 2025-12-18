@@ -51,6 +51,13 @@ export interface AvailableOperation {
 	icon: string;
 }
 
+export interface PartitionDetail {
+	partition: number;
+	leader: number | null;
+	replicas: number[];
+	isrs: number[];
+}
+
 export interface AdminOperationResult {
 	success: boolean;
 	operation?: string;
@@ -69,8 +76,66 @@ export interface AdminOperationResult {
 	error?: string;
 	topic?: string;
 	group_id?: string;
-	partitions?: number;
+	partitions?: number | PartitionDetail[];  // int for create, list for describe
+	partition_count?: number;
 	replication_factor?: number;
+	configuration?: Record<string, string>;  // Topic config from describe
+	all_configs?: Record<string, { value: string; is_default: boolean; is_read_only: boolean }>;
+}
+
+// ============================================================================
+// Agent Activity Types (for educational pipeline visibility)
+// ============================================================================
+
+export type AgentName = 'router' | 'retrieval' | 'kafka' | 'admin' | 'validation' | 'synthesis' | 'error';
+export type AgentStatus = 'pending' | 'started' | 'completed' | 'error';
+
+export interface AgentEvent {
+	agent: AgentName;
+	status: AgentStatus;
+	description?: string;
+	duration_ms?: number;
+	result?: Record<string, unknown>;
+}
+
+export interface RoutingDecision {
+	route: string;
+	reasoning: string;
+	sub_goals: string[];
+	needs_cluster: boolean;
+	needs_retrieval: boolean;
+	needs_admin: boolean;
+}
+
+export interface RetrievalResultItem {
+	source: string;
+	source_name: string;
+	content_preview: string;
+	similarity_score: number;
+	rerank_score: number | null;
+	collection: string;
+	search_query: string | null;
+}
+
+export interface RetrievalResults {
+	docs: RetrievalResultItem[];
+	total: number;
+	queries_expanded: number;
+	reranked: boolean;
+	reranking_model: string | null;
+}
+
+export interface ValidationResultItem {
+	source: string;
+	is_relevant: boolean;
+	confidence: number;
+	reasoning?: string;
+}
+
+export interface ValidationResults {
+	validated: number;
+	filtered: number;
+	results: ValidationResultItem[];
 }
 
 export interface AdminOperationRequest {
@@ -775,12 +840,13 @@ export async function getAvailableModels(provider: string): Promise<string[]> {
 
 export async function validateApiKey(
 	provider: string,
-	apiKey: string
+	apiKey: string,
+	options?: { ollama_host?: string }
 ): Promise<ValidateKeyResponse> {
 	const response = await fetch(`${API_BASE}/settings/validate-key`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ provider, api_key: apiKey })
+		body: JSON.stringify({ provider, api_key: apiKey, ...options })
 	});
 	if (!response.ok) throw new Error(`Validation failed: ${response.statusText}`);
 	return response.json();

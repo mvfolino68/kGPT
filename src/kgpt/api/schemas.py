@@ -240,6 +240,8 @@ class ValidateKeyRequest(BaseModel):
 
     provider: str
     api_key: str
+    # Optional override for providers that don't use API keys (e.g. Ollama)
+    ollama_host: str | None = None
 
 
 class ValidateKeyResponse(BaseModel):
@@ -271,6 +273,15 @@ class SettingsUpdateRequest(BaseModel):
 # ============================================================================
 
 
+class PartitionDetail(BaseModel):
+    """Detailed information about a topic partition."""
+
+    partition: int
+    leader: int | None = None
+    replicas: list[int] = Field(default_factory=list)
+    isrs: list[int] = Field(default_factory=list)
+
+
 class AdminOperationRequest(BaseModel):
     """Request to execute a confirmed admin operation."""
 
@@ -287,8 +298,80 @@ class AdminOperationResponse(BaseModel):
     error: str | None = None
     topic: str | None = None
     group_id: str | None = None
-    partitions: int | None = None
+    # Support both int (for create_topic) and list (for describe_topic)
+    partitions: int | list[PartitionDetail] | None = None
+    partition_count: int | None = None
     replication_factor: int | None = None
+    # Topic configuration from describe_topic
+    configuration: dict | None = None
+    all_configs: dict | None = None
+
+
+# ============================================================================
+# Agent Activity Schemas (for educational pipeline visibility)
+# ============================================================================
+
+
+class AgentEvent(BaseModel):
+    """Event emitted when an agent starts or completes."""
+
+    agent: str = Field(
+        ..., description="Agent name: router, retrieval, kafka, admin, validation, synthesis"
+    )
+    status: str = Field(..., description="Status: started, completed, error")
+    description: str | None = None
+    duration_ms: int | None = None
+    result: dict | None = None
+
+
+class RoutingDecision(BaseModel):
+    """Routing decision from the router agent."""
+
+    route: str = Field(..., description="Route: retrieval, kafka, admin, both, direct, help")
+    reasoning: str
+    sub_goals: list[str] = Field(default_factory=list)
+    needs_cluster: bool = False
+    needs_retrieval: bool = False
+    needs_admin: bool = False
+
+
+class RetrievalResultItem(BaseModel):
+    """A single retrieved document with scores."""
+
+    source: str
+    source_name: str
+    content_preview: str
+    similarity_score: float
+    rerank_score: float | None = None
+    collection: str
+    search_query: str | None = None
+
+
+class RetrievalResults(BaseModel):
+    """Results from the retrieval agent."""
+
+    docs: list[RetrievalResultItem] = Field(default_factory=list)
+    total: int = 0
+    queries_expanded: int = 1
+    reranked: bool = False
+    reranking_model: str | None = None
+
+
+class ValidationResultItem(BaseModel):
+    """Validation result for a single document."""
+
+    source: str
+    is_relevant: bool
+    confidence: float
+    reasoning: str | None = None
+
+
+class ValidationResults(BaseModel):
+    """Results from the validation agent."""
+
+    validated: int = 0
+    filtered: int = 0
+    results: list[ValidationResultItem] = Field(default_factory=list)
 
 
 # ============================================================================
