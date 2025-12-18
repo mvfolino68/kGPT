@@ -3,7 +3,13 @@
 from fastapi import APIRouter
 from loguru import logger
 
-from kgpt.api.schemas import SettingsResponse, SettingsUpdateRequest
+from kgpt.api.schemas import (
+    KeyStatus,
+    SettingsResponse,
+    SettingsUpdateRequest,
+    ValidateKeyRequest,
+    ValidateKeyResponse,
+)
 from kgpt.config import settings
 from kgpt.db import get_db
 from kgpt.vectorstore import reset_vectorstore
@@ -17,6 +23,23 @@ def get_setting_with_fallback(db, key: str, env_value: str | None) -> str | None
     if db_value:
         return db_value
     return env_value
+
+
+def get_key_status(db, db_key: str, env_value: str | None) -> KeyStatus:
+    """Get the status of an API key including its source."""
+    db_value = db.get_setting(db_key)
+
+    if db_value:
+        return KeyStatus(configured=True, source="db", valid=None)
+    elif env_value:
+        return KeyStatus(configured=True, source="env", valid=None)
+    else:
+        return KeyStatus(configured=False, source=None, valid=None)
+
+
+def get_effective_key(db, db_key: str, env_value: str | None) -> str | None:
+    """Get the effective API key (DB takes priority over env)."""
+    return db.get_setting(db_key) or env_value
 
 
 @router.get("", response_model=SettingsResponse)
@@ -33,12 +56,12 @@ async def get_settings() -> SettingsResponse:
     embedding_model = get_setting_with_fallback(db, "embedding_model", settings.embedding_model)
     ollama_host = get_setting_with_fallback(db, "ollama_host", settings.ollama_host)
 
-    # Check for API keys (in DB or env)
-    has_openai = bool(db.get_setting("openai_api_key") or settings.openai_api_key)
-    has_anthropic = bool(db.get_setting("anthropic_api_key") or settings.anthropic_api_key)
-    has_openrouter = bool(db.get_setting("openrouter_api_key") or settings.openrouter_api_key)
-    has_cohere = bool(db.get_setting("cohere_api_key") or settings.cohere_api_key)
-    has_huggingface = bool(db.get_setting("huggingface_token"))
+    # Get key status with source information
+    openai_key = get_key_status(db, "openai_api_key", settings.openai_api_key)
+    anthropic_key = get_key_status(db, "anthropic_api_key", settings.anthropic_api_key)
+    openrouter_key = get_key_status(db, "openrouter_api_key", settings.openrouter_api_key)
+    cohere_key = get_key_status(db, "cohere_api_key", settings.cohere_api_key)
+    huggingface_token = get_key_status(db, "huggingface_token", None)  # HF only from DB
 
     return SettingsResponse(
         llm_provider=llm_provider,
@@ -48,11 +71,18 @@ async def get_settings() -> SettingsResponse:
         qdrant_url=settings.qdrant_url,
         qdrant_collection=settings.qdrant_collection,
         ollama_host=ollama_host,
-        has_openai_key=has_openai,
-        has_anthropic_key=has_anthropic,
-        has_openrouter_key=has_openrouter,
-        has_cohere_key=has_cohere,
-        has_huggingface_token=has_huggingface,
+        # New detailed key status
+        openai_key=openai_key,
+        anthropic_key=anthropic_key,
+        openrouter_key=openrouter_key,
+        cohere_key=cohere_key,
+        huggingface_token=huggingface_token,
+        # Legacy fields for backwards compatibility
+        has_openai_key=openai_key.configured,
+        has_anthropic_key=anthropic_key.configured,
+        has_openrouter_key=openrouter_key.configured,
+        has_cohere_key=cohere_key.configured,
+        has_huggingface_token=huggingface_token.configured,
     )
 
 
@@ -118,6 +148,291 @@ async def update_settings(request: SettingsUpdateRequest) -> SettingsResponse:
     return await get_settings()
 
 
+@router.post("/validate-key", response_model=ValidateKeyResponse)
+async def validate_api_key(request: ValidateKeyRequest) -> ValidateKeyResponse:
+    """Validate an API key and return available models if valid."""
+    provider = request.provider.lower()
+    api_key = request.api_key
+    db = get_db()
+
+    # Handle special value to use stored key
+    if api_key == "__USE_STORED__":
+        if provider == "openai":
+            api_key = get_effective_key(db, "openai_api_key", settings.openai_api_key)
+        elif provider == "anthropic":
+            api_key = get_effective_key(db, "anthropic_api_key", settings.anthropic_api_key)
+        elif provider == "openrouter":
+            api_key = get_effective_key(db, "openrouter_api_key", settings.openrouter_api_key)
+
+        if not api_key:
+            return ValidateKeyResponse(
+                valid=False,
+                provider=provider,
+                message="No API key configured",
+            )
+
+    try:
+        if provider == "openai":
+            return await _validate_openai_key(api_key)
+        elif provider == "anthropic":
+            return await _validate_anthropic_key(api_key)
+        elif provider == "openrouter":
+            return await _validate_openrouter_key(api_key)
+        elif provider == "ollama":
+            return await _validate_ollama()
+        else:
+            return ValidateKeyResponse(
+                valid=False,
+                provider=provider,
+                message=f"Unknown provider: {provider}",
+            )
+    except Exception as e:
+        logger.error(f"Error validating {provider} key: {e}")
+        return ValidateKeyResponse(
+            valid=False,
+            provider=provider,
+            message=str(e),
+        )
+
+
+async def _validate_openai_key(api_key: str) -> ValidateKeyResponse:
+    """Validate OpenAI API key by fetching models."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                # Filter to chat models
+                chat_models = [
+                    m["id"]
+                    for m in data.get("data", [])
+                    if "gpt" in m["id"] or m["id"].startswith("o1") or m["id"].startswith("o3")
+                ]
+                # Sort with preferred models first
+                preferred = [
+                    "gpt-4o",
+                    "gpt-4o-mini",
+                    "o3-mini",
+                    "o1-preview",
+                    "o1-mini",
+                    "gpt-4-turbo",
+                ]
+                sorted_models = []
+                for p in preferred:
+                    if p in chat_models:
+                        sorted_models.append(p)
+                for m in sorted(chat_models):
+                    if m not in sorted_models:
+                        sorted_models.append(m)
+
+                return ValidateKeyResponse(
+                    valid=True,
+                    provider="openai",
+                    message="API key is valid",
+                    models=sorted_models[:20],  # Limit to top 20
+                )
+            elif response.status_code == 401:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="openai",
+                    message="Invalid API key",
+                )
+            else:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="openai",
+                    message=f"API error: {response.status_code}",
+                )
+    except httpx.TimeoutException:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="openai",
+            message="Request timed out",
+        )
+    except Exception as e:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="openai",
+            message=f"Connection error: {str(e)}",
+        )
+
+
+async def _validate_anthropic_key(api_key: str) -> ValidateKeyResponse:
+    """Validate Anthropic API key."""
+    import httpx
+
+    try:
+        # Anthropic doesn't have a models endpoint, so we try a minimal request
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-3-5-haiku-latest",
+                    "max_tokens": 1,
+                    "messages": [{"role": "user", "content": "hi"}],
+                },
+            )
+
+            # 200 means valid, 401 means invalid key
+            if response.status_code == 200:
+                models = [
+                    "claude-sonnet-4-20250514",
+                    "claude-opus-4-20250514",
+                    "claude-3-7-sonnet-latest",
+                    "claude-3-5-haiku-latest",
+                ]
+                return ValidateKeyResponse(
+                    valid=True,
+                    provider="anthropic",
+                    message="API key is valid",
+                    models=models,
+                )
+            elif response.status_code == 401:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="anthropic",
+                    message="Invalid API key",
+                )
+            else:
+                # Other errors (rate limit, etc) mean key is probably valid
+                models = [
+                    "claude-sonnet-4-20250514",
+                    "claude-opus-4-20250514",
+                    "claude-3-7-sonnet-latest",
+                    "claude-3-5-haiku-latest",
+                ]
+                return ValidateKeyResponse(
+                    valid=True,
+                    provider="anthropic",
+                    message="API key appears valid",
+                    models=models,
+                )
+    except httpx.TimeoutException:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="anthropic",
+            message="Request timed out",
+        )
+    except Exception as e:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="anthropic",
+            message=f"Connection error: {str(e)}",
+        )
+
+
+async def _validate_openrouter_key(api_key: str) -> ValidateKeyResponse:
+    """Validate OpenRouter API key by fetching models."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://openrouter.ai/api/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                # Get model IDs
+                models = [m["id"] for m in data.get("data", [])]
+                # Filter to popular models
+                popular_prefixes = [
+                    "anthropic/claude",
+                    "openai/gpt",
+                    "openai/o1",
+                    "openai/o3",
+                    "google/gemini",
+                    "meta-llama/llama",
+                    "deepseek/deepseek",
+                ]
+                filtered = []
+                for prefix in popular_prefixes:
+                    for m in models:
+                        if m.startswith(prefix) and m not in filtered:
+                            filtered.append(m)
+                            if len(filtered) >= 25:
+                                break
+                    if len(filtered) >= 25:
+                        break
+
+                return ValidateKeyResponse(
+                    valid=True,
+                    provider="openrouter",
+                    message="API key is valid",
+                    models=filtered if filtered else models[:25],
+                )
+            elif response.status_code == 401:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="openrouter",
+                    message="Invalid API key",
+                )
+            else:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="openrouter",
+                    message=f"API error: {response.status_code}",
+                )
+    except httpx.TimeoutException:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="openrouter",
+            message="Request timed out",
+        )
+    except Exception as e:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="openrouter",
+            message=f"Connection error: {str(e)}",
+        )
+
+
+async def _validate_ollama() -> ValidateKeyResponse:
+    """Check if Ollama is available and get models."""
+    import httpx
+
+    db = get_db()
+    ollama_host = db.get_setting("ollama_host") or settings.ollama_host
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{ollama_host}/api/tags")
+
+            if response.status_code == 200:
+                data = response.json()
+                models = [m["name"] for m in data.get("models", [])]
+                return ValidateKeyResponse(
+                    valid=True,
+                    provider="ollama",
+                    message=f"Connected to Ollama at {ollama_host}",
+                    models=models if models else ["llama3.3", "llama3.2", "mistral"],
+                )
+            else:
+                return ValidateKeyResponse(
+                    valid=False,
+                    provider="ollama",
+                    message=f"Ollama returned error: {response.status_code}",
+                )
+    except Exception:
+        return ValidateKeyResponse(
+            valid=False,
+            provider="ollama",
+            message=f"Cannot connect to Ollama at {ollama_host}",
+        )
+
+
 @router.get("/models/{provider}")
 async def get_available_models(provider: str) -> dict:
     """Get available models for a provider."""
@@ -128,12 +443,23 @@ async def get_available_models(provider: str) -> dict:
         provider_enum = LLMProvider(provider)
         db = get_db()
 
-        # Get API key from DB if available
+        # Get API key from DB or env
         api_key = None
         if provider == "openai":
-            api_key = db.get_setting("openai_api_key") or settings.openai_api_key
+            api_key = get_effective_key(db, "openai_api_key", settings.openai_api_key)
         elif provider == "openrouter":
-            api_key = db.get_setting("openrouter_api_key") or settings.openrouter_api_key
+            api_key = get_effective_key(db, "openrouter_api_key", settings.openrouter_api_key)
+        elif provider == "anthropic":
+            api_key = get_effective_key(db, "anthropic_api_key", settings.anthropic_api_key)
+
+        # Check if we have a key for providers that need one
+        if provider in ["openai", "anthropic", "openrouter"] and not api_key:
+            return {
+                "provider": provider,
+                "models": [],
+                "error": "No API key configured",
+                "needs_key": True,
+            }
 
         models = get_available_models(provider_enum, api_key=api_key, use_cache=False)
         return {"provider": provider, "models": models}

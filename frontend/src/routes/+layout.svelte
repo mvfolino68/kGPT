@@ -28,29 +28,31 @@
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </svelte:head>
 
-<div class="flex h-screen bg-surface-900">
-	<!-- Sidebar - terminal style -->
-	<aside class="w-56 bg-surface-800 flex flex-col border-r border-surface-700">
+<div class="flex h-screen bg-surface-950">
+	<!-- Sidebar -->
+	<aside class="w-60 bg-surface-900/60 backdrop-blur-xl flex flex-col border-r border-white/5">
 		<!-- Logo -->
-		<div class="px-4 py-3 border-b border-surface-700">
+		<div class="px-5 py-4 border-b border-white/5">
 			<div class="flex items-center gap-3">
-				<img src={kgptLogo} alt="kGPT" class="w-8 h-8" />
+				<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
+					<img src={kgptLogo} alt="kGPT" class="w-6 h-6" />
+				</div>
 				<div>
-					<h1 class="font-mono text-lg text-surface-100 leading-tight">kGPT</h1>
-					<p class="text-xs font-mono text-surface-500">kafka + AI</p>
+					<h1 class="text-lg font-semibold text-surface-100 leading-tight tracking-tight">kGPT</h1>
+					<p class="text-[10px] font-medium text-surface-500 tracking-wider uppercase">kafka + AI</p>
 				</div>
 			</div>
 		</div>
 
 		<!-- Navigation -->
-		<nav class="flex-1 py-2">
+		<nav class="flex-1 py-3 px-2">
 			{#each navItems as item}
 				<a
 					href={item.href}
-					class="flex items-center gap-3 px-4 py-2.5 font-mono text-sm transition-colors
+					class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl mb-1 transition-all duration-200
 						{$page.url.pathname === item.href
-						? 'bg-surface-700/50 text-emerald-400 border-l-2 border-emerald-400'
-						: 'text-surface-400 hover:bg-surface-700/30 hover:text-surface-200 border-l-2 border-transparent'}"
+						? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20'
+						: 'text-surface-400 hover:bg-white/5 hover:text-surface-200'}"
 				>
 					{#if item.iconType === 'chat'}
 						<!-- Terminal/Chat icon -->
@@ -83,28 +85,40 @@
 			{/each}
 		</nav>
 
-		<!-- Status - terminal style -->
-		<div class="px-4 py-3 border-t border-surface-700 bg-surface-900/50">
-			<p class="text-xs font-mono text-surface-600 mb-2"># status</p>
+		<!-- Status -->
+		<div class="px-4 py-4 border-t border-white/5 bg-surface-900/40">
+			<div class="flex items-center gap-2 mb-3">
+				<svg class="w-3.5 h-3.5 text-surface-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+				</svg>
+				<span class="text-[10px] font-semibold text-surface-500 uppercase tracking-widest">Status</span>
+			</div>
 			{#if $health}
-				<div class="space-y-1 text-xs font-mono">
-					<div class="flex items-center gap-2">
-						<span class="w-1.5 h-1.5 rounded-full {$health.qdrant_connected ? 'bg-emerald-400' : 'bg-red-400'}"></span>
-						<span class="text-surface-400">qdrant:</span>
-						<span class="{$health.qdrant_connected ? 'text-emerald-400' : 'text-red-400'}">
+				<div class="space-y-2 text-xs">
+					<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-800/50">
+						<div class="flex items-center gap-2">
+							<span class="w-2 h-2 rounded-full {$health.qdrant_connected ? 'bg-emerald-400 shadow-lg shadow-emerald-400/30' : 'bg-red-400 shadow-lg shadow-red-400/30'}"></span>
+							<span class="text-surface-300 font-medium">qdrant</span>
+						</div>
+						<span class="font-mono {$health.qdrant_connected ? 'text-emerald-400' : 'text-red-400'}">
 							{$health.qdrant_connected ? 'ok' : 'err'}
 						</span>
 					</div>
-					<div class="flex items-center gap-2">
-						<span class="w-1.5 h-1.5 rounded-full {$health.kafka_connected ? 'bg-emerald-400' : 'bg-amber-400'}"></span>
-						<span class="text-surface-400">kafka:</span>
-						<span class="{$health.kafka_connected ? 'text-emerald-400' : 'text-amber-400'}">
-							{$health.kafka_connected ? 'ok' : '—'}
+					<div class="flex items-center justify-between px-3 py-2 rounded-lg bg-surface-800/50">
+						<div class="flex items-center gap-2">
+							<span class="w-2 h-2 rounded-full {$health.kafka_connected ? 'bg-emerald-400 shadow-lg shadow-emerald-400/30' : 'bg-amber-400 shadow-lg shadow-amber-400/30'}"></span>
+							<span class="text-surface-300 font-medium">kafka</span>
+						</div>
+						<span class="font-mono {$health.kafka_connected ? 'text-emerald-400' : 'text-amber-400'}">
+							{$health.kafka_connected ? 'ok' : '--'}
 						</span>
 					</div>
 				</div>
 			{:else}
-				<p class="text-xs font-mono text-surface-600 animate-pulse">checking...</p>
+				<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-800/50 animate-pulse">
+					<span class="w-2 h-2 rounded-full bg-surface-600"></span>
+					<span class="text-surface-500 text-xs">checking...</span>
+				</div>
 			{/if}
 		</div>
 	</aside>

@@ -33,6 +33,88 @@ SYNTHESIS_USER_PROMPT = """Question: {question}
 Provide a direct, helpful answer:"""
 
 
+# Admin operation-specific prompts for GATHERING INFO (asking questions)
+ADMIN_GATHERING_SYSTEM_PROMPT = """You are a friendly Kafka admin assistant helping the user set up an operation.
+You need to gather some information before proceeding.
+
+### Rules:
+1. **Be conversational** - Ask questions naturally, not like a form
+2. **Explain briefly** - Help them understand what each parameter means if it's not obvious
+3. **Provide examples** - Give example values when helpful
+4. **Show defaults** - Mention default values so they know what to expect
+5. **Be encouraging** - This should feel like a helpful conversation, not an interrogation
+
+### Format:
+- Acknowledge what they want to do
+- Ask the questions in a natural way
+- For each question, briefly explain why it matters or give examples
+- Don't number questions like a form - weave them into conversation"""
+
+
+ADMIN_GATHERING_USER_PROMPT = """User's request: {question}
+
+Analysis of what's needed:
+{admin_result}
+
+Cluster context:
+{cluster_section}
+
+Have a helpful conversation to gather the missing information:"""
+
+
+# Admin operation-specific prompts for PENDING operations (confirmation required)
+ADMIN_PENDING_SYSTEM_PROMPT = """You are a Kafka admin assistant. The user has requested an admin operation.
+Present the operation details clearly so they can review and confirm before execution.
+
+### Rules:
+1. **Summarize the operation** - Clearly state what will happen if they confirm
+2. **Show key parameters** - Include topic names, partition counts, config values, etc.
+3. **Note any risks** - For destructive operations, briefly mention what could be affected
+4. **Be concise** - Don't over-explain, just present the facts
+5. **Use structured format** - Make it easy to scan with bullet points or a table
+
+### Format:
+- Start with a brief summary of the operation
+- List the key parameters
+- If destructive (delete), add a brief warning
+- End by noting they can confirm or cancel"""
+
+
+ADMIN_PENDING_USER_PROMPT = """Original request: {question}
+
+{admin_result}
+
+{cluster_section}
+
+Present this pending operation for user confirmation:"""
+
+
+# Admin operation-specific prompts for EXECUTED operations
+ADMIN_SYNTHESIS_SYSTEM_PROMPT = """You are a Kafka admin assistant that has just executed an operation on a cluster.
+Report the result clearly and concisely.
+
+### Rules:
+1. **Report the outcome** - State whether the operation succeeded or failed
+2. **Be specific** - Include the operation type and affected resource (topic name, group id, etc.)
+3. **On success** - Briefly confirm what was done
+4. **On failure** - Explain the error clearly and suggest a fix if obvious
+5. **Format cleanly** - Use Markdown for clarity
+
+### What NOT to do:
+- Don't add unnecessary warnings or caveats for successful operations
+- Don't suggest additional operations unless asked
+- Don't be verbose"""
+
+
+ADMIN_SYNTHESIS_USER_PROMPT = """Original request: {question}
+
+{admin_result}
+
+{cluster_section}
+
+Provide a clear response about the operation result:"""
+
+
 def format_documents(docs: list[Document]) -> str:
     """Format documents for the synthesis prompt."""
     if not docs:
@@ -78,6 +160,97 @@ def format_cluster_context(context: dict | None) -> str:
 
     if "cluster_id" in context:
         sections.append(f"- Cluster ID: {context['cluster_id']}")
+
+    return "\n".join(sections)
+
+
+def format_admin_result(result: dict | None) -> str:
+    """Format admin operation result for the prompt."""
+    if not result:
+        return "No operation result."
+
+    # Check if we need to gather more information
+    if result.get("needs_info") or result.get("unclear"):
+        sections = ["Admin Operation Analysis:"]
+
+        if result.get("operation"):
+            sections.append(f"- Detected Operation: {result['operation']}")
+        else:
+            sections.append("- Operation: Could not determine")
+
+        params = result.get("params", {})
+        if params:
+            sections.append("- Parameters provided so far:")
+            for key, value in params.items():
+                sections.append(f"  - {key}: {value}")
+
+        if result.get("missing_required"):
+            sections.append(f"- Missing required info: {', '.join(result['missing_required'])}")
+
+        if result.get("missing_optional"):
+            sections.append(
+                f"- Optional info not specified: {', '.join(result['missing_optional'])}"
+            )
+
+        if result.get("questions"):
+            sections.append("- Questions to ask:")
+            for q in result["questions"]:
+                sections.append(f"  • {q}")
+
+        return "\n".join(sections)
+
+    # Check if this is a pending operation awaiting confirmation
+    if result.get("pending"):
+        sections = ["Pending Admin Operation (Awaiting Confirmation):"]
+        sections.append(f"- Operation: {result.get('operation', 'unknown')}")
+
+        params = result.get("params", {})
+        if params.get("topic_name"):
+            sections.append(f"- Topic: {params['topic_name']}")
+        if params.get("group_id"):
+            sections.append(f"- Consumer Group: {params['group_id']}")
+        if params.get("num_partitions"):
+            sections.append(f"- Partitions: {params['num_partitions']}")
+        if params.get("replication_factor"):
+            sections.append(f"- Replication Factor: {params['replication_factor']}")
+        if params.get("new_total_partitions"):
+            sections.append(f"- New Total Partitions: {params['new_total_partitions']}")
+        if params.get("config_updates"):
+            sections.append(f"- Config Updates: {params['config_updates']}")
+        if params.get("config"):
+            sections.append(f"- Topic Config: {params['config']}")
+
+        if result.get("confirmation_message"):
+            sections.append(f"- Impact: {result['confirmation_message']}")
+        if result.get("warning_level"):
+            sections.append(f"- Risk Level: {result['warning_level']}")
+
+        return "\n".join(sections)
+
+    # This is an executed operation result
+    sections = ["Admin Operation Result:"]
+
+    if result.get("success"):
+        sections.append("- Status: SUCCESS")
+        sections.append(f"- Operation: {result.get('operation', 'unknown')}")
+
+        if result.get("topic"):
+            sections.append(f"- Topic: {result['topic']}")
+        if result.get("group_id"):
+            sections.append(f"- Consumer Group: {result['group_id']}")
+        if result.get("message"):
+            sections.append(f"- Message: {result['message']}")
+        if result.get("partitions"):
+            sections.append(f"- Partitions: {result['partitions']}")
+        if result.get("replication_factor"):
+            sections.append(f"- Replication Factor: {result['replication_factor']}")
+        if result.get("config_updates"):
+            sections.append(f"- Config Updates: {result['config_updates']}")
+    else:
+        sections.append("- Status: FAILED")
+        sections.append(f"- Operation: {result.get('operation', 'unknown')}")
+        if result.get("error"):
+            sections.append(f"- Error: {result['error']}")
 
     return "\n".join(sections)
 

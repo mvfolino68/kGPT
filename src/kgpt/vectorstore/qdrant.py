@@ -9,7 +9,6 @@ Features:
 """
 
 import hashlib
-import uuid
 from typing import Any
 
 from langchain_core.documents import Document
@@ -22,10 +21,6 @@ from qdrant_client.http.models import (
     FieldCondition,
     Filter,
     MatchValue,
-    PointStruct,
-    Record,
-    ScrollRequest,
-    SearchRequest,
     VectorParams,
 )
 
@@ -36,7 +31,7 @@ from kgpt.llm.providers import get_embeddings
 class QdrantStore:
     """
     Advanced Qdrant vector store wrapper for kGPT.
-    
+
     Provides:
     - Document ingestion with embedding
     - Multiple search strategies (dense, hybrid with RRF)
@@ -153,17 +148,19 @@ class QdrantStore:
     ) -> list[Document]:
         """Perform similarity search with optional metadata filtering."""
         vectorstore = self.get_vectorstore(collection_name)
-        
-        search_kwargs = {"k": k}
+
+        # Build filter if metadata provided
+        # LangChain stores metadata under "metadata" key in Qdrant payload
+        qdrant_filter = None
         if filter_metadata:
-            # Build Qdrant filter
-            conditions = []
-            for key, value in filter_metadata.items():
-                conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+            conditions = [
+                FieldCondition(key=f"metadata.{key}", match=MatchValue(value=value))
+                for key, value in filter_metadata.items()
+            ]
             if conditions:
-                search_kwargs["filter"] = Filter(must=conditions)
-        
-        return vectorstore.similarity_search(query, **search_kwargs)
+                qdrant_filter = Filter(must=conditions)  # type: ignore[arg-type]
+
+        return vectorstore.similarity_search(query, k=k, filter=qdrant_filter)
 
     def similarity_search_with_score(
         self,
@@ -174,16 +171,19 @@ class QdrantStore:
     ) -> list[tuple[Document, float]]:
         """Perform similarity search with relevance scores."""
         vectorstore = self.get_vectorstore(collection_name)
-        
-        search_kwargs = {"k": k}
+
+        # Build filter if metadata provided
+        # LangChain stores metadata under "metadata" key in Qdrant payload
+        qdrant_filter = None
         if filter_metadata:
-            conditions = []
-            for key, value in filter_metadata.items():
-                conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+            conditions = [
+                FieldCondition(key=f"metadata.{key}", match=MatchValue(value=value))
+                for key, value in filter_metadata.items()
+            ]
             if conditions:
-                search_kwargs["filter"] = Filter(must=conditions)
-        
-        return vectorstore.similarity_search_with_score(query, **search_kwargs)
+                qdrant_filter = Filter(must=conditions)  # type: ignore[arg-type]
+
+        return vectorstore.similarity_search_with_score(query, k=k, filter=qdrant_filter)
 
     def as_retriever(self, collection_name: str | None = None, **kwargs):
         """Get a retriever for the vector store."""
@@ -200,51 +200,51 @@ class QdrantStore:
     ) -> list[tuple[Document, float]]:
         """
         Perform hybrid search using Reciprocal Rank Fusion (RRF).
-        
+
         Combines:
         1. Dense vector similarity search
         2. Keyword-based search via metadata matching
-        
+
         Args:
             query: Search query
             k: Number of results to return
             collection_name: Collection to search
             alpha: Weight for dense vs keyword (1.0 = all dense, 0.0 = all keyword)
             filter_metadata: Optional metadata filter
-            
+
         Returns:
             List of (document, score) tuples sorted by combined score
         """
         name = collection_name or self.collection_name
-        
+
         # Get more candidates for fusion
         fetch_k = k * 3
-        
+
         # Dense search
         dense_results = self.similarity_search_with_score(
             query, k=fetch_k, collection_name=name, filter_metadata=filter_metadata
         )
-        
+
         # For hybrid, we combine dense results with a keyword-boosted scoring
         # This is a simplified RRF without true sparse vectors
         # Future: Add BM25 sparse vector indexing
-        
+
         # Apply RRF scoring
         doc_scores: dict[str, tuple[Document, float]] = {}
-        
+
         for rank, (doc, score) in enumerate(dense_results):
             # Create a unique key for the document
             doc_key = hashlib.md5(doc.page_content[:200].encode()).hexdigest()
-            
+
             # RRF score: 1 / (rank + k) where k is a constant (typically 60)
             rrf_score = 1.0 / (rank + 60)
-            
+
             # Also consider the similarity score
             combined_score = alpha * (1 - score) + (1 - alpha) * rrf_score
-            
+
             if doc_key not in doc_scores or doc_scores[doc_key][1] < combined_score:
                 doc_scores[doc_key] = (doc, combined_score)
-        
+
         # Sort by combined score and return top k
         sorted_results = sorted(doc_scores.values(), key=lambda x: x[1], reverse=True)
         return sorted_results[:k]
@@ -259,34 +259,105 @@ class QdrantStore:
             logger.warning(f"Could not delete collection '{name}': {e}")
 
     def get_collection_info(self, collection_name: str | None = None) -> dict:
-        """Get information about a collection."""
+        """Get comprehensive information about a collection including HNSW config."""
         name = collection_name or self.collection_name
         try:
             info = self.client.get_collection(name)
-            
+
             # Get vector config details
             vectors_config = info.config.params.vectors
             if isinstance(vectors_config, VectorParams):
                 dimensions = vectors_config.size
                 distance = vectors_config.distance.value if vectors_config.distance else "unknown"
+                on_disk = getattr(vectors_config, "on_disk", False)
             elif isinstance(vectors_config, dict):
                 first_config = next(iter(vectors_config.values()), None)
                 dimensions = first_config.size if first_config else 0
-                distance = first_config.distance.value if first_config and first_config.distance else "unknown"
+                distance = (
+                    first_config.distance.value
+                    if first_config and first_config.distance
+                    else "unknown"
+                )
+                on_disk = getattr(first_config, "on_disk", False) if first_config else False
             else:
                 dimensions = 0
                 distance = "unknown"
-            
+                on_disk = False
+
+            # Handle different Qdrant client versions
+            # In newer versions, vectors_count is deprecated - use points_count
+            points_count = info.points_count or 0
+            vectors_count = (
+                getattr(info, "vectors_count", None) or points_count  # Fall back to points_count
+            )
+
+            # Get HNSW configuration (important for understanding search performance)
+            hnsw_config = {}
+            if info.config.hnsw_config:
+                hc = info.config.hnsw_config
+                hnsw_config = {
+                    "m": hc.m,  # Number of edges per node
+                    "ef_construct": hc.ef_construct,  # Construction-time search width
+                    "full_scan_threshold": hc.full_scan_threshold,
+                    "on_disk": getattr(hc, "on_disk", False),
+                }
+
+            # Get optimizer config
+            optimizer_config = {}
+            if info.config.optimizer_config:
+                oc = info.config.optimizer_config
+                optimizer_config = {
+                    "indexing_threshold": oc.indexing_threshold,
+                    "memmap_threshold": oc.memmap_threshold,
+                    "flush_interval_sec": oc.flush_interval_sec,
+                }
+
+            # Get quantization config (for storage optimization)
+            quantization_config = None
+            if info.config.quantization_config:
+                qc = info.config.quantization_config
+                if hasattr(qc, "scalar"):
+                    quantization_config = {
+                        "type": "scalar",
+                        "quantile": getattr(qc.scalar, "quantile", None),
+                        "always_ram": getattr(qc.scalar, "always_ram", False),
+                    }
+                elif hasattr(qc, "binary"):
+                    quantization_config = {"type": "binary"}
+                elif hasattr(qc, "product"):
+                    quantization_config = {"type": "product"}
+
+            # Get payload schema (indexed fields)
+            payload_schema = {}
+            if info.payload_schema:
+                for field_name, field_info in info.payload_schema.items():
+                    payload_schema[field_name] = {
+                        "data_type": str(field_info.data_type)
+                        if field_info.data_type
+                        else "unknown",
+                        "indexed": True,  # If it's in schema, it's indexed
+                    }
+
             return {
                 "name": name,
-                "vectors_count": info.vectors_count or 0,
-                "points_count": info.points_count or 0,
+                "vectors_count": vectors_count if vectors_count > 0 else points_count,
+                "points_count": points_count,
                 "indexed_vectors_count": info.indexed_vectors_count or 0,
+                "segments_count": getattr(info, "segments_count", 0) or 0,
                 "status": info.status.value if info.status else "unknown",
+                "optimizer_status": info.optimizer_status.value
+                if hasattr(info.optimizer_status, "value")
+                else str(info.optimizer_status),
                 "dimensions": dimensions,
                 "distance_metric": distance,
+                "on_disk_vectors": on_disk,
                 "disk_data_size": getattr(info, "disk_data_size", 0) or 0,
                 "ram_data_size": getattr(info, "ram_data_size", 0) or 0,
+                "hnsw_config": hnsw_config,
+                "optimizer_config": optimizer_config,
+                "quantization_config": quantization_config,
+                "payload_schema": payload_schema,
+                "on_disk_payload": getattr(info.config.params, "on_disk_payload", False),
             }
         except Exception:
             return {
@@ -334,29 +405,30 @@ class QdrantStore:
     ) -> dict:
         """
         Scroll through vectors in a collection (paginated browsing).
-        
+
         Args:
             collection_name: Collection to browse
             limit: Number of results per page
             offset: Pagination offset (point ID)
             filter_metadata: Optional metadata filter
             with_vectors: Whether to include vector data (expensive)
-            
+
         Returns:
             Dict with 'points' list and 'next_offset' for pagination
         """
         name = collection_name or self.collection_name
-        
+
         try:
             # Build filter if provided
             scroll_filter = None
             if filter_metadata:
-                conditions = []
-                for key, value in filter_metadata.items():
-                    conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+                conditions = [
+                    FieldCondition(key=key, match=MatchValue(value=value))
+                    for key, value in filter_metadata.items()
+                ]
                 if conditions:
-                    scroll_filter = Filter(must=conditions)
-            
+                    scroll_filter = Filter(must=conditions)  # type: ignore[arg-type]
+
             result = self.client.scroll(
                 collection_name=name,
                 limit=limit,
@@ -365,7 +437,7 @@ class QdrantStore:
                 with_vectors=with_vectors,
                 scroll_filter=scroll_filter,
             )
-            
+
             points = []
             for point in result[0]:
                 point_data = {
@@ -374,21 +446,23 @@ class QdrantStore:
                 }
                 if with_vectors and point.vector:
                     # Only include first few dimensions for preview
-                    if isinstance(point.vector, list):
-                        point_data["vector_preview"] = point.vector[:10]
-                        point_data["vector_dimensions"] = len(point.vector)
-                    elif isinstance(point.vector, dict):
-                        first_vec = next(iter(point.vector.values()), [])
-                        point_data["vector_preview"] = first_vec[:10] if first_vec else []
-                        point_data["vector_dimensions"] = len(first_vec) if first_vec else 0
+                    vec = point.vector
+                    if isinstance(vec, list) and len(vec) > 0 and isinstance(vec[0], (int, float)):
+                        point_data["vector_preview"] = vec[:10]  # type: ignore[index]
+                        point_data["vector_dimensions"] = len(vec)
+                    elif isinstance(vec, dict):
+                        first_vec = next(iter(vec.values()), None)
+                        if first_vec and isinstance(first_vec, list):
+                            point_data["vector_preview"] = first_vec[:10]
+                            point_data["vector_dimensions"] = len(first_vec)
                 points.append(point_data)
-            
+
             return {
                 "points": points,
                 "next_offset": str(result[1]) if result[1] else None,
                 "total_count": len(points),
             }
-            
+
         except Exception as e:
             logger.error(f"Error scrolling vectors: {e}")
             return {"points": [], "next_offset": None, "total_count": 0, "error": str(e)}
@@ -401,17 +475,17 @@ class QdrantStore:
     ) -> dict | None:
         """
         Get a specific point/vector by ID.
-        
+
         Args:
             point_id: The point ID to retrieve
             collection_name: Collection name
             with_vector: Whether to include the full vector
-            
+
         Returns:
             Point data or None if not found
         """
         name = collection_name or self.collection_name
-        
+
         try:
             points = self.client.retrieve(
                 collection_name=name,
@@ -419,25 +493,26 @@ class QdrantStore:
                 with_payload=True,
                 with_vectors=with_vector,
             )
-            
+
             if not points:
                 return None
-            
+
             point = points[0]
             result = {
                 "id": str(point.id),
                 "payload": point.payload or {},
             }
-            
+
             if with_vector and point.vector:
-                if isinstance(point.vector, list):
-                    result["vector"] = point.vector
-                    result["vector_dimensions"] = len(point.vector)
-                elif isinstance(point.vector, dict):
-                    result["vectors"] = {k: list(v) for k, v in point.vector.items()}
-            
+                vec = point.vector
+                if isinstance(vec, list) and len(vec) > 0 and isinstance(vec[0], (int, float)):
+                    result["vector"] = vec  # type: ignore[assignment]
+                    result["vector_dimensions"] = len(vec)
+                elif isinstance(vec, dict):
+                    result["vectors"] = {k: list(v) for k, v in vec.items()}
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Error retrieving point {point_id}: {e}")
             return None
@@ -451,35 +526,36 @@ class QdrantStore:
     ) -> list[dict]:
         """
         Search using a raw vector (for finding similar vectors).
-        
+
         Args:
             vector: The query vector
             k: Number of results
             collection_name: Collection to search
             filter_metadata: Optional filter
-            
+
         Returns:
             List of similar points with scores
         """
         name = collection_name or self.collection_name
-        
+
         try:
             search_filter = None
             if filter_metadata:
-                conditions = []
-                for key, value in filter_metadata.items():
-                    conditions.append(FieldCondition(key=key, match=MatchValue(value=value)))
+                conditions = [
+                    FieldCondition(key=key, match=MatchValue(value=value))
+                    for key, value in filter_metadata.items()
+                ]
                 if conditions:
-                    search_filter = Filter(must=conditions)
-            
-            results = self.client.search(
+                    search_filter = Filter(must=conditions)  # type: ignore[arg-type]
+
+            results = self.client.query_points(
                 collection_name=name,
-                query_vector=vector,
+                query=vector,
                 limit=k,
                 with_payload=True,
                 query_filter=search_filter,
-            )
-            
+            ).points
+
             return [
                 {
                     "id": str(r.id),
@@ -488,7 +564,7 @@ class QdrantStore:
                 }
                 for r in results
             ]
-            
+
         except Exception as e:
             logger.error(f"Error in vector search: {e}")
             return []
@@ -501,46 +577,54 @@ class QdrantStore:
     ) -> list[Any]:
         """
         Get unique values for a metadata field (for filtering UI).
-        
+
         Args:
-            field: The metadata field name
+            field: The metadata field name (searches in payload.metadata.{field})
             collection_name: Collection to scan
             limit: Max unique values to return
-            
+
         Returns:
             List of unique values
         """
         name = collection_name or self.collection_name
-        
+
         try:
             # Scroll through to collect unique values
             unique_values: set = set()
             offset = None
-            
+
             while len(unique_values) < limit:
                 result = self.client.scroll(
                     collection_name=name,
                     limit=100,
                     offset=offset,
-                    with_payload=[field],
+                    with_payload=True,  # Need full payload to access nested metadata
                     with_vectors=False,
                 )
-                
+
                 if not result[0]:
                     break
-                
+
                 for point in result[0]:
-                    if point.payload and field in point.payload:
-                        value = point.payload[field]
-                        if isinstance(value, (str, int, float, bool)):
-                            unique_values.add(value)
-                
+                    if point.payload:
+                        # LangChain stores metadata nested under "metadata" key
+                        metadata = point.payload.get("metadata", {})
+                        if isinstance(metadata, dict) and field in metadata:
+                            value = metadata[field]
+                            if isinstance(value, (str, int, float, bool)):
+                                unique_values.add(value)
+                        # Also check directly in payload for backwards compatibility
+                        elif field in point.payload:
+                            value = point.payload[field]
+                            if isinstance(value, (str, int, float, bool)):
+                                unique_values.add(value)
+
                 offset = result[1]
                 if not offset:
                     break
-            
+
             return sorted(list(unique_values)[:limit], key=str)
-            
+
         except Exception as e:
             logger.error(f"Error getting metadata values: {e}")
             return []
@@ -552,42 +636,61 @@ class QdrantStore:
     ) -> int:
         """
         Delete all vectors from a specific source.
-        
+
         Args:
             source_name: The source name to delete
             collection_name: Collection to delete from
-            
+
         Returns:
             Number of points deleted (approximate)
         """
         name = collection_name or self.collection_name
-        
+
         try:
             # Get count before deletion
             info_before = self.get_collection_info(name)
             count_before = info_before.get("points_count", 0)
-            
-            # Delete by filter
+
+            # Delete by filter - LangChain stores metadata nested under "metadata" key
+            # Try nested path first (metadata.source_name)
             self.client.delete(
                 collection_name=name,
                 points_selector=Filter(
                     must=[
                         FieldCondition(
-                            key="source_name",
+                            key="metadata.source_name",
                             match=MatchValue(value=source_name),
                         )
                     ]
-                ),
+                ),  # type: ignore[arg-type]
             )
-            
+
             # Get count after deletion
             info_after = self.get_collection_info(name)
             count_after = info_after.get("points_count", 0)
-            
+
             deleted = count_before - count_after
+
+            # If nothing deleted, try without nesting (for backwards compatibility)
+            if deleted == 0:
+                self.client.delete(
+                    collection_name=name,
+                    points_selector=Filter(
+                        must=[
+                            FieldCondition(
+                                key="source_name",
+                                match=MatchValue(value=source_name),
+                            )
+                        ]
+                    ),  # type: ignore[arg-type]
+                )
+                info_after = self.get_collection_info(name)
+                count_after = info_after.get("points_count", 0)
+                deleted = count_before - count_after
+
             logger.info(f"Deleted {deleted} points from source '{source_name}'")
             return deleted
-            
+
         except Exception as e:
             logger.error(f"Error deleting by source: {e}")
             return 0
@@ -595,12 +698,12 @@ class QdrantStore:
     def get_embedding_for_text(self, text: str) -> list[float]:
         """
         Generate an embedding for a text string.
-        
+
         Useful for the UI to show vector representations.
-        
+
         Args:
             text: Text to embed
-            
+
         Returns:
             Embedding vector
         """
@@ -622,49 +725,53 @@ class QdrantStore:
     ) -> list[dict]:
         """
         Search for document chunks with rich metadata.
-        
+
         Args:
             query: Search query text
             collection_name: Collection to search
             k: Number of results
             source_filter: Optional source name filter
             with_vectors: Include vector preview
-            
+
         Returns:
             List of chunk results with metadata and scores
         """
         name = collection_name or self.collection_name
-        
+
         try:
             filter_metadata = {}
             if source_filter:
                 filter_metadata["source_name"] = source_filter
-            
+
             results = self.similarity_search_with_score(
-                query, k=k, collection_name=name, 
-                filter_metadata=filter_metadata if filter_metadata else None
+                query,
+                k=k,
+                collection_name=name,
+                filter_metadata=filter_metadata if filter_metadata else None,
             )
-            
+
             chunks = []
             for doc, score in results:
                 chunk_data = {
                     "content": doc.page_content,
-                    "content_preview": doc.page_content[:300] + "..." if len(doc.page_content) > 300 else doc.page_content,
+                    "content_preview": doc.page_content[:300] + "..."
+                    if len(doc.page_content) > 300
+                    else doc.page_content,
                     "metadata": doc.metadata,
                     "similarity_score": float(score),
                     # Convert distance to similarity percentage (assuming cosine distance)
                     "similarity_percent": round((1 - min(score, 1.0)) * 100, 1),
                 }
-                
+
                 # Extract key metadata fields
                 chunk_data["source"] = doc.metadata.get("source", "unknown")
                 chunk_data["source_name"] = doc.metadata.get("source_name", "unknown")
                 chunk_data["chunk_index"] = doc.metadata.get("chunk_index", None)
-                
+
                 chunks.append(chunk_data)
-            
+
             return chunks
-            
+
         except Exception as e:
             logger.error(f"Error searching chunks: {e}")
             return []

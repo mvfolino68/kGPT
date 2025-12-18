@@ -29,7 +29,7 @@ Output only the queries, nothing else."""
 async def expand_queries(question: str) -> list[str]:
     """
     Expand a question into multiple search queries for better recall.
-    
+
     Uses an LLM to generate semantically related queries that might
     match different phrasings in the document corpus.
     """
@@ -39,7 +39,11 @@ async def expand_queries(question: str) -> list[str]:
         chain = prompt | llm
 
         result = await chain.ainvoke({"question": question})
-        queries = [q.strip() for q in result.content.strip().split("\n") if q.strip()]
+        content = result.content if hasattr(result, "content") else str(result)
+        if isinstance(content, str):
+            queries = [q.strip() for q in content.strip().split("\n") if q.strip()]
+        else:
+            queries = []
 
         # Always include the original question first
         return [question] + queries[:2]
@@ -56,35 +60,36 @@ async def rerank_documents(
 ) -> list[Document]:
     """
     Rerank documents using Cohere's reranker or a cross-encoder fallback.
-    
+
     Reranking significantly improves retrieval quality by using a more
     sophisticated model to score query-document relevance.
-    
+
     Args:
         query: The original user query
         documents: List of candidate documents
         top_k: Number of documents to return after reranking
-        
+
     Returns:
         Reranked list of documents (best first)
     """
     if not documents:
         return []
-    
+
     # Try Cohere reranking first (best quality)
     try:
         from kgpt.db import get_db
+
         db = get_db()
         cohere_key = db.get_setting("cohere_api_key")
-        
+
         if cohere_key:
             import cohere
-            
+
             co = cohere.Client(cohere_key)
-            
+
             # Prepare documents for reranking
             doc_texts = [doc.page_content for doc in documents]
-            
+
             # Rerank using Cohere
             rerank_response = co.rerank(
                 model="rerank-english-v3.0",
@@ -93,7 +98,7 @@ async def rerank_documents(
                 top_n=min(top_k, len(documents)),
                 return_documents=False,
             )
-            
+
             # Reorder documents based on reranking
             reranked_docs = []
             for result in rerank_response.results:
@@ -101,44 +106,44 @@ async def rerank_documents(
                 doc.metadata["rerank_score"] = float(result.relevance_score)
                 doc.metadata["reranking_model"] = "cohere-rerank-v3"
                 reranked_docs.append(doc)
-            
+
             logger.info(f"Reranked {len(reranked_docs)} documents using Cohere")
             return reranked_docs
-            
+
     except ImportError:
         logger.debug("Cohere not installed, using fallback reranking")
     except Exception as e:
         logger.warning(f"Cohere reranking failed: {e}, using fallback")
-    
+
     # Fallback: Use cross-encoder reranking with sentence-transformers
     try:
         from sentence_transformers import CrossEncoder
-        
+
         # Use a lightweight cross-encoder model
         model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", max_length=512)
-        
+
         # Score each document
         pairs = [[query, doc.page_content[:1000]] for doc in documents]
         scores = model.predict(pairs)
-        
+
         # Sort by cross-encoder score
         scored_docs = list(zip(documents, scores))
         scored_docs.sort(key=lambda x: x[1], reverse=True)
-        
+
         reranked_docs = []
         for doc, score in scored_docs[:top_k]:
             doc.metadata["rerank_score"] = float(score)
             doc.metadata["reranking_model"] = "ms-marco-MiniLM"
             reranked_docs.append(doc)
-        
+
         logger.info(f"Reranked {len(reranked_docs)} documents using cross-encoder")
         return reranked_docs
-        
+
     except ImportError:
         logger.debug("sentence-transformers not installed, skipping reranking")
     except Exception as e:
         logger.warning(f"Cross-encoder reranking failed: {e}")
-    
+
     # Final fallback: Return documents sorted by original similarity score
     logger.info("Using similarity scores for ranking (no reranking model available)")
     sorted_docs = sorted(
@@ -171,7 +176,7 @@ async def retrieval_node(state: AgentState) -> dict:
 
     store = get_vectorstore()
     all_docs: list[Document] = []
-    seen_content_hashes: set[str] = set()
+    seen_content_hashes: set[int] = set()
 
     # Get sub-goals or use the main question
     queries = state.get("sub_goals", [state["question"]])
@@ -214,7 +219,7 @@ async def retrieval_node(state: AgentState) -> dict:
 
         # Preliminary sort by relevance score
         all_docs.sort(key=lambda d: d.metadata.get("relevance_score", 0), reverse=True)
-        
+
         # Take top candidates for reranking (more than we need)
         candidates = all_docs[:20]
 

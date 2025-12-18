@@ -15,8 +15,14 @@ class AgentState(TypedDict):
     # Decomposed sub-goals from the router
     sub_goals: list[str]
 
-    # Whether to use cluster context
+    # Routing decisions
     needs_cluster_context: bool
+    needs_retrieval: bool
+    needs_admin_operation: bool  # Whether this is an admin operation request
+    route: str  # "retrieval", "kafka", "admin", "both", or "direct"
+
+    # Admin operation details (parsed from question)
+    admin_operation: dict | None  # {"type": "delete_topic", "params": {...}}
 
     # Retrieved documents from the retrieval agent
     retrieved_docs: list[Document]
@@ -26,6 +32,9 @@ class AgentState(TypedDict):
 
     # Cluster context from the Kafka agent (if applicable)
     cluster_context: dict | None
+
+    # Admin operation result (if an operation was executed)
+    admin_result: dict | None
 
     # The final synthesized answer
     answer: str

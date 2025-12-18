@@ -110,6 +110,72 @@ EMBEDDING_DIMENSIONS = {
 }
 
 
+def get_structured_llm(
+    provider: LLMProvider | None = None,
+    model: str | None = None,
+    temperature: float = 0,
+) -> BaseChatModel:
+    """
+    Get a native LangChain LLM that supports structured output.
+
+    Unlike ChatLiteLLM, native models like ChatOpenAI and ChatAnthropic
+    support with_structured_output() for Pydantic models.
+    """
+    # Get provider from DB or env
+    if provider is None:
+        db_provider = _get_db_setting("llm_provider")
+        if db_provider:
+            provider = LLMProvider(db_provider)
+        else:
+            provider = settings.llm_provider
+
+    # Get model from DB or env
+    if model is None:
+        model_name = _get_db_setting("llm_model", settings.llm_model) or "gpt-4o-mini"
+    else:
+        model_name = model
+
+    # Get API keys from DB or env
+    openai_key = _get_db_setting("openai_api_key", settings.openai_api_key)
+    anthropic_key = _get_db_setting("anthropic_api_key", settings.anthropic_api_key)
+    openrouter_key = _get_db_setting("openrouter_api_key", settings.openrouter_api_key)
+
+    logger.info(f"Creating structured LLM: provider={provider}, model={model_name}")
+
+    if provider == LLMProvider.OPENAI:
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(
+            model=model_name,
+            temperature=temperature,
+            api_key=openai_key or None,
+        )
+    elif provider == LLMProvider.ANTHROPIC:
+        from langchain_anthropic import ChatAnthropic
+
+        return ChatAnthropic(
+            model_name=model_name,  # ChatAnthropic uses model_name, not model
+            temperature=temperature,
+            api_key=anthropic_key or "",
+        )
+    elif provider == LLMProvider.OPENROUTER:
+        # OpenRouter is OpenAI-compatible
+        from langchain_openai import ChatOpenAI
+
+        return ChatOpenAI(
+            model=model_name,
+            temperature=temperature,
+            api_key=openrouter_key or None,
+            base_url="https://openrouter.ai/api/v1",
+        )
+    else:
+        # Fallback to ChatLiteLLM (won't support structured output)
+        logger.warning(f"Provider {provider} may not support structured output")
+        return get_llm(
+            provider=provider, model=model_name, temperature=temperature, streaming=False
+        )
+
+
 def get_llm(
     provider: LLMProvider | None = None,
     model: str | None = None,

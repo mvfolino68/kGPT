@@ -10,6 +10,8 @@ from fastapi.responses import StreamingResponse
 from loguru import logger
 
 from kgpt.api.schemas import (
+    AdminOperationRequest,
+    AdminOperationResponse,
     ChatRequest,
     ChatResponse,
     ChatSession,
@@ -56,11 +58,67 @@ async def send_message(request: ChatRequest) -> ChatResponse:
 
 
 def generate_suggested_actions(
-    message: str, cluster_context: dict | None = None
+    message: str,
+    cluster_context: dict | None = None,
+    admin_result: dict | None = None,
 ) -> list[dict]:
     """Generate contextual suggested actions based on the query and cluster state."""
     actions = []
     message_lower = message.lower()
+
+    # After admin operation, suggest related follow-ups
+    if admin_result:
+        operation = admin_result.get("operation", "")
+        success = admin_result.get("success", False)
+
+        if success:
+            if operation == "delete_topic":
+                actions.append(
+                    {
+                        "id": "list-topics",
+                        "label": "List remaining topics",
+                        "type": "query",
+                        "value": "List all topics in the cluster",
+                        "icon": "📋",
+                    }
+                )
+            elif operation == "create_topic":
+                topic = admin_result.get("topic", "")
+                if topic:
+                    actions.append(
+                        {
+                            "id": "describe-new-topic",
+                            "label": f"Describe '{topic}'",
+                            "type": "query",
+                            "value": f"Describe the configuration of topic {topic}",
+                            "icon": "🔍",
+                        }
+                    )
+            elif operation == "alter_topic_config":
+                topic = admin_result.get("topic", "")
+                if topic:
+                    actions.append(
+                        {
+                            "id": "verify-config",
+                            "label": f"Verify '{topic}' config",
+                            "type": "query",
+                            "value": f"Show the current configuration of topic {topic}",
+                            "icon": "✅",
+                        }
+                    )
+        else:
+            # On failure, suggest checking cluster status
+            actions.append(
+                {
+                    "id": "check-cluster",
+                    "label": "Check cluster status",
+                    "type": "query",
+                    "value": "Show cluster status and health",
+                    "icon": "🔧",
+                }
+            )
+
+        return actions[:3]
 
     # Cluster-related suggestions
     if cluster_context:
@@ -70,48 +128,86 @@ def generate_suggested_actions(
         if "topic" in message_lower and topics:
             # Suggest exploring specific topics
             if len(topics) > 0:
-                actions.append({
-                    "id": "describe-topic",
-                    "label": f"Describe topic '{topics[0]}'",
-                    "type": "query",
-                    "value": f"Describe the configuration of topic {topics[0]}",
-                    "icon": "📋",
-                })
+                actions.append(
+                    {
+                        "id": "describe-topic",
+                        "label": f"Describe topic '{topics[0]}'",
+                        "type": "query",
+                        "value": f"Describe the configuration of topic {topics[0]}",
+                        "icon": "📋",
+                    }
+                )
+
+        # Suggest admin operations for topics
+        if "delete" in message_lower or "remove" in message_lower:
+            if topics and len(topics) > 0:
+                # Find the topic mentioned in the message
+                mentioned_topic = next((t for t in topics if t.lower() in message_lower), topics[0])
+                actions.append(
+                    {
+                        "id": "confirm-delete",
+                        "label": f"Delete topic '{mentioned_topic}'",
+                        "type": "operation",
+                        "value": f"Delete the topic {mentioned_topic}",
+                        "icon": "🗑️",
+                    }
+                )
+
+        if "create" in message_lower and "topic" in message_lower:
+            actions.append(
+                {
+                    "id": "create-topic",
+                    "label": "Create new topic",
+                    "type": "operation",
+                    "value": "Create a new topic called my-topic with 3 partitions",
+                    "icon": "➕",
+                }
+            )
+
         if "consumer" in message_lower or "lag" in message_lower:
             if consumer_groups:
-                actions.append({
-                    "id": "check-lag",
-                    "label": "Check consumer lag",
-                    "type": "query",
-                    "value": "Show consumer group lag for all groups",
-                    "icon": "⏱️",
-                })
+                actions.append(
+                    {
+                        "id": "check-lag",
+                        "label": "Check consumer lag",
+                        "type": "query",
+                        "value": "Show consumer group lag for all groups",
+                        "icon": "⏱️",
+                    }
+                )
+
         if "cluster" in message_lower or "status" in message_lower:
-            actions.append({
-                "id": "list-topics",
-                "label": "List all topics",
-                "type": "query",
-                "value": "List all topics with their partition counts",
-                "icon": "📋",
-            })
+            actions.append(
+                {
+                    "id": "list-topics",
+                    "label": "List all topics",
+                    "type": "query",
+                    "value": "List all topics with their partition counts",
+                    "icon": "📋",
+                }
+            )
 
     # Documentation-related suggestions
     if "producer" in message_lower:
-        actions.append({
-            "id": "producer-config",
-            "label": "Producer configurations",
-            "type": "query",
-            "value": "What are the most important producer configurations?",
-            "icon": "⚙️",
-        })
+        actions.append(
+            {
+                "id": "producer-config",
+                "label": "Producer configurations",
+                "type": "query",
+                "value": "What are the most important producer configurations?",
+                "icon": "⚙️",
+            }
+        )
     if "consumer" in message_lower and "lag" not in message_lower:
-        actions.append({
-            "id": "consumer-config",
-            "label": "Consumer configurations",
-            "type": "query",
-            "value": "What are the most important consumer configurations?",
-            "icon": "⚙️",
-        })
+        actions.append(
+            {
+                "id": "consumer-config",
+                "label": "Consumer configurations",
+                "type": "query",
+                "value": "What are the most important consumer configurations?",
+                "icon": "⚙️",
+            }
+        )
 
     return actions[:3]  # Limit to 3 suggestions
 
@@ -128,6 +224,7 @@ async def generate_sse_stream(
     full_response = ""
     citations = []
     cluster_context = None
+    admin_result = None
 
     # Save user message to session if provided
     if session_id:
@@ -152,6 +249,12 @@ async def generate_sse_stream(
                     yield f"data: {json.dumps({'cluster_context': cluster_context})}\n\n"
                     continue
 
+                # Handle admin operation result
+                if chunk.get("admin_result"):
+                    admin_result = chunk["admin_result"]
+                    yield f"data: {json.dumps({'admin_result': admin_result})}\n\n"
+                    continue
+
                 # Final chunk with citations
                 if chunk.get("citations"):
                     citations = chunk["citations"]
@@ -167,7 +270,7 @@ async def generate_sse_stream(
                 yield f"data: {json.dumps(finish_event)}\n\n"
 
                 # Generate and send suggested actions
-                actions = generate_suggested_actions(message, cluster_context)
+                actions = generate_suggested_actions(message, cluster_context, admin_result)
                 if actions:
                     yield f"data: {json.dumps({'actions': actions})}\n\n"
 
@@ -331,3 +434,42 @@ async def clear_all_sessions() -> dict:
     db = get_db()
     db.clear_all_chat_history()
     return {"status": "cleared"}
+
+
+# ============================================================================
+# Admin Operation Execution
+# ============================================================================
+
+
+@router.post("/admin/execute", response_model=AdminOperationResponse)
+async def execute_admin_operation(request: AdminOperationRequest) -> AdminOperationResponse:
+    """
+    Execute a confirmed admin operation.
+
+    This endpoint should only be called after the user has reviewed and confirmed
+    the operation details. It will execute the operation on the connected Kafka cluster.
+    """
+    from kgpt.agents.admin import execute_confirmed_operation
+
+    logger.info(f"Executing confirmed admin operation: {request.operation}")
+
+    try:
+        result = await execute_confirmed_operation(request.operation, request.params)
+
+        return AdminOperationResponse(
+            success=result.get("success", False),
+            operation=request.operation,
+            message=result.get("message"),
+            error=result.get("error"),
+            topic=result.get("topic"),
+            group_id=result.get("group_id"),
+            partitions=result.get("partitions"),
+            replication_factor=result.get("replication_factor"),
+        )
+    except Exception as e:
+        logger.error(f"Admin operation execution error: {e}")
+        return AdminOperationResponse(
+            success=False,
+            operation=request.operation,
+            error=str(e),
+        )

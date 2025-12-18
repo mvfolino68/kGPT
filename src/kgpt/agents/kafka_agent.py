@@ -160,6 +160,300 @@ class KafkaClusterContext:
         except Exception as e:
             return False, str(e)
 
+    # ========================================================================
+    # Admin Operations
+    # ========================================================================
+
+    def delete_topic(self, topic_name: str, timeout: float = 30.0) -> dict:
+        """Delete a topic from the cluster."""
+        try:
+            futures = self.admin.delete_topics([topic_name], operation_timeout=timeout)
+
+            for topic, future in futures.items():
+                try:
+                    future.result(timeout=timeout)
+                    logger.info(f"Successfully deleted topic: {topic}")
+                    return {
+                        "success": True,
+                        "operation": "delete_topic",
+                        "topic": topic_name,
+                        "message": f"Topic '{topic_name}' has been deleted successfully.",
+                    }
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Failed to delete topic {topic}: {error_msg}")
+                    return {
+                        "success": False,
+                        "operation": "delete_topic",
+                        "topic": topic_name,
+                        "error": error_msg,
+                    }
+
+            return {
+                "success": False,
+                "operation": "delete_topic",
+                "topic": topic_name,
+                "error": "No result returned from delete operation",
+            }
+
+        except Exception as e:
+            logger.error(f"Error deleting topic {topic_name}: {e}")
+            return {
+                "success": False,
+                "operation": "delete_topic",
+                "topic": topic_name,
+                "error": str(e),
+            }
+
+    def create_topic(
+        self,
+        topic_name: str,
+        num_partitions: int = 1,
+        replication_factor: int = 1,
+        config: dict | None = None,
+        timeout: float = 30.0,
+    ) -> dict:
+        """Create a new topic in the cluster."""
+        try:
+            from confluent_kafka.admin import NewTopic
+
+            new_topic = NewTopic(
+                topic_name,
+                num_partitions=num_partitions,
+                replication_factor=replication_factor,
+                config=config or {},
+            )
+
+            futures = self.admin.create_topics([new_topic], operation_timeout=timeout)
+
+            for topic, future in futures.items():
+                try:
+                    future.result(timeout=timeout)
+                    logger.info(f"Successfully created topic: {topic}")
+                    return {
+                        "success": True,
+                        "operation": "create_topic",
+                        "topic": topic_name,
+                        "partitions": num_partitions,
+                        "replication_factor": replication_factor,
+                        "message": f"Topic '{topic_name}' created with {num_partitions} partition(s) and replication factor {replication_factor}.",
+                    }
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Failed to create topic {topic}: {error_msg}")
+                    return {
+                        "success": False,
+                        "operation": "create_topic",
+                        "topic": topic_name,
+                        "error": error_msg,
+                    }
+
+            return {
+                "success": False,
+                "operation": "create_topic",
+                "topic": topic_name,
+                "error": "No result returned from create operation",
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating topic {topic_name}: {e}")
+            return {
+                "success": False,
+                "operation": "create_topic",
+                "topic": topic_name,
+                "error": str(e),
+            }
+
+    def alter_topic_config(
+        self,
+        topic_name: str,
+        config_updates: dict[str, str],
+        timeout: float = 30.0,
+    ) -> dict:
+        """Alter configuration for a topic."""
+        try:
+            from confluent_kafka.admin import ConfigResource, ResourceType
+
+            resource = ConfigResource(ResourceType.TOPIC, topic_name)
+
+            # Set each config value
+            for key, value in config_updates.items():
+                resource.set_config(key, value)
+
+            futures = self.admin.alter_configs([resource])
+
+            for res, future in futures.items():
+                try:
+                    future.result(timeout=timeout)
+                    logger.info(f"Successfully altered config for topic: {topic_name}")
+                    return {
+                        "success": True,
+                        "operation": "alter_topic_config",
+                        "topic": topic_name,
+                        "config_updates": config_updates,
+                        "message": f"Configuration for topic '{topic_name}' has been updated: {config_updates}",
+                    }
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Failed to alter config for {topic_name}: {error_msg}")
+                    return {
+                        "success": False,
+                        "operation": "alter_topic_config",
+                        "topic": topic_name,
+                        "error": error_msg,
+                    }
+
+            return {
+                "success": False,
+                "operation": "alter_topic_config",
+                "topic": topic_name,
+                "error": "No result returned from alter operation",
+            }
+
+        except Exception as e:
+            logger.error(f"Error altering config for topic {topic_name}: {e}")
+            return {
+                "success": False,
+                "operation": "alter_topic_config",
+                "topic": topic_name,
+                "error": str(e),
+            }
+
+    def delete_consumer_group(self, group_id: str, timeout: float = 30.0) -> dict:
+        """Delete a consumer group."""
+        try:
+            futures = self.admin.delete_consumer_groups([group_id])
+
+            for group, future in futures.items():
+                try:
+                    future.result(timeout=timeout)
+                    logger.info(f"Successfully deleted consumer group: {group}")
+                    return {
+                        "success": True,
+                        "operation": "delete_consumer_group",
+                        "group_id": group_id,
+                        "message": f"Consumer group '{group_id}' has been deleted successfully.",
+                    }
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Failed to delete consumer group {group}: {error_msg}")
+                    return {
+                        "success": False,
+                        "operation": "delete_consumer_group",
+                        "group_id": group_id,
+                        "error": error_msg,
+                    }
+
+            return {
+                "success": False,
+                "operation": "delete_consumer_group",
+                "group_id": group_id,
+                "error": "No result returned from delete operation",
+            }
+
+        except Exception as e:
+            logger.error(f"Error deleting consumer group {group_id}: {e}")
+            return {
+                "success": False,
+                "operation": "delete_consumer_group",
+                "group_id": group_id,
+                "error": str(e),
+            }
+
+    def describe_consumer_group(self, group_id: str, timeout: float = 10.0) -> dict:
+        """Get detailed information about a consumer group."""
+        try:
+            futures = self.admin.describe_consumer_groups([group_id])
+
+            for group, future in futures.items():
+                try:
+                    result = future.result(timeout=timeout)
+                    members = []
+                    for member in result.members:
+                        member_info = {
+                            "member_id": member.member_id,
+                            "client_id": member.client_id,
+                            "host": member.host,
+                        }
+                        if hasattr(member, "assignment") and member.assignment:
+                            member_info["assignments"] = [
+                                {"topic": tp.topic, "partition": tp.partition}
+                                for tp in member.assignment.topic_partitions
+                            ]
+                        members.append(member_info)
+
+                    return {
+                        "group_id": result.group_id,
+                        "state": str(result.state),
+                        "protocol_type": result.protocol_type,
+                        "protocol": result.protocol,
+                        "coordinator": {
+                            "id": result.coordinator.id if result.coordinator else None,
+                            "host": result.coordinator.host if result.coordinator else None,
+                            "port": result.coordinator.port if result.coordinator else None,
+                        },
+                        "members": members,
+                    }
+                except Exception as e:
+                    logger.error(f"Failed to describe consumer group {group}: {e}")
+                    return {"error": str(e)}
+
+            return {"error": "No result returned"}
+
+        except Exception as e:
+            logger.error(f"Error describing consumer group {group_id}: {e}")
+            return {"error": str(e)}
+
+    def add_partitions(
+        self,
+        topic_name: str,
+        new_total_partitions: int,
+        timeout: float = 30.0,
+    ) -> dict:
+        """Add partitions to a topic."""
+        try:
+            from confluent_kafka.admin import NewPartitions
+
+            new_parts = NewPartitions(topic_name, new_total_partitions)
+            futures = self.admin.create_partitions([new_parts], operation_timeout=timeout)
+
+            for topic, future in futures.items():
+                try:
+                    future.result(timeout=timeout)
+                    logger.info(f"Successfully added partitions to topic: {topic}")
+                    return {
+                        "success": True,
+                        "operation": "add_partitions",
+                        "topic": topic_name,
+                        "new_total_partitions": new_total_partitions,
+                        "message": f"Topic '{topic_name}' now has {new_total_partitions} partitions.",
+                    }
+                except Exception as e:
+                    error_msg = str(e)
+                    logger.error(f"Failed to add partitions to {topic}: {error_msg}")
+                    return {
+                        "success": False,
+                        "operation": "add_partitions",
+                        "topic": topic_name,
+                        "error": error_msg,
+                    }
+
+            return {
+                "success": False,
+                "operation": "add_partitions",
+                "topic": topic_name,
+                "error": "No result returned from operation",
+            }
+
+        except Exception as e:
+            logger.error(f"Error adding partitions to topic {topic_name}: {e}")
+            return {
+                "success": False,
+                "operation": "add_partitions",
+                "topic": topic_name,
+                "error": str(e),
+            }
+
 
 # Global cluster context (set via UI)
 _cluster_context: KafkaClusterContext | None = None

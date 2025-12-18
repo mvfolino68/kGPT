@@ -13,6 +13,18 @@ kGPT is an AI-powered chatbot that helps you navigate Kafka and Confluent docume
 - **Demo Mode**: Optional demo Kafka cluster with sample topics and events
 - **Modern Stack**: FastAPI backend + Svelte 5 frontend with Tailwind CSS
 
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Python 3.11 or 3.12** - [Download](https://www.python.org/downloads/)
+- **Node.js 20+** - [Download](https://nodejs.org/)
+- **uv** (recommended) or pip - [Install uv](https://docs.astral.sh/uv/)
+- **Docker** - [Install Docker](https://docs.docker.com/get-docker/)
+- **Make** - Usually pre-installed on macOS/Linux
+
+The Makefile will check these automatically and provide helpful error messages if anything is missing.
+
 ## Quick Start
 
 ### Option 1: Docker (Production)
@@ -31,7 +43,7 @@ Open <http://localhost:3000> and configure your LLM provider in Settings.
 git clone https://github.com/mvfolino68/kGPT.git
 cd kGPT
 
-# Install dependencies
+# Install dependencies (checks prerequisites automatically)
 make install
 
 # Start development environment (hot-reload enabled)
@@ -41,6 +53,15 @@ make dev
 Open <http://localhost:5173> (frontend) and <http://localhost:8000/docs> (API).
 
 **Development mode is much faster** - code changes reload instantly without rebuilding Docker images.
+
+### Troubleshooting
+
+**"uv not found"** - Install uv: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+**"Docker not running"** - Start Docker Desktop
+**"Port already in use"** - Stop other services or change ports in config
+**"Python version too old"** - Install Python 3.11+ from [python.org](https://www.python.org/downloads/)
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed troubleshooting.
 
 ### Docker Options
 

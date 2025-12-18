@@ -9,11 +9,51 @@ import {
 	clearAllChatSessions
 } from '$lib/api';
 
+export interface InputField {
+	name: string;
+	label: string;
+	field_type: 'text' | 'number' | 'select';
+	required: boolean;
+	default?: string | number | null;
+	placeholder?: string;
+	hint?: string;
+	options?: string[];
+}
+
+export interface AvailableOperation {
+	id: string;
+	label: string;
+	icon: string;
+}
+
+export interface AdminOperationResult {
+	success: boolean;
+	pending?: boolean;  // True if awaiting user confirmation
+	needs_info?: boolean;  // True if we need more input from user
+	unclear?: boolean;  // True if AI couldn't determine the operation
+	operation?: string;
+	operation_title?: string;  // Human-readable title
+	params?: Record<string, unknown>;  // Parameters for pending operations
+	input_fields?: InputField[];  // Structured input fields to show
+	guidance_message?: string;  // Helpful guidance text
+	available_operations?: AvailableOperation[];  // For unclear status
+	confirmation_message?: string;  // What will happen if confirmed
+	warning_level?: 'low' | 'medium' | 'high';  // Risk level for UI styling
+	warning_message?: string;  // Warning for high-risk operations
+	topic?: string;
+	group_id?: string;
+	message?: string;
+	error?: string;
+	partitions?: number;
+	replication_factor?: number;
+}
+
 export interface ChatMessage extends Message {
 	id: string;
 	citations?: string[];
 	actions?: SuggestedAction[];
 	operationResult?: ClusterOperationResult;
+	adminResult?: AdminOperationResult;
 	clusterContext?: {
 		broker_count?: number;
 		brokers?: Record<string, unknown> | number;

@@ -19,11 +19,61 @@ make dev
 
 ## Prerequisites
 
-- Python 3.11 or 3.12
-- Node.js 20+ (for frontend)
-- [uv](https://docs.astral.sh/uv/) (recommended) or pip
-- Docker (for Qdrant vector database)
-- Make (usually pre-installed on macOS/Linux)
+Before starting, ensure you have:
+
+- **Python 3.11 or 3.12** - [Download](https://www.python.org/downloads/)
+- **Node.js 20+** - [Download](https://nodejs.org/) (includes npm)
+- **[uv](https://docs.astral.sh/uv/)** - Fast Python package manager (recommended)
+
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+
+- **Docker** - [Install Docker Desktop](https://docs.docker.com/get-docker/)
+- **Make** - Usually pre-installed on macOS/Linux
+
+The Makefile automatically checks prerequisites and provides helpful error messages if anything is missing.
+
+## First Time Setup
+
+On a fresh computer, follow these steps:
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/mvfolino68/kGPT.git
+   cd kGPT
+   ```
+
+2. **Install dependencies** (checks prerequisites automatically)
+
+   ```bash
+   make install
+   ```
+
+   This will:
+   - Check Python, Node.js, uv, and Docker are installed
+   - Create a Python virtual environment
+   - Install all backend dependencies
+   - Install all frontend dependencies
+
+3. **Start the development environment**
+
+   ```bash
+   make dev
+   ```
+
+   This starts:
+   - Qdrant (vector database) in Docker
+   - Kafka demo cluster (optional)
+   - Backend API on <http://localhost:8000>
+   - Frontend on <http://localhost:5173>
+
+4. **Configure settings** (optional)
+   - Copy `.env.example` to `.env` if you want to set defaults
+   - Or configure everything through the UI at <http://localhost:5173/settings>
+
+That's it! You're ready to develop.
 
 ## Development vs Production
 
@@ -213,14 +263,27 @@ make dev-infra
 
 ### Port Already in Use
 
+If you see `ERROR: [Errno 48] Address already in use`:
+
 ```bash
 # Find what's using the port
 lsof -i :8000  # backend
 lsof -i :5173  # frontend
 lsof -i :6333  # qdrant
 
-# Kill the process or change ports
+# Kill processes on a port (macOS/Linux)
+lsof -ti:8000 | xargs kill -9  # backend
+lsof -ti:5173 | xargs kill -9  # frontend
+
+# Or stop all dev services
+make stop
 ```
+
+**Common causes:**
+
+- Previous `make dev` session still running
+- Another application using the port
+- Docker containers still running
 
 ### Import Errors
 

@@ -33,6 +33,51 @@ export interface ClusterOperationResult {
 	error?: string;
 }
 
+// Admin operation types
+export interface InputField {
+	name: string;
+	label: string;
+	field_type: 'text' | 'number' | 'select';
+	required: boolean;
+	default?: string | number | null;
+	placeholder?: string;
+	hint?: string;
+	options?: string[];
+}
+
+export interface AvailableOperation {
+	id: string;
+	label: string;
+	icon: string;
+}
+
+export interface AdminOperationResult {
+	success: boolean;
+	operation?: string;
+	operation_title?: string;  // Human-readable title
+	pending?: boolean;  // All info gathered, ready for confirmation
+	needs_info?: boolean;  // Need more input from user
+	unclear?: boolean;  // Couldn't determine the operation
+	params?: Record<string, unknown>;
+	input_fields?: InputField[];  // Structured input fields
+	available_operations?: AvailableOperation[];  // For unclear status
+	guidance_message?: string;  // Helpful guidance text
+	confirmation_message?: string;
+	warning_level?: 'low' | 'medium' | 'high';
+	warning_message?: string;  // Warning for high-risk operations
+	message?: string;
+	error?: string;
+	topic?: string;
+	group_id?: string;
+	partitions?: number;
+	replication_factor?: number;
+}
+
+export interface AdminOperationRequest {
+	operation: string;
+	params: Record<string, unknown>;
+}
+
 export interface ChatResponse {
 	answer: string;
 	citations: string[];
@@ -104,6 +149,12 @@ export interface ClusterInfo {
 	consumer_groups?: string[];
 }
 
+export interface KeyStatus {
+	configured: boolean;
+	source: 'env' | 'db' | null;
+	valid: boolean | null;
+}
+
 export interface Settings {
 	llm_provider: string;
 	llm_model: string;
@@ -115,11 +166,25 @@ export interface Settings {
 	cohere_api_key?: string;
 	huggingface_token?: string;
 	ollama_host?: string;
+	// New detailed key status
+	openai_key?: KeyStatus;
+	anthropic_key?: KeyStatus;
+	openrouter_key?: KeyStatus;
+	cohere_key?: KeyStatus;
+	huggingface_token_status?: KeyStatus;
+	// Legacy fields
 	has_openai_key?: boolean;
 	has_anthropic_key?: boolean;
 	has_openrouter_key?: boolean;
 	has_cohere_key?: boolean;
 	has_huggingface_token?: boolean;
+}
+
+export interface ValidateKeyResponse {
+	valid: boolean;
+	provider: string;
+	message: string | null;
+	models: string[];
 }
 
 export interface HealthResponse {
@@ -221,6 +286,17 @@ export async function clearAllChatSessions(): Promise<void> {
 	if (!response.ok) throw new Error(`Failed to clear sessions: ${response.statusText}`);
 }
 
+// Admin Operation Execution
+export async function executeAdminOperation(request: AdminOperationRequest): Promise<AdminOperationResult> {
+	const response = await fetch(`${API_BASE}/chat/admin/execute`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(request)
+	});
+	if (!response.ok) throw new Error(`Admin operation failed: ${response.statusText}`);
+	return response.json();
+}
+
 // Documents API
 export async function getDocuments(): Promise<DocumentSource[]> {
 	const response = await fetch(`${API_BASE}/documents`);
@@ -303,16 +379,31 @@ export interface VectorSearchResponse {
 	collection: string | null;
 }
 
+export interface HNSWConfig {
+	m: number | null;
+	ef_construct: number | null;
+	full_scan_threshold: number | null;
+	on_disk: boolean;
+}
+
 export interface CollectionStats {
 	name: string;
 	vectors_count: number;
 	points_count: number;
 	indexed_vectors_count: number;
+	segments_count: number;
 	status: string;
+	optimizer_status: string;
 	dimensions: number;
 	distance_metric: string;
+	on_disk_vectors: boolean | null;
+	on_disk_payload: boolean | null;
 	disk_data_size: number;
 	ram_data_size: number;
+	hnsw_config: HNSWConfig | null;
+	optimizer_config: Record<string, unknown> | null;
+	quantization_config: Record<string, unknown> | null;
+	payload_schema: Record<string, unknown> | null;
 }
 
 export interface CollectionsResponse {
@@ -508,6 +599,127 @@ export async function runRAGDemo(query: string): Promise<RAGDemoResponse> {
 	return response.json();
 }
 
+// ============================================================================
+// Sync and Cleanup APIs
+// ============================================================================
+
+export interface SourceSyncStatus {
+	id: number;
+	name: string;
+	db_status: string;
+	db_count: number;
+	in_qdrant: boolean;
+	synced: boolean;
+}
+
+export interface SyncStatusResponse {
+	synced: boolean;
+	collection: CollectionStats;
+	db_sources_count: number;
+	qdrant_sources_count: number;
+	orphaned_sources: string[];
+	missing_sources: string[];
+	source_status: SourceSyncStatus[];
+}
+
+export interface CleanupResult {
+	status: string;
+	orphans_found?: number;
+	total_vectors_deleted?: number;
+	deleted_sources?: Array<{ name: string; vectors_deleted?: number; error?: string }>;
+	entries_cleaned?: number;
+	cleaned?: Array<{ id: number; name: string; status: string }>;
+}
+
+export async function getSyncStatus(): Promise<SyncStatusResponse> {
+	const response = await fetch(`${API_BASE}/documents/sync/status`);
+	if (!response.ok) throw new Error(`Failed to get sync status: ${response.statusText}`);
+	return response.json();
+}
+
+export async function cleanupOrphanVectors(): Promise<CleanupResult> {
+	const response = await fetch(`${API_BASE}/documents/sync/cleanup-orphans`, {
+		method: 'POST'
+	});
+	if (!response.ok) throw new Error(`Failed to cleanup orphans: ${response.statusText}`);
+	return response.json();
+}
+
+export async function cleanupStaleEntries(): Promise<CleanupResult> {
+	const response = await fetch(`${API_BASE}/documents/sync/cleanup-stale`, {
+		method: 'POST'
+	});
+	if (!response.ok) throw new Error(`Failed to cleanup stale entries: ${response.statusText}`);
+	return response.json();
+}
+
+export async function purgeAllData(): Promise<{ status: string; db_entries_deleted: number; vectors_deleted: number }> {
+	const response = await fetch(`${API_BASE}/documents/sync/purge-all`, {
+		method: 'DELETE'
+	});
+	if (!response.ok) throw new Error(`Failed to purge data: ${response.statusText}`);
+	return response.json();
+}
+
+// ============================================================================
+// Analytics APIs
+// ============================================================================
+
+export interface ChunkAnalytics {
+	collection: string;
+	total_vectors: number;
+	total_sampled: number;
+	chunk_size_stats: {
+		avg_chars: number;
+		min_chars: number;
+		max_chars: number;
+		avg_tokens_estimate: number;
+	};
+	size_distribution: Record<string, number>;
+	sources: Record<string, number>;
+	source_types: Record<string, number>;
+	index_health: {
+		indexed_vectors: number;
+		segments: number;
+		optimizer_status: string;
+	};
+}
+
+export interface SearchQualityResult {
+	query: string;
+	results_found: number;
+	quality_metrics: {
+		avg_similarity: number;
+		top_score: number;
+		score_spread: number;
+		score_variance: number;
+	};
+	sources_matched: string[];
+	expected_source_match: { rank: number; score: number } | null;
+	top_3_preview: Array<{
+		rank: number;
+		score: number;
+		source: string;
+		preview: string;
+	}>;
+}
+
+export async function getChunkAnalytics(collection?: string): Promise<ChunkAnalytics> {
+	const params = new URLSearchParams();
+	if (collection) params.append('collection', collection);
+	const response = await fetch(`${API_BASE}/documents/analytics/chunks?${params}`);
+	if (!response.ok) throw new Error(`Failed to get analytics: ${response.statusText}`);
+	return response.json();
+}
+
+export async function testSearchQuality(query: string, expectedSource?: string): Promise<SearchQualityResult> {
+	const params = new URLSearchParams({ query });
+	if (expectedSource) params.append('expected_source', expectedSource);
+	const response = await fetch(`${API_BASE}/documents/analytics/search-quality?${params}`);
+	if (!response.ok) throw new Error(`Failed to test search: ${response.statusText}`);
+	return response.json();
+}
+
 // Cluster API
 export async function getClusters(): Promise<KafkaCluster[]> {
 	const response = await fetch(`${API_BASE}/cluster`);
@@ -559,6 +771,19 @@ export async function getAvailableModels(provider: string): Promise<string[]> {
 	if (!response.ok) throw new Error(`Failed to get models: ${response.statusText}`);
 	const data = await response.json();
 	return data.models;
+}
+
+export async function validateApiKey(
+	provider: string,
+	apiKey: string
+): Promise<ValidateKeyResponse> {
+	const response = await fetch(`${API_BASE}/settings/validate-key`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ provider, api_key: apiKey })
+	});
+	if (!response.ok) throw new Error(`Validation failed: ${response.statusText}`);
+	return response.json();
 }
 
 // Health API

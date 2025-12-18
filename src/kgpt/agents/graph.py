@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END, StateGraph
 from loguru import logger
 
+from kgpt.agents.admin import admin_node
 from kgpt.agents.kafka_agent import kafka_node
 from kgpt.agents.retrieval import retrieval_node
 from kgpt.agents.router import route_decision, router_node
@@ -19,12 +20,14 @@ def create_agent_graph() -> StateGraph:
     Create the multi-agent graph.
 
     Graph structure:
-        START -> router -> [retrieval | kafka] -> validation -> synthesis -> END
+        START -> router -> [retrieval | kafka | admin | synthesis] -> ... -> synthesis -> END
 
-    The router decides whether to:
-    - Go to retrieval (documentation search)
-    - Go to kafka (cluster context)
-    - Go to both (retrieval first, then kafka)
+    Routes:
+    - "retrieval": docs only -> retrieval -> validation -> synthesis
+    - "kafka": cluster only -> kafka -> synthesis (skip docs!)
+    - "admin": admin operation -> admin -> synthesis
+    - "both": cluster + docs -> kafka -> retrieval -> validation -> synthesis
+    - "direct": simple response -> synthesis
     """
     # Create the graph
     graph = StateGraph(AgentState)
@@ -33,6 +36,7 @@ def create_agent_graph() -> StateGraph:
     graph.add_node("router", router_node)
     graph.add_node("retrieval", retrieval_node)
     graph.add_node("kafka", kafka_node)
+    graph.add_node("admin", admin_node)
     graph.add_node("validation", validation_node)
     graph.add_node("synthesis", synthesis_node)
 
@@ -46,20 +50,30 @@ def create_agent_graph() -> StateGraph:
         {
             "retrieval": "retrieval",
             "kafka": "kafka",
-            "synthesis": "synthesis",  # Direct route on error
+            "admin": "admin",
+            "synthesis": "synthesis",  # Direct route
         },
     )
 
     # Retrieval -> Validation
     graph.add_edge("retrieval", "validation")
 
-    # Kafka -> Retrieval (to also get docs) or Validation (if we have docs)
+    # Admin -> Synthesis (admin operations go directly to synthesis)
+    graph.add_edge("admin", "synthesis")
+
+    # Kafka -> Retrieval (if needs_retrieval) or Synthesis (if kafka-only)
+    def kafka_next_node(state: AgentState) -> str:
+        """Determine next node after kafka based on routing."""
+        if state.get("needs_retrieval"):
+            return "retrieval"
+        return "synthesis"
+
     graph.add_conditional_edges(
         "kafka",
-        lambda state: "retrieval" if not state.get("retrieved_docs") else "validation",
+        kafka_next_node,
         {
             "retrieval": "retrieval",
-            "validation": "validation",
+            "synthesis": "synthesis",
         },
     )
 
@@ -124,9 +138,14 @@ class AgentOrchestrator:
             "question": question,
             "sub_goals": [],
             "needs_cluster_context": False,
+            "needs_retrieval": True,
+            "needs_admin_operation": False,
+            "route": "retrieval",
+            "admin_operation": None,
             "retrieved_docs": [],
             "validated_docs": [],
             "cluster_context": None,
+            "admin_result": None,
             "answer": "",
             "citations": [],
             "messages": messages,
@@ -194,9 +213,14 @@ class AgentOrchestrator:
             "question": question,
             "sub_goals": [],
             "needs_cluster_context": False,
+            "needs_retrieval": True,  # Default to retrieval
+            "needs_admin_operation": False,
+            "route": "retrieval",
+            "admin_operation": None,
             "retrieved_docs": [],
             "validated_docs": [],
             "cluster_context": None,
+            "admin_result": None,
             "answer": "",
             "citations": [],
             "messages": messages,
@@ -206,22 +230,138 @@ class AgentOrchestrator:
         try:
             from langchain_core.prompts import ChatPromptTemplate
 
+            from kgpt.agents.admin import admin_node
             from kgpt.agents.synthesis import (
+                ADMIN_SYNTHESIS_SYSTEM_PROMPT,
+                ADMIN_SYNTHESIS_USER_PROMPT,
                 SYNTHESIS_SYSTEM_PROMPT,
                 SYNTHESIS_USER_PROMPT,
                 extract_citations,
+                format_admin_result,
                 format_cluster_context,
                 format_documents,
             )
             from kgpt.llm import get_llm
 
-            # Step 1: Router
+            # Step 1: Router - determine what we need
             yield {"stage": "Understanding your question..."}
             router_result = await router_node(initial_state)
             state = {**initial_state, **router_result}
 
+            route = state.get("route", "retrieval")
+            needs_cluster = state.get("needs_cluster_context", False)
+            needs_retrieval = state.get("needs_retrieval", True)
+            needs_admin = state.get("needs_admin_operation", False)
+
+            logger.info(
+                f"Route: {route}, cluster={needs_cluster}, retrieval={needs_retrieval}, admin={needs_admin}"
+            )
+
+            # Handle help route - provide canned response about capabilities
+            if route == "help":
+                yield {"stage": ""}
+                help_response = """## 🚀 What I Can Do
+
+I'm your Kafka assistant! Here's what I can help you with:
+
+### 📊 Query & Explore
+- **Check cluster status** - View brokers, topics, and consumer groups
+- **List topics** - See all topics with their partition counts
+- **Describe topics** - Get detailed topic configuration
+- **Consumer lag** - Check consumer group lag and offsets
+
+### ⚡ Admin Operations
+I can execute these operations directly on your connected cluster:
+
+| Operation | Example Command |
+|-----------|-----------------|
+| **Create topic** | "Create a topic called orders with 3 partitions" |
+| **Delete topic** | "Delete the topic named test-topic" |
+| **Alter config** | "Set retention.ms to 604800000 for topic orders" |
+| **Add partitions** | "Increase partitions to 6 for topic events" |
+| **Delete consumer group** | "Delete consumer group my-consumer-group" |
+
+### 📚 Documentation
+- Ask about Kafka concepts, best practices, and configurations
+- Get help with producers, consumers, and Streams
+- Learn about security, monitoring, and troubleshooting
+
+### 💡 Tips
+- Connect to a cluster first in the **Cluster** page
+- Use natural language - I understand requests like "delete my orders topic"
+- Ask follow-up questions for more details
+
+**Try asking:** "List all topics in my cluster" or "Create a topic called events with 5 partitions"
+"""
+                # Stream the help response character by character for nice effect
+                for char in help_response:
+                    yield char
+
+                yield {"citations": []}
+                return
+
+            # Handle admin operations
+            if needs_admin and not state.get("error"):
+                yield {"stage": "Analyzing your request..."}
+                admin_result = await admin_node(state)
+                state = {**state, **admin_result}
+
+                # Send cluster context and admin result to frontend
+                if state.get("cluster_context"):
+                    yield {"cluster_context": state["cluster_context"]}
+                if state.get("admin_result"):
+                    yield {"admin_result": state["admin_result"]}
+
+                # Check the status of the admin analysis
+                admin_res = state.get("admin_result", {})
+                is_pending = admin_res.get("pending", False)
+                needs_info = admin_res.get("needs_info", False)
+                is_unclear = admin_res.get("unclear", False)
+                has_error = admin_res.get("error")
+
+                # For structured UI cards (needs_info, unclear, pending), we don't need
+                # to generate text - the cards handle the UI. Just clear the stage.
+                if needs_info or is_unclear or is_pending:
+                    yield {"stage": ""}
+                    yield {"citations": []}
+                    return
+
+                # For errors, generate a helpful message
+                if has_error:
+                    yield {"stage": ""}
+                    yield {"citations": []}
+                    return
+
+                # Otherwise (shouldn't happen often), generate a response
+                yield {"stage": "Generating response..."}
+                admin_section = format_admin_result(admin_res)
+                cluster_section = format_cluster_context(state.get("cluster_context"))
+
+                llm = get_llm(streaming=True)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", ADMIN_SYNTHESIS_SYSTEM_PROMPT),
+                        ("human", ADMIN_SYNTHESIS_USER_PROMPT),
+                    ]
+                )
+
+                chain = prompt | llm
+
+                async for chunk in chain.astream(
+                    {
+                        "question": state["question"],
+                        "admin_result": admin_section,
+                        "cluster_section": cluster_section,
+                    }
+                ):
+                    if hasattr(chunk, "content") and chunk.content:
+                        yield chunk.content
+
+                yield {"citations": []}
+                return
+
             # Step 2: Kafka context (if needed)
-            if state.get("needs_cluster_context") and not state.get("error"):
+            if needs_cluster and not state.get("error"):
                 yield {"stage": "Fetching cluster info..."}
                 kafka_result = await kafka_node(state)
                 state = {**state, **kafka_result}
@@ -230,16 +370,17 @@ class AgentOrchestrator:
                 if state.get("cluster_context"):
                     yield {"cluster_context": state["cluster_context"]}
 
-            # Step 3: Retrieval
-            if not state.get("error"):
+            # Step 3: Retrieval (only if needed!)
+            if needs_retrieval and not state.get("error"):
                 yield {"stage": "Searching documentation..."}
                 retrieval_result = await retrieval_node(state)
                 state = {**state, **retrieval_result}
 
-            # Step 4: Validation
-            yield {"stage": "Validating sources..."}
-            validation_result = await validation_node(state)
-            state = {**state, **validation_result}
+                # Step 4: Validation (only if we retrieved docs)
+                if state.get("retrieved_docs"):
+                    yield {"stage": "Validating sources..."}
+                    validation_result = await validation_node(state)
+                    state = {**state, **validation_result}
 
             # Step 5: Streaming synthesis
             yield {"stage": "Generating response..."}
@@ -268,8 +409,8 @@ class AgentOrchestrator:
                 if hasattr(chunk, "content") and chunk.content:
                     yield chunk.content
 
-            # Yield final citations
-            citations = extract_citations(docs)
+            # Yield final citations (only if we have docs)
+            citations = extract_citations(docs) if docs else []
             yield {"citations": citations}
 
         except Exception as e:

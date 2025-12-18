@@ -201,6 +201,14 @@ class EmbeddingProviderEnum(str, Enum):
     COHERE = "cohere"
 
 
+class KeyStatus(BaseModel):
+    """Status of an API key."""
+
+    configured: bool = False  # Whether key exists (env or db)
+    source: str | None = None  # "env", "db", or None
+    valid: bool | None = None  # True/False if validated, None if not checked
+
+
 class SettingsResponse(BaseModel):
     """Current application settings."""
 
@@ -211,12 +219,36 @@ class SettingsResponse(BaseModel):
     qdrant_url: str
     qdrant_collection: str
     ollama_host: str
-    # API key status (not the actual keys)
+
+    # Key status with source information
+    openai_key: KeyStatus = Field(default_factory=KeyStatus)
+    anthropic_key: KeyStatus = Field(default_factory=KeyStatus)
+    openrouter_key: KeyStatus = Field(default_factory=KeyStatus)
+    cohere_key: KeyStatus = Field(default_factory=KeyStatus)
+    huggingface_token: KeyStatus = Field(default_factory=KeyStatus)
+
+    # Legacy fields for backwards compatibility
     has_openai_key: bool = False
     has_anthropic_key: bool = False
     has_openrouter_key: bool = False
     has_cohere_key: bool = False
     has_huggingface_token: bool = False
+
+
+class ValidateKeyRequest(BaseModel):
+    """Request to validate an API key."""
+
+    provider: str
+    api_key: str
+
+
+class ValidateKeyResponse(BaseModel):
+    """Response from key validation."""
+
+    valid: bool
+    provider: str
+    message: str | None = None
+    models: list[str] = Field(default_factory=list)  # Available models if valid
 
 
 class SettingsUpdateRequest(BaseModel):
@@ -232,6 +264,31 @@ class SettingsUpdateRequest(BaseModel):
     cohere_api_key: str | None = None
     huggingface_token: str | None = None
     ollama_host: str | None = None
+
+
+# ============================================================================
+# Admin Operation Schemas
+# ============================================================================
+
+
+class AdminOperationRequest(BaseModel):
+    """Request to execute a confirmed admin operation."""
+
+    operation: str = Field(..., description="Operation type (create_topic, delete_topic, etc.)")
+    params: dict = Field(..., description="Operation parameters")
+
+
+class AdminOperationResponse(BaseModel):
+    """Response from an admin operation execution."""
+
+    success: bool
+    operation: str
+    message: str | None = None
+    error: str | None = None
+    topic: str | None = None
+    group_id: str | None = None
+    partitions: int | None = None
+    replication_factor: int | None = None
 
 
 # ============================================================================
