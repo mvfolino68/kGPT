@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 
 	interface Props {
-		variant?: 'default' | 'primary' | 'danger' | 'ghost';
+		variant?: 'default' | 'primary' | 'danger' | 'ghost' | 'confluent';
 		size?: 'sm' | 'md' | 'lg';
 		disabled?: boolean;
 		type?: 'button' | 'submit' | 'reset';
@@ -31,7 +31,8 @@
 		default: 'retro-button',
 		primary: 'retro-button retro-button-primary',
 		danger: 'retro-button retro-button-danger',
-		ghost: 'bg-transparent border-transparent hover:bg-surface-800/50 hover:border-white/10'
+		ghost: 'bg-transparent border-transparent hover:bg-surface-800/50 hover:border-white/10',
+		confluent: 'retro-button retro-button-confluent'
 	};
 </script>
 
@@ -43,3 +44,4 @@
 >
 	{@render children()}
 </button>
+

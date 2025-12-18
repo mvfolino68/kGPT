@@ -277,7 +277,7 @@
 			<RetroCard>
 				<div class="flex items-center justify-between border-b retro-border pb-3 mb-4">
 					<div class="flex items-center gap-2">
-						<span class="text-emerald-400 font-mono text-xs">+</span>
+						<span class="text-confluent-accent font-mono text-xs">+</span>
 						<span class="font-mono text-sm text-surface-300 uppercase tracking-wider">Connect Cluster</span>
 					</div>
 					{#if !showForm}

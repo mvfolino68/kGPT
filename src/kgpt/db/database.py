@@ -85,10 +85,17 @@ class Database:
                     role TEXT NOT NULL,
                     content TEXT NOT NULL,
                     citations TEXT,
+                    agent_trace TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (session_id) REFERENCES chat_sessions(id)
                 )
             """)
+
+            # Migration: Add agent_trace column if it doesn't exist
+            cursor.execute("PRAGMA table_info(chat_history)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if "agent_trace" not in columns:
+                cursor.execute("ALTER TABLE chat_history ADD COLUMN agent_trace TEXT")
 
             # Index for faster session lookups
             cursor.execute("""
@@ -347,17 +354,37 @@ class Database:
             conn.commit()
 
     def add_chat_message(
-        self, session_id: str, role: str, content: str, citations: list[str] | None = None
+        self,
+        session_id: str,
+        role: str,
+        content: str,
+        citations: list | None = None,
+        agent_trace: dict | None = None,
     ) -> int:
-        """Add a message to a chat session."""
+        """Add a message to a chat session.
+
+        Args:
+            session_id: The session ID
+            role: 'user' or 'assistant'
+            content: Message content
+            citations: List of citation objects with title, url, type, and optional content_preview
+            agent_trace: Agent pipeline trace data (routing decision, retrieval results, etc.)
+        """
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO chat_history (session_id, role, content, citations, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO chat_history (session_id, role, content, citations, agent_trace, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
             """,
-                (session_id, role, content, json.dumps(citations or []), datetime.now()),
+                (
+                    session_id,
+                    role,
+                    content,
+                    json.dumps(citations or []),
+                    json.dumps(agent_trace) if agent_trace else None,
+                    datetime.now(),
+                ),
             )
             # Update the session's updated_at timestamp
             cursor.execute(
@@ -373,7 +400,7 @@ class Database:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT id, session_id, role, content, citations, created_at
+                SELECT id, session_id, role, content, citations, agent_trace, created_at
                 FROM chat_history
                 WHERE session_id = ?
                 ORDER BY created_at ASC
@@ -387,6 +414,12 @@ class Database:
                     msg["citations"] = json.loads(msg["citations"]) if msg["citations"] else []
                 except (json.JSONDecodeError, TypeError):
                     msg["citations"] = []
+                try:
+                    msg["agent_trace"] = (
+                        json.loads(msg["agent_trace"]) if msg.get("agent_trace") else None
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    msg["agent_trace"] = None
                 messages.append(msg)
             return messages
 

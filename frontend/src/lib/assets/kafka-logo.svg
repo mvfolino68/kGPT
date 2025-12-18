@@ -2,23 +2,22 @@
   <!-- Kafka-inspired streaming data logo -->
   <defs>
     <linearGradient id="kafka-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10b981"/>
-      <stop offset="100%" style="stop-color:#059669"/>
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#3B82F6"/>
     </linearGradient>
   </defs>
   <!-- Central node -->
   <circle cx="32" cy="32" r="8" fill="url(#kafka-grad)"/>
   <!-- Top node -->
-  <circle cx="32" cy="12" r="5" fill="#10b981"/>
-  <line x1="32" y1="17" x2="32" y2="24" stroke="#10b981" stroke-width="2"/>
+  <circle cx="32" cy="12" r="5" fill="#60A5FA"/>
+  <line x1="32" y1="17" x2="32" y2="24" stroke="#60A5FA" stroke-width="2"/>
   <!-- Bottom left node -->
-  <circle cx="15" cy="47" r="5" fill="#10b981"/>
-  <line x1="18" y1="43" x2="26" y2="38" stroke="#10b981" stroke-width="2"/>
+  <circle cx="15" cy="47" r="5" fill="#60A5FA"/>
+  <line x1="18" y1="43" x2="26" y2="38" stroke="#60A5FA" stroke-width="2"/>
   <!-- Bottom right node -->
-  <circle cx="49" cy="47" r="5" fill="#10b981"/>
-  <line x1="46" y1="43" x2="38" y2="38" stroke="#10b981" stroke-width="2"/>
+  <circle cx="49" cy="47" r="5" fill="#60A5FA"/>
+  <line x1="46" y1="43" x2="38" y2="38" stroke="#60A5FA" stroke-width="2"/>
   <!-- Data streams -->
-  <path d="M10 22 Q 20 32, 10 42" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
-  <path d="M54 22 Q 44 32, 54 42" stroke="#10b981" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M10 22 Q 20 32, 10 42" stroke="#60A5FA" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <path d="M54 22 Q 44 32, 54 42" stroke="#60A5FA" stroke-width="1.5" fill="none" opacity="0.6"/>
 </svg>
-

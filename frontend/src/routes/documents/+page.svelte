@@ -649,7 +649,7 @@
 			<button
 				onclick={() => (activeTab = tab.id)}
 				class="px-4 py-2.5 font-mono text-sm transition-all {activeTab === tab.id
-					? 'text-emerald-400 border-b-2 border-emerald-400 bg-surface-900/50'
+					? 'text-confluent-primary border-b-2 border-confluent-primary bg-surface-900/50'
 					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/30 border-b-2 border-transparent'}"
 			>
 				{activeTab === tab.id ? '> ' : ''}{tab.label}
@@ -678,10 +678,10 @@
 			{#if activeTab === 'sources'}
 				<!-- Ingest form -->
 				<RetroCard noPadding>
-					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-						<span class="text-emerald-400 font-mono text-xs">+</span>
-						<span class="font-mono text-sm text-surface-300">ingest --source</span>
-					</div>
+				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+					<span class="text-confluent-accent font-mono text-xs">+</span>
+					<span class="font-mono text-sm text-surface-300">ingest --source</span>
+				</div>
 
 					<div class="p-4 space-y-4">
 						<!-- Quick presets -->
@@ -763,7 +763,7 @@
 			{/if}
 
 			<!-- Sync Status Panel (shown when out of sync) -->
-			{#if syncStatus && (!syncStatus.synced || syncStatus.orphaned_sources.length > 0 || syncStatus.missing_sources.length > 0)}
+			{#if syncStatus && (!syncStatus.synced || syncStatus.orphaned_collections.length > 0 || syncStatus.missing_sources.length > 0)}
 				<RetroCard variant="glow-amber" noPadding>
 					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
 						<div class="flex items-center gap-2">
@@ -780,15 +780,15 @@
 					</div>
 
 					<div class="p-4 space-y-4">
-						<!-- Orphaned vectors in Qdrant -->
-						{#if syncStatus.orphaned_sources.length > 0}
+						<!-- Orphaned collections in Qdrant -->
+						{#if syncStatus.orphaned_collections.length > 0}
 							<div class="bg-surface-900/50 rounded p-3">
 								<div class="flex items-center justify-between mb-2">
 									<span class="text-sm font-mono text-amber-400">
 										<svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 										</svg>
-										Orphaned in Qdrant ({syncStatus.orphaned_sources.length})
+										Orphaned Collections ({syncStatus.orphaned_collections.length})
 									</span>
 									{#if activeDestructiveOp !== 'cleanup_orphans'}
 										<button
@@ -804,12 +804,12 @@
 									{/if}
 								</div>
 								<p class="text-xs text-surface-400 mb-2">
-									These sources exist in Qdrant but are not tracked in the database:
+									These collections exist in Qdrant but are not tracked in the database:
 								</p>
 								<div class="flex flex-wrap gap-2">
-									{#each syncStatus.orphaned_sources as source}
+									{#each syncStatus.orphaned_collections as collection}
 										<span class="px-2 py-1 text-xs font-mono bg-surface-700 text-amber-300 rounded">
-											{source}
+											{collection}
 										</span>
 									{/each}
 								</div>
@@ -824,7 +824,7 @@
 											<span class="text-sm font-semibold text-amber-400">Confirm Deletion</span>
 										</div>
 										<p class="text-xs text-surface-300 mb-3">
-											This will permanently delete all orphaned vectors from Qdrant that are not tracked in the database.
+											This will permanently delete all orphaned collections from Qdrant that are not tracked in the database.
 										</p>
 										<div class="mb-3">
 											<label class="block text-xs font-mono text-surface-500 mb-1">

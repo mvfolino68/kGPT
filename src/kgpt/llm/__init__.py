@@ -1,13 +1,13 @@
-"""LLM provider module for kGPT."""
+"""LLM provider module for kGPT - OpenAI only."""
 
 from kgpt.llm.providers import (
-    AVAILABLE_MODELS,
-    clear_models_cache,
     get_available_models,
     get_embedding_dimensions,
     get_embeddings,
     get_llm,
+    get_openai_api_key,
     get_structured_llm,
+    test_llm_connection,
 )
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
     "get_structured_llm",
     "get_embeddings",
     "get_embedding_dimensions",
-    "AVAILABLE_MODELS",
     "get_available_models",
-    "clear_models_cache",
+    "get_openai_api_key",
+    "test_llm_connection",
 ]

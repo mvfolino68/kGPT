@@ -1,4 +1,4 @@
-"""Synthesis agent for generating the final answer."""
+"""Synthesis agent for generating the final answer with inline citations."""
 
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
@@ -7,21 +7,30 @@ from loguru import logger
 from kgpt.agents.state import AgentState
 from kgpt.llm import get_llm
 
-SYNTHESIS_SYSTEM_PROMPT = """You are a Kafka expert assistant. Be direct, concise, and helpful.
+SYNTHESIS_SYSTEM_PROMPT = """You are a Kafka expert assistant. Be direct, thorough, and helpful.
 
 ### Rules:
-1. **Answer directly** - Get to the point. Don't add unnecessary preamble or headers like "Analysis:" or "Answer:".
-2. **Be concise** - Users want quick, actionable answers. Avoid verbose explanations unless asked.
+1. **Answer directly** - Get to the point. Don't add unnecessary preamble.
+2. **Be comprehensive** - Use the provided documentation to give thorough, educational answers. Include key details, architecture insights, and practical information from the sources.
 3. **Use context** - If cluster info is provided, use it to give specific answers about their cluster.
-4. **Only recommend when asked** - Don't add unsolicited recommendations, best practices, or suggestions.
-5. **Format cleanly** - Use Markdown for code blocks and lists. Keep formatting minimal and readable.
+4. **Cite sources** - When using information from documents or web results, cite with [1], [2], etc. matching the source numbers provided. Cite frequently when drawing from sources.
+5. **Format cleanly** - Use Markdown for code blocks, lists, and headers. Structure longer answers with sections for readability.
+
+### Response Depth:
+- For conceptual questions (what is X, how does Y work): Provide detailed explanations with architecture details, key components, and how they interact
+- For practical questions (how to configure X): Be specific with steps and examples
+- For troubleshooting: Include common causes and solutions
+
+### Citation Format:
+- Reference sources inline like: "Kafka uses log segments for storage [1]"
+- Cite when directly using information from a source
+- Don't add a separate "Sources" or "References" section - citations are handled by the UI
 
 ### What NOT to do:
 - Don't start with "Based on the context..." or similar phrases
-- Don't add sections like "Recommendations:", "Best Practices:", "Additional Tips:" unless specifically asked
 - Don't repeat the question back
-- Don't add disclaimers or caveats unless critical
-- Don't say "Sources:" at the end - citations are handled separately"""
+- Don't add disclaimers unless critical
+- Don't ignore the documentation - synthesize insights from the provided sources"""
 
 
 SYNTHESIS_USER_PROMPT = """Question: {question}
@@ -30,63 +39,7 @@ SYNTHESIS_USER_PROMPT = """Question: {question}
 
 {documents}
 
-Provide a direct, helpful answer:"""
-
-
-# Admin operation-specific prompts for GATHERING INFO (asking questions)
-ADMIN_GATHERING_SYSTEM_PROMPT = """You are a friendly Kafka admin assistant helping the user set up an operation.
-You need to gather some information before proceeding.
-
-### Rules:
-1. **Be conversational** - Ask questions naturally, not like a form
-2. **Explain briefly** - Help them understand what each parameter means if it's not obvious
-3. **Provide examples** - Give example values when helpful
-4. **Show defaults** - Mention default values so they know what to expect
-5. **Be encouraging** - This should feel like a helpful conversation, not an interrogation
-
-### Format:
-- Acknowledge what they want to do
-- Ask the questions in a natural way
-- For each question, briefly explain why it matters or give examples
-- Don't number questions like a form - weave them into conversation"""
-
-
-ADMIN_GATHERING_USER_PROMPT = """User's request: {question}
-
-Analysis of what's needed:
-{admin_result}
-
-Cluster context:
-{cluster_section}
-
-Have a helpful conversation to gather the missing information:"""
-
-
-# Admin operation-specific prompts for PENDING operations (confirmation required)
-ADMIN_PENDING_SYSTEM_PROMPT = """You are a Kafka admin assistant. The user has requested an admin operation.
-Present the operation details clearly so they can review and confirm before execution.
-
-### Rules:
-1. **Summarize the operation** - Clearly state what will happen if they confirm
-2. **Show key parameters** - Include topic names, partition counts, config values, etc.
-3. **Note any risks** - For destructive operations, briefly mention what could be affected
-4. **Be concise** - Don't over-explain, just present the facts
-5. **Use structured format** - Make it easy to scan with bullet points or a table
-
-### Format:
-- Start with a brief summary of the operation
-- List the key parameters
-- If destructive (delete), add a brief warning
-- End by noting they can confirm or cancel"""
-
-
-ADMIN_PENDING_USER_PROMPT = """Original request: {question}
-
-{admin_result}
-
-{cluster_section}
-
-Present this pending operation for user confirmation:"""
+Provide a direct, helpful answer with inline citations [1], [2], etc. when using source information:"""
 
 
 # Admin operation-specific prompts for EXECUTED operations
@@ -116,20 +69,32 @@ Provide a clear response about the operation result:"""
 
 
 def format_documents(docs: list[Document]) -> str:
-    """Format documents for the synthesis prompt."""
+    """Format documents for the synthesis prompt with numbered sources."""
     if not docs:
-        return "No documents found."
+        return "No documentation found."
 
-    formatted = []
+    formatted = ["Documentation Sources:"]
     for i, doc in enumerate(docs, 1):
         source = doc.metadata.get("source", "Unknown source")
         source_name = doc.metadata.get("source_name", "")
 
+        # Derive source_name from URL if not set
+        if not source_name and source:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(source)
+            if parsed.netloc:
+                source_name = parsed.netloc
+            else:
+                source_name = "Documentation"
+        elif not source_name:
+            source_name = "Documentation"
+
         formatted.append(f"""
---- Document {i} ---
-Source: {source_name} - {source}
+[{i}] {source_name}
+URL: {source}
 Content:
-{doc.page_content[:3000]}
+{doc.page_content[:2500]}
 """)
 
     return "\n".join(formatted)
@@ -142,7 +107,6 @@ def format_cluster_context(context: dict | None) -> str:
 
     sections = ["Kafka Cluster Context:"]
 
-    # Use broker_count if available, otherwise count broker entries
     if "broker_count" in context:
         sections.append(f"- Brokers: {context['broker_count']}")
     elif "brokers" in context:
@@ -162,7 +126,6 @@ def format_cluster_context(context: dict | None) -> str:
     if "topic_configs" in context:
         configs = context["topic_configs"]
         if isinstance(configs, dict):
-            # Format config dict nicely
             config_items = [f"{k}={v}" for k, v in list(configs.items())[:5]]
             sections.append(f"- Topic Configuration: {', '.join(config_items)}")
             if len(configs) > 5:
@@ -174,7 +137,6 @@ def format_cluster_context(context: dict | None) -> str:
         groups = context["consumer_groups"]
         if isinstance(groups, list):
             if groups and isinstance(groups[0], dict):
-                # Extract group IDs from list of dicts
                 group_ids = [g.get("group_id", str(g)) for g in groups]
                 sections.append(f"- Consumer Groups ({len(groups)}): {', '.join(group_ids[:10])}")
                 if len(groups) > 10:
@@ -223,7 +185,7 @@ def format_admin_result(result: dict | None) -> str:
         if result.get("questions"):
             sections.append("- Questions to ask:")
             for q in result["questions"]:
-                sections.append(f"  • {q}")
+                sections.append(f"  - {q}")
 
         return "\n".join(sections)
 
@@ -283,51 +245,49 @@ def format_admin_result(result: dict | None) -> str:
     return "\n".join(sections)
 
 
-def extract_citations(docs: list[Document]) -> list[str]:
-    """Extract source citations from documents."""
-    citations = []
-    seen = set()
-
-    for doc in docs:
-        source = doc.metadata.get("source", "")
-        source_name = doc.metadata.get("source_name", "")
-
-        if source and source not in seen:
-            seen.add(source)
-            if source.startswith("http"):
-                citations.append(source)
-            elif source_name:
-                citations.append(f"{source_name}: {source}")
-            else:
-                citations.append(source)
-
-    return citations
-
-
 async def synthesis_node(state: AgentState) -> dict:
     """
     Synthesis node that generates the final answer.
 
-    Combines validated documents and cluster context to produce a comprehensive answer.
+    Combines retrieved documents, web results, and cluster context to produce a comprehensive answer.
     """
     logger.info("Synthesis agent generating answer...")
 
     # Handle error state
-    if state.get("error") and not state.get("validated_docs"):
+    if state.get("error") and not state.get("retrieved_docs"):
         return {
             "answer": f"I encountered an error while processing your question: {state['error']}. Please try again.",
             "citations": [],
         }
 
-    # Get documents (prefer validated, fall back to retrieved)
-    docs = state.get("validated_docs", []) or state.get("retrieved_docs", [])
+    # Get documents
+    docs = state.get("retrieved_docs", [])
+    web_results = state.get("web_results", [])
 
     # Format inputs
     documents_text = format_documents(docs)
+
+    # Add web results if available
+    if web_results:
+        web_section = "\n\nWeb Search Results:\n"
+        start_idx = len(docs) + 1
+        for i, result in enumerate(web_results, start_idx):
+            web_section += f"\n[{i}] {result.get('title', 'Web Result')}\n"
+            web_section += f"URL: {result.get('url', '')}\n"
+            if result.get("highlights"):
+                highlights = result["highlights"]
+                if isinstance(highlights, list):
+                    web_section += f"Key excerpts: {' ... '.join(highlights[:3])}\n"
+                else:
+                    web_section += f"Key excerpt: {highlights}\n"
+            elif result.get("content"):
+                web_section += f"Content: {result['content'][:500]}...\n"
+        documents_text += web_section
+
     cluster_section = format_cluster_context(state.get("cluster_context"))
 
     # Create synthesis chain
-    llm = get_llm(streaming=True)
+    llm = get_llm(streaming=False)
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", SYNTHESIS_SYSTEM_PROMPT),
@@ -347,7 +307,49 @@ async def synthesis_node(state: AgentState) -> dict:
         )
 
         answer = result.content
-        citations = extract_citations(docs)
+
+        # Build structured citations with content previews for modal display
+        citations = []
+        seen_urls = set()
+
+        for doc in docs:
+            source = doc.metadata.get("source", "")
+            if source and source not in seen_urls:
+                seen_urls.add(source)
+                # Include content preview for the citation modal
+                content_preview = doc.page_content[:500] if doc.page_content else ""
+                citations.append(
+                    {
+                        "title": doc.metadata.get("source_name", "Documentation"),
+                        "url": source if source.startswith("http") else "",
+                        "type": "doc",
+                        "content_preview": content_preview,
+                    }
+                )
+
+        for result in web_results:
+            url = result.get("url", "")
+            if url and url not in seen_urls:
+                seen_urls.add(url)
+                # Include content preview from web search results
+                content_preview = ""
+                if result.get("highlights"):
+                    highlights = result["highlights"]
+                    if isinstance(highlights, list):
+                        content_preview = " ... ".join(highlights[:3])
+                    else:
+                        content_preview = highlights
+                elif result.get("content"):
+                    content_preview = result["content"][:500]
+
+                citations.append(
+                    {
+                        "title": result.get("title", "Web Result"),
+                        "url": url,
+                        "type": "web",
+                        "content_preview": content_preview,
+                    }
+                )
 
         logger.info(
             f"Synthesis complete. Answer length: {len(answer)}, Citations: {len(citations)}"
@@ -365,42 +367,3 @@ async def synthesis_node(state: AgentState) -> dict:
             "citations": [],
             "error": str(e),
         }
-
-
-async def synthesis_node_streaming(state: AgentState):
-    """
-    Streaming version of synthesis node.
-
-    Yields tokens as they are generated for real-time display.
-    """
-    logger.info("Synthesis agent generating answer (streaming)...")
-
-    docs = state.get("validated_docs", []) or state.get("retrieved_docs", [])
-    documents_text = format_documents(docs)
-    cluster_section = format_cluster_context(state.get("cluster_context"))
-
-    llm = get_llm(streaming=True)
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", SYNTHESIS_SYSTEM_PROMPT),
-            ("human", SYNTHESIS_USER_PROMPT),
-        ]
-    )
-
-    chain = prompt | llm
-
-    full_response = ""
-    async for chunk in chain.astream(
-        {
-            "question": state["question"],
-            "cluster_section": cluster_section,
-            "documents": documents_text,
-        }
-    ):
-        if hasattr(chunk, "content"):
-            full_response += chunk.content
-            yield chunk.content
-
-    # Final state update
-    citations = extract_citations(docs)
-    yield {"answer": full_response, "citations": citations}

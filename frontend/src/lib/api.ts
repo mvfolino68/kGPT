@@ -87,7 +87,7 @@ export interface AdminOperationResult {
 // Agent Activity Types (for educational pipeline visibility)
 // ============================================================================
 
-export type AgentName = 'router' | 'retrieval' | 'kafka' | 'admin' | 'validation' | 'synthesis' | 'error';
+export type AgentName = 'router' | 'retrieval' | 'kafka' | 'admin' | 'web_search' | 'synthesis' | 'error';
 export type AgentStatus = 'pending' | 'started' | 'completed' | 'error';
 
 export interface AgentEvent {
@@ -104,6 +104,7 @@ export interface RoutingDecision {
 	sub_goals: string[];
 	needs_cluster: boolean;
 	needs_retrieval: boolean;
+	needs_web_search: boolean;
 	needs_admin: boolean;
 }
 
@@ -125,17 +126,15 @@ export interface RetrievalResults {
 	reranking_model: string | null;
 }
 
-export interface ValidationResultItem {
-	source: string;
-	is_relevant: boolean;
-	confidence: number;
-	reasoning?: string;
+export interface WebSearchResultItem {
+	title: string;
+	url: string;
+	highlights?: string[];
 }
 
-export interface ValidationResults {
-	validated: number;
-	filtered: number;
-	results: ValidationResultItem[];
+export interface WebSearchResults {
+	results: WebSearchResultItem[];
+	total: number;
 }
 
 export interface AdminOperationRequest {
@@ -143,9 +142,29 @@ export interface AdminOperationRequest {
 	params: Record<string, unknown>;
 }
 
+// Citation can be either a simple URL string or a full object with metadata
+export interface CitationMetadata {
+	collection?: string;
+	similarity_score?: number;
+	rerank_score?: number;
+	published_date?: string;
+	search_query?: string;
+}
+
+export interface CitationObject {
+	title: string;
+	url: string;
+	type: 'doc' | 'web' | 'cluster';
+	content_preview?: string;
+	relevance_score?: number;
+	metadata?: CitationMetadata;
+}
+
+export type Citation = string | CitationObject;
+
 export interface ChatResponse {
 	answer: string;
-	citations: string[];
+	citations: Citation[];
 	error?: string;
 	actions?: SuggestedAction[];
 	cluster_context?: {
@@ -164,13 +183,37 @@ export interface ChatSession {
 	updated_at: string;
 }
 
+export interface AgentTraceData {
+	routing_decision?: RoutingDecision;
+	retrieval_results?: RetrievalResults;
+	validation_results?: {
+		validated: number;
+		filtered: number;
+		results: Array<{
+			source: string;
+			is_relevant: boolean;
+			confidence: number;
+			reasoning?: string;
+		}>;
+	};
+	web_search_results?: WebSearchResults;
+	agent_timeline: Array<{
+		agent: AgentName;
+		status: AgentStatus;
+		description?: string;
+		duration_ms?: number;
+		result?: Record<string, unknown>;
+	}>;
+}
+
 export interface ChatSessionMessage {
 	id: number;
 	session_id: string;
 	role: 'user' | 'assistant';
 	content: string;
-	citations: string[];
+	citations: Citation[];
 	actions?: SuggestedAction[];
+	agent_trace?: AgentTraceData;
 	created_at: string;
 }
 
@@ -225,22 +268,21 @@ export interface Settings {
 	llm_model: string;
 	embedding_provider: string;
 	embedding_model: string;
+	// API keys for updates
 	openai_api_key?: string;
-	anthropic_api_key?: string;
-	openrouter_api_key?: string;
+	exa_api_key?: string;
 	cohere_api_key?: string;
 	huggingface_token?: string;
-	ollama_host?: string;
-	// New detailed key status
+	// Web search toggle
+	web_search_enabled?: boolean;
+	// Key status
 	openai_key?: KeyStatus;
-	anthropic_key?: KeyStatus;
-	openrouter_key?: KeyStatus;
+	exa_key?: KeyStatus;
 	cohere_key?: KeyStatus;
 	huggingface_token_status?: KeyStatus;
 	// Legacy fields
 	has_openai_key?: boolean;
-	has_anthropic_key?: boolean;
-	has_openrouter_key?: boolean;
+	has_exa_key?: boolean;
 	has_cohere_key?: boolean;
 	has_huggingface_token?: boolean;
 }
@@ -364,7 +406,7 @@ export async function executeAdminOperation(request: AdminOperationRequest): Pro
 
 // Documents API
 export async function getDocuments(): Promise<DocumentSource[]> {
-	const response = await fetch(`${API_BASE}/documents`);
+	const response = await fetch(`${API_BASE}/documents/sources`);
 	if (!response.ok) throw new Error(`Failed to get documents: ${response.statusText}`);
 	const data = await response.json();
 	return data.sources;
@@ -397,7 +439,7 @@ export interface IngestionStatus {
 }
 
 export async function ingestDocument(request: IngestRequest): Promise<IngestResponse> {
-	const response = await fetch(`${API_BASE}/documents/ingest`, {
+	const response = await fetch(`${API_BASE}/documents/sources/ingest`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(request)
@@ -407,18 +449,18 @@ export async function ingestDocument(request: IngestRequest): Promise<IngestResp
 }
 
 export async function getIngestionStatus(sourceId: number): Promise<IngestionStatus> {
-	const response = await fetch(`${API_BASE}/documents/${sourceId}/status`);
+	const response = await fetch(`${API_BASE}/documents/sources/${sourceId}/status`);
 	if (!response.ok) throw new Error(`Failed to get status: ${response.statusText}`);
 	return response.json();
 }
 
 export async function deleteDocument(id: number): Promise<void> {
-	const response = await fetch(`${API_BASE}/documents/${id}`, { method: 'DELETE' });
+	const response = await fetch(`${API_BASE}/documents/sources/${id}`, { method: 'DELETE' });
 	if (!response.ok) throw new Error(`Delete failed: ${response.statusText}`);
 }
 
 export async function cancelIngestion(id: number): Promise<void> {
-	const response = await fetch(`${API_BASE}/documents/${id}/cancel`, { method: 'POST' });
+	const response = await fetch(`${API_BASE}/documents/sources/${id}/cancel`, { method: 'POST' });
 	if (!response.ok) throw new Error(`Cancel failed: ${response.statusText}`);
 }
 
@@ -652,7 +694,7 @@ export async function compareEmbeddings(
 
 // RAG Pipeline Info (Educational)
 export async function getRAGPipelineInfo(): Promise<RAGPipelineInfo> {
-	const response = await fetch(`${API_BASE}/documents/rag/pipeline`);
+	const response = await fetch(`${API_BASE}/documents/rag/info`);
 	if (!response.ok) throw new Error(`Failed to get RAG info: ${response.statusText}`);
 	return response.json();
 }
@@ -699,18 +741,20 @@ export async function getAgentGraph(): Promise<AgentGraphInfo> {
 export interface SourceSyncStatus {
 	id: number;
 	name: string;
+	collection_name: string;
 	db_status: string;
 	db_count: number;
+	qdrant_count: number;
 	in_qdrant: boolean;
 	synced: boolean;
 }
 
 export interface SyncStatusResponse {
 	synced: boolean;
-	collection: CollectionStats;
+	total_vectors: number;
 	db_sources_count: number;
-	qdrant_sources_count: number;
-	orphaned_sources: string[];
+	qdrant_collections_count: number;
+	orphaned_collections: string[];
 	missing_sources: string[];
 	source_status: SourceSyncStatus[];
 }

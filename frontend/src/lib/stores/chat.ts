@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { Message, ChatSession, ChatSessionMessage, SuggestedAction, ClusterOperationResult } from '$lib/api';
+import type { Message, ChatSession, ChatSessionMessage, SuggestedAction, ClusterOperationResult, Citation, CitationObject } from '$lib/api';
 import {
 	getChatSessions,
 	createChatSession,
@@ -8,6 +8,9 @@ import {
 	updateChatSession,
 	clearAllChatSessions
 } from '$lib/api';
+
+// Re-export Citation types for consumers
+export type { Citation, CitationObject };
 
 // ============================================================================
 // Admin Operation Types
@@ -83,6 +86,7 @@ export interface RoutingDecision {
 	sub_goals: string[];
 	needs_cluster: boolean;
 	needs_retrieval: boolean;
+	needs_web_search: boolean;
 	needs_admin: boolean;
 }
 
@@ -117,6 +121,17 @@ export interface ValidationResults {
 	results: ValidationResultItem[];
 }
 
+export interface WebSearchResultItem {
+	title: string;
+	url: string;
+	highlights?: string[];
+}
+
+export interface WebSearchResults {
+	results: WebSearchResultItem[];
+	total: number;
+}
+
 export interface AgentActivity {
 	agent: AgentName;
 	status: AgentStatus;
@@ -131,6 +146,7 @@ export interface MessageAgentTrace {
 	routingDecision?: RoutingDecision;
 	retrievalResults?: RetrievalResults;
 	validationResults?: ValidationResults;
+	webSearchResults?: WebSearchResults;
 	agentTimeline: AgentActivity[];
 }
 
@@ -146,7 +162,8 @@ export interface ClusterContext {
 
 export interface ChatMessage extends Message {
 	id: string;
-	citations?: string[];
+	/** Unified sources - combines RAG docs, web results, etc. */
+	citations?: Citation[];
 	actions?: SuggestedAction[];
 	operationResult?: ClusterOperationResult;
 	adminResult?: AdminOperationResult;
@@ -154,7 +171,7 @@ export interface ChatMessage extends Message {
 	isStreaming?: boolean;
 	isThinking?: boolean;
 	thinkingStage?: string;
-	// Agent activity trace for educational visibility
+	/** Agent activity trace for educational visibility */
 	agentTrace?: MessageAgentTrace;
 }
 
@@ -173,10 +190,29 @@ export const isProcessing = writable(false);
 // Agent activity sidebar visibility
 export const showAgentActivity = writable(false);
 
+// Selected message ID for viewing its trace (null = show current/streaming trace)
+export const selectedMessageId = writable<string | null>(null);
+
 // Current agent activity (for the active message being streamed)
 export const currentAgentTrace = writable<MessageAgentTrace>({
 	agentTimeline: []
 });
+
+// Derived store: the trace to display in sidebar (selected message's trace or current streaming trace)
+export const displayedAgentTrace = derived(
+	[selectedMessageId, chatMessages, currentAgentTrace],
+	([$selectedMessageId, $chatMessages, $currentAgentTrace]) => {
+		if ($selectedMessageId) {
+			// Find the selected message and return its stored trace
+			const message = $chatMessages.find((m) => m.id === $selectedMessageId);
+			if (message?.agentTrace) {
+				return message.agentTrace;
+			}
+		}
+		// Fall back to current streaming trace
+		return $currentAgentTrace;
+	}
+);
 
 // Derived store for chat history (for API calls)
 export const chatHistory = derived(chatMessages, ($messages) =>
@@ -219,16 +255,41 @@ export async function loadSession(sessionId: string): Promise<void> {
 		currentSessionId.set(sessionId);
 		currentSession.set(data.session);
 
-		// Convert session messages to ChatMessage format
-		const messages: ChatMessage[] = data.messages.map((m: ChatSessionMessage) => ({
-			id: String(m.id),
-			role: m.role as 'user' | 'assistant',
-			content: m.content,
-			citations: m.citations,
-			actions: m.actions,
-			isStreaming: false
-		}));
+		// Convert session messages to ChatMessage format, restoring agent traces
+		const messages: ChatMessage[] = data.messages.map((m: ChatSessionMessage) => {
+			// Convert stored agent_trace format to MessageAgentTrace format
+			let agentTrace: MessageAgentTrace | undefined;
+			if (m.agent_trace) {
+				agentTrace = {
+					routingDecision: m.agent_trace.routing_decision as RoutingDecision | undefined,
+					retrievalResults: m.agent_trace.retrieval_results as RetrievalResults | undefined,
+					validationResults: m.agent_trace.validation_results as ValidationResults | undefined,
+					webSearchResults: m.agent_trace.web_search_results as WebSearchResults | undefined,
+					agentTimeline: (m.agent_trace.agent_timeline || []).map((a) => ({
+						agent: a.agent as AgentName,
+						status: a.status as AgentStatus,
+						description: a.description,
+						duration_ms: a.duration_ms,
+						result: a.result
+					}))
+				};
+			}
+
+			return {
+				id: String(m.id),
+				role: m.role as 'user' | 'assistant',
+				content: m.content,
+				citations: m.citations,
+				actions: m.actions,
+				agentTrace,
+				isStreaming: false
+			};
+		});
 		chatMessages.set(messages);
+
+		// Clear any previous selection and reset current trace
+		selectedMessageId.set(null);
+		resetAgentTrace();
 	} catch (error) {
 		console.error('Failed to load session:', error);
 		throw error;
@@ -358,7 +419,20 @@ export function clearMessages(): void {
 	chatMessages.set([]);
 	currentSessionId.set(null);
 	currentSession.set(null);
+	selectedMessageId.set(null);
 	resetAgentTrace();
+}
+
+/**
+ * Select a message to view its agent trace in the sidebar.
+ * Pass null to deselect and show the current/streaming trace.
+ */
+export function selectMessageForTrace(messageId: string | null): void {
+	selectedMessageId.set(messageId);
+	// Auto-open the sidebar when selecting a message
+	if (messageId) {
+		showAgentActivity.set(true);
+	}
 }
 
 // ============================================================================
@@ -434,6 +508,13 @@ export function handleValidationResults(results: ValidationResults): void {
 	currentAgentTrace.update((trace) => ({
 		...trace,
 		validationResults: results
+	}));
+}
+
+export function handleWebSearchResults(results: WebSearchResults): void {
+	currentAgentTrace.update((trace) => ({
+		...trace,
+		webSearchResults: results
 	}));
 }
 

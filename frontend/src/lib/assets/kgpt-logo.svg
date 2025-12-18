@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Terminal-style kGPT logo -->
+  <!-- Terminal-style kGPT logo - Confluent themed -->
   <!-- Background -->
   <rect x="2" y="2" width="44" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
   <!-- Terminal bar -->
@@ -8,16 +8,15 @@
   <!-- Window controls -->
   <circle cx="10" cy="7" r="2" fill="#ef4444"/>
   <circle cx="17" cy="7" r="2" fill="#f59e0b"/>
-  <circle cx="24" cy="7" r="2" fill="#10b981"/>
-  <!-- K letter -->
-  <path d="M12 18v16M12 26l7-8M12 26l7 8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Cursor -->
-  <rect x="28" y="18" width="2" height="16" fill="#10b981" opacity="0.8">
+  <circle cx="24" cy="7" r="2" fill="#22c55e"/>
+  <!-- K letter - Blue themed -->
+  <path d="M12 18v16M12 26l7-8M12 26l7 8" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Cursor - Blue -->
+  <rect x="28" y="18" width="2" height="16" fill="#60A5FA" opacity="0.8">
     <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1s" repeatCount="indefinite"/>
   </rect>
-  <!-- Streaming dots -->
-  <circle cx="36" cy="20" r="1.5" fill="#10b981"/>
-  <circle cx="36" cy="26" r="1.5" fill="#10b981" opacity="0.6"/>
-  <circle cx="36" cy="32" r="1.5" fill="#10b981" opacity="0.3"/>
+  <!-- Streaming dots - Blue gradient -->
+  <circle cx="36" cy="20" r="1.5" fill="#60A5FA"/>
+  <circle cx="36" cy="26" r="1.5" fill="#60A5FA" opacity="0.6"/>
+  <circle cx="36" cy="32" r="1.5" fill="#60A5FA" opacity="0.3"/>
 </svg>
-

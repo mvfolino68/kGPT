@@ -3,7 +3,6 @@
 import json
 import time
 import uuid
-from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -23,6 +22,7 @@ from kgpt.api.schemas import (
     UpdateSessionRequest,
 )
 from kgpt.db.database import get_db
+from kgpt.services import ChatStreamRequest, generate_sse_stream
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -58,327 +58,6 @@ async def send_message(request: ChatRequest) -> ChatResponse:
         )
 
 
-def generate_suggested_actions(
-    message: str,
-    cluster_context: dict | None = None,
-    admin_result: dict | None = None,
-) -> list[dict]:
-    """Generate contextual suggested actions based on the query and cluster state."""
-    actions = []
-    message_lower = message.lower()
-
-    # After admin operation, suggest related follow-ups
-    if admin_result:
-        operation = admin_result.get("operation", "")
-        success = admin_result.get("success", False)
-
-        if success:
-            if operation == "delete_topic":
-                actions.append(
-                    {
-                        "id": "list-topics",
-                        "label": "List remaining topics",
-                        "type": "query",
-                        "value": "List all topics in the cluster",
-                        "icon": "📋",
-                    }
-                )
-            elif operation == "create_topic":
-                topic = admin_result.get("topic", "")
-                if topic:
-                    actions.append(
-                        {
-                            "id": "describe-new-topic",
-                            "label": f"Describe '{topic}'",
-                            "type": "query",
-                            "value": f"Describe the configuration of topic {topic}",
-                            "icon": "🔍",
-                        }
-                    )
-            elif operation == "alter_topic_config":
-                topic = admin_result.get("topic", "")
-                if topic:
-                    actions.append(
-                        {
-                            "id": "verify-config",
-                            "label": f"Verify '{topic}' config",
-                            "type": "query",
-                            "value": f"Show the current configuration of topic {topic}",
-                            "icon": "✅",
-                        }
-                    )
-        else:
-            # On failure, suggest checking cluster status
-            actions.append(
-                {
-                    "id": "check-cluster",
-                    "label": "Check cluster status",
-                    "type": "query",
-                    "value": "Show cluster status and health",
-                    "icon": "🔧",
-                }
-            )
-
-        return actions[:3]
-
-    # Cluster-related suggestions
-    if cluster_context:
-        topics = cluster_context.get("topics", [])
-        consumer_groups = cluster_context.get("consumer_groups", [])
-
-        if "topic" in message_lower and topics:
-            # Suggest exploring specific topics
-            if len(topics) > 0:
-                actions.append(
-                    {
-                        "id": "describe-topic",
-                        "label": f"Describe topic '{topics[0]}'",
-                        "type": "query",
-                        "value": f"Describe the configuration of topic {topics[0]}",
-                        "icon": "📋",
-                    }
-                )
-
-        # Suggest admin operations for topics
-        if "delete" in message_lower or "remove" in message_lower:
-            if topics and len(topics) > 0:
-                # Find the topic mentioned in the message
-                mentioned_topic = next((t for t in topics if t.lower() in message_lower), topics[0])
-                actions.append(
-                    {
-                        "id": "confirm-delete",
-                        "label": f"Delete topic '{mentioned_topic}'",
-                        "type": "operation",
-                        "value": f"Delete the topic {mentioned_topic}",
-                        "icon": "🗑️",
-                    }
-                )
-
-        if "create" in message_lower and "topic" in message_lower:
-            actions.append(
-                {
-                    "id": "create-topic",
-                    "label": "Create new topic",
-                    "type": "operation",
-                    "value": "Create a new topic called my-topic with 3 partitions",
-                    "icon": "➕",
-                }
-            )
-
-        if "consumer" in message_lower or "lag" in message_lower:
-            if consumer_groups:
-                actions.append(
-                    {
-                        "id": "check-lag",
-                        "label": "Check consumer lag",
-                        "type": "query",
-                        "value": "Show consumer group lag for all groups",
-                        "icon": "⏱️",
-                    }
-                )
-
-        if "cluster" in message_lower or "status" in message_lower:
-            actions.append(
-                {
-                    "id": "list-topics",
-                    "label": "List all topics",
-                    "type": "query",
-                    "value": "List all topics with their partition counts",
-                    "icon": "📋",
-                }
-            )
-
-    # Documentation-related suggestions
-    if "producer" in message_lower:
-        actions.append(
-            {
-                "id": "producer-config",
-                "label": "Producer configurations",
-                "type": "query",
-                "value": "What are the most important producer configurations?",
-                "icon": "⚙️",
-            }
-        )
-    if "consumer" in message_lower and "lag" not in message_lower:
-        actions.append(
-            {
-                "id": "consumer-config",
-                "label": "Consumer configurations",
-                "type": "query",
-                "value": "What are the most important consumer configurations?",
-                "icon": "⚙️",
-            }
-        )
-
-    return actions[:3]  # Limit to 3 suggestions
-
-
-async def generate_sse_stream(
-    message: str, history: list[dict], session_id: str | None = None
-) -> AsyncGenerator[str, None]:
-    """Generate SSE events for streaming chat response with agent activity visibility."""
-    from kgpt.agents import get_orchestrator
-
-    orchestrator = get_orchestrator()
-    response_id = f"chatcmpl-{uuid.uuid4().hex[:8]}"
-    created = int(time.time())
-    full_response = ""
-    citations = []
-    cluster_context = None
-    admin_result = None
-
-    # Save user message to session if provided
-    if session_id:
-        db = get_db()
-        db.add_chat_message(session_id, "user", message)
-
-    try:
-        # Send initial thinking stage
-        yield f"data: {json.dumps({'stage': 'Analyzing query...'})}\n\n"
-
-        # Use the streaming query method with stage updates and agent events
-        async for chunk in orchestrator.query_stream_with_stages(message, history):
-            if isinstance(chunk, dict):
-                # Handle stage updates
-                if chunk.get("stage") is not None:
-                    yield f"data: {json.dumps({'stage': chunk['stage']})}\n\n"
-                    continue
-
-                # Handle agent events (for educational sidebar)
-                if chunk.get("agent_event"):
-                    yield f"data: {json.dumps({'agent_event': chunk['agent_event']})}\n\n"
-                    continue
-
-                # Handle routing decision (for educational visibility)
-                if chunk.get("routing_decision"):
-                    yield f"data: {json.dumps({'routing_decision': chunk['routing_decision']})}\n\n"
-                    continue
-
-                # Handle retrieval results (for educational visibility)
-                if chunk.get("retrieval_results"):
-                    yield f"data: {json.dumps({'retrieval_results': chunk['retrieval_results']})}\n\n"
-                    continue
-
-                # Handle validation results (for educational visibility)
-                if chunk.get("validation_results"):
-                    yield f"data: {json.dumps({'validation_results': chunk['validation_results']})}\n\n"
-                    continue
-
-                # Handle cluster context
-                if chunk.get("cluster_context"):
-                    cluster_context = chunk["cluster_context"]
-                    yield f"data: {json.dumps({'cluster_context': cluster_context})}\n\n"
-                    continue
-
-                # Handle admin operation result
-                if chunk.get("admin_result"):
-                    admin_result = chunk["admin_result"]
-                    yield f"data: {json.dumps({'admin_result': admin_result})}\n\n"
-                    continue
-
-                # Final chunk with citations
-                if chunk.get("citations") is not None:
-                    citations = chunk["citations"]
-
-                    # Send citations to frontend
-                    if citations:
-                        yield f"data: {json.dumps({'citations': citations})}\n\n"
-
-                    # Send finish event
-                    finish_event = {
-                        "id": response_id,
-                        "object": "chat.completion.chunk",
-                        "created": created,
-                        "model": "kgpt",
-                        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
-                    }
-                    yield f"data: {json.dumps(finish_event)}\n\n"
-
-                    # Generate and send suggested actions
-                    actions = generate_suggested_actions(message, cluster_context, admin_result)
-                    if actions:
-                        yield f"data: {json.dumps({'actions': actions})}\n\n"
-
-                    yield "data: [DONE]\n\n"
-
-                    # Save assistant response to session
-                    if session_id and full_response:
-                        db = get_db()
-                        db.add_chat_message(session_id, "assistant", full_response, citations)
-            else:
-                # Regular text chunk - ensure it's ALWAYS a string
-                text_chunk = ""
-
-                if isinstance(chunk, str):
-                    text_chunk = chunk
-                elif isinstance(chunk, (int, float)):
-                    text_chunk = str(chunk)
-                elif hasattr(chunk, "content"):
-                    # Handle AIMessageChunk or similar objects
-                    content = chunk.content
-                    if isinstance(content, str):
-                        text_chunk = content
-                    elif isinstance(content, list):
-                        # Handle content block format [{"type": "text", "text": "..."}]
-                        texts = []
-                        for item in content:
-                            if isinstance(item, str):
-                                texts.append(item)
-                            elif isinstance(item, dict):
-                                # Extract text from dict, ensuring it's a string
-                                if "text" in item and isinstance(item["text"], str):
-                                    texts.append(item["text"])
-                                elif "content" in item and isinstance(item["content"], str):
-                                    texts.append(item["content"])
-                        text_chunk = "".join(texts)
-                    elif isinstance(content, dict):
-                        # Handle dict content
-                        if "text" in content and isinstance(content["text"], str):
-                            text_chunk = content["text"]
-                        elif "content" in content and isinstance(content["content"], str):
-                            text_chunk = content["content"]
-                    # Skip any other content types silently
-                # Skip unrecognized chunk types silently
-
-                if not text_chunk:
-                    continue
-
-                full_response += text_chunk
-                event = {
-                    "id": response_id,
-                    "object": "chat.completion.chunk",
-                    "created": created,
-                    "model": "kgpt",
-                    "choices": [
-                        {"index": 0, "delta": {"content": text_chunk}, "finish_reason": None}
-                    ],
-                }
-                yield f"data: {json.dumps(event)}\n\n"
-
-    except Exception as e:
-        logger.error(f"Streaming error: {e}")
-        error_msg = f"Error: {str(e)}"
-        error_event = {
-            "id": response_id,
-            "object": "chat.completion.chunk",
-            "created": created,
-            "model": "kgpt",
-            "choices": [{"index": 0, "delta": {"content": error_msg}, "finish_reason": "stop"}],
-        }
-        yield f"data: {json.dumps(error_event)}\n\n"
-        yield "data: [DONE]\n\n"
-
-        if session_id:
-            db = get_db()
-            db.add_chat_message(session_id, "assistant", full_response + error_msg)
-
-
-class ChatStreamRequest(ChatRequest):
-    """Request for streaming chat with optional session persistence."""
-
-    session_id: str | None = None
-
-
 @router.post("/stream")
 async def stream_message(request: ChatStreamRequest) -> StreamingResponse:
     """
@@ -392,10 +71,36 @@ async def stream_message(request: ChatStreamRequest) -> StreamingResponse:
     - type: 'done' - Stream complete
     - type: 'error' - An error occurred
     """
-    chat_history = [{"role": msg.role, "content": msg.content} for msg in request.history]
+    # ChatStreamRequest.history is list[dict], handle accordingly
+    chat_history = [
+        {"role": msg.get("role", ""), "content": msg.get("content", "")} for msg in request.history
+    ]
+
+    async def error_wrapper():
+        """Wrapper to catch exceptions during stream generation."""
+        try:
+            async for chunk in generate_sse_stream(
+                request.message, chat_history, request.session_id
+            ):
+                yield chunk
+        except Exception as e:
+            logger.error(f"Streaming error in wrapper: {e}", exc_info=True)
+            # Send error event
+            response_id = f"chatcmpl-{uuid.uuid4().hex[:8]}"
+            created = int(time.time())
+            error_msg = f"Error: {str(e)}"
+            error_event = {
+                "id": response_id,
+                "object": "chat.completion.chunk",
+                "created": created,
+                "model": "kgpt",
+                "choices": [{"index": 0, "delta": {"content": error_msg}, "finish_reason": "stop"}],
+            }
+            yield f"data: {json.dumps(error_event)}\n\n"
+            yield "data: [DONE]\n\n"
 
     return StreamingResponse(
-        generate_sse_stream(request.message, chat_history, request.session_id),
+        error_wrapper(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

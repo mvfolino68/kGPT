@@ -9,3 +9,10 @@ export { default as RetroButton } from './RetroButton.svelte';
 export { default as RetroHeader } from './RetroHeader.svelte';
 export { default as StatusIndicator } from './StatusIndicator.svelte';
 
+// Chat components
+export * from './chat';
+
+// Source components
+export { SourcesPanel, SourceItem, SourceDrawer } from './sources';
+export type { Source, SourceGroup, SourceMetadata } from './sources';
+

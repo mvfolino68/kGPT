@@ -16,7 +16,7 @@
 	}: Props = $props();
 
 	const statusColors = {
-		active: 'led-green',
+		active: 'led-blue',
 		inactive: 'led-off',
 		warning: 'led-amber',
 		error: 'led-red',
@@ -36,3 +36,4 @@
 		<span class="text-sm font-mono text-surface-400">{label}</span>
 	{/if}
 </div>
+

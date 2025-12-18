@@ -24,11 +24,32 @@ class ChatRequest(BaseModel):
     history: list[ChatMessage] = Field(default=[], description="Previous chat messages")
 
 
+class CitationMetadata(BaseModel):
+    """Additional metadata for educational source display."""
+
+    collection: str | None = None
+    similarity_score: float | None = None
+    rerank_score: float | None = None
+    published_date: str | None = None
+    search_query: str | None = None
+
+
+class CitationObject(BaseModel):
+    """A structured citation with metadata for educational display."""
+
+    title: str
+    url: str
+    type: str = "doc"  # "doc" or "web" or "cluster"
+    content_preview: str | None = None
+    relevance_score: float | None = None
+    metadata: CitationMetadata | None = None
+
+
 class ChatResponse(BaseModel):
     """Response from a chat request."""
 
     answer: str = Field(..., description="Assistant's response")
-    citations: list[str] = Field(default=[], description="Source citations")
+    citations: list[str | CitationObject] = Field(default=[], description="Source citations")
     error: str | None = Field(default=None, description="Error message if any")
 
 
@@ -41,6 +62,16 @@ class ChatSession(BaseModel):
     updated_at: datetime | None = None
 
 
+class AgentTraceData(BaseModel):
+    """Agent pipeline trace data for educational visibility."""
+
+    routing_decision: dict | None = None
+    retrieval_results: dict | None = None
+    validation_results: dict | None = None
+    web_search_results: dict | None = None
+    agent_timeline: list[dict] = Field(default_factory=list)
+
+
 class ChatSessionMessage(BaseModel):
     """A message within a chat session."""
 
@@ -48,7 +79,8 @@ class ChatSessionMessage(BaseModel):
     session_id: str
     role: str
     content: str
-    citations: list[str] = []
+    citations: list[str | CitationObject] = []
+    agent_trace: AgentTraceData | None = None
     created_at: datetime | None = None
 
 
@@ -183,22 +215,11 @@ class ClusterResponse(BaseModel):
 # ============================================================================
 
 
-class LLMProviderEnum(str, Enum):
-    """LLM provider options."""
-
-    OPENAI = "openai"
-    ANTHROPIC = "anthropic"
-    OLLAMA = "ollama"
-    OPENROUTER = "openrouter"
-
-
 class EmbeddingProviderEnum(str, Enum):
     """Embedding provider options."""
 
     OPENAI = "openai"
     FASTEMBED = "fastembed"
-    OLLAMA = "ollama"
-    COHERE = "cohere"
 
 
 class KeyStatus(BaseModel):
@@ -212,25 +233,30 @@ class KeyStatus(BaseModel):
 class SettingsResponse(BaseModel):
     """Current application settings."""
 
-    llm_provider: str
+    # LLM settings (OpenAI only)
+    llm_provider: str = "openai"
     llm_model: str
+
+    # Embedding settings
     embedding_provider: str
     embedding_model: str
+
+    # Vector store settings
     qdrant_url: str
     qdrant_collection: str
-    ollama_host: str
+
+    # Web search settings
+    web_search_enabled: bool = True
 
     # Key status with source information
     openai_key: KeyStatus = Field(default_factory=KeyStatus)
-    anthropic_key: KeyStatus = Field(default_factory=KeyStatus)
-    openrouter_key: KeyStatus = Field(default_factory=KeyStatus)
+    exa_key: KeyStatus = Field(default_factory=KeyStatus)
     cohere_key: KeyStatus = Field(default_factory=KeyStatus)
     huggingface_token: KeyStatus = Field(default_factory=KeyStatus)
 
     # Legacy fields for backwards compatibility
     has_openai_key: bool = False
-    has_anthropic_key: bool = False
-    has_openrouter_key: bool = False
+    has_exa_key: bool = False
     has_cohere_key: bool = False
     has_huggingface_token: bool = False
 
@@ -240,8 +266,6 @@ class ValidateKeyRequest(BaseModel):
 
     provider: str
     api_key: str
-    # Optional override for providers that don't use API keys (e.g. Ollama)
-    ollama_host: str | None = None
 
 
 class ValidateKeyResponse(BaseModel):
@@ -261,11 +285,10 @@ class SettingsUpdateRequest(BaseModel):
     embedding_provider: str | None = None
     embedding_model: str | None = None
     openai_api_key: str | None = None
-    anthropic_api_key: str | None = None
-    openrouter_api_key: str | None = None
+    exa_api_key: str | None = None
     cohere_api_key: str | None = None
     huggingface_token: str | None = None
-    ollama_host: str | None = None
+    web_search_enabled: bool | None = None
 
 
 # ============================================================================
@@ -316,7 +339,7 @@ class AgentEvent(BaseModel):
     """Event emitted when an agent starts or completes."""
 
     agent: str = Field(
-        ..., description="Agent name: router, retrieval, kafka, admin, validation, synthesis"
+        ..., description="Agent name: router, retrieval, kafka, admin, web_search, synthesis"
     )
     status: str = Field(..., description="Status: started, completed, error")
     description: str | None = None
@@ -332,6 +355,7 @@ class RoutingDecision(BaseModel):
     sub_goals: list[str] = Field(default_factory=list)
     needs_cluster: bool = False
     needs_retrieval: bool = False
+    needs_web_search: bool = False
     needs_admin: bool = False
 
 
@@ -352,26 +376,9 @@ class RetrievalResults(BaseModel):
 
     docs: list[RetrievalResultItem] = Field(default_factory=list)
     total: int = 0
-    queries_expanded: int = 1
+    queries_used: int = 1
     reranked: bool = False
     reranking_model: str | None = None
-
-
-class ValidationResultItem(BaseModel):
-    """Validation result for a single document."""
-
-    source: str
-    is_relevant: bool
-    confidence: float
-    reasoning: str | None = None
-
-
-class ValidationResults(BaseModel):
-    """Results from the validation agent."""
-
-    validated: int = 0
-    filtered: int = 0
-    results: list[ValidationResultItem] = Field(default_factory=list)
 
 
 # ============================================================================

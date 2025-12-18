@@ -21,7 +21,7 @@
 
 		// Enhanced blockquote rendering
 		renderer.blockquote = (quote: string) => {
-			return `<blockquote class="border-l-4 border-emerald-500/30 pl-4 py-2 my-4 bg-surface-900/50 rounded-r-lg italic text-surface-300">${quote}</blockquote>`;
+			return `<blockquote class="border-l-4 border-blue-500/30 pl-4 py-2 my-4 bg-surface-900/50 rounded-r-lg italic text-surface-300">${quote}</blockquote>`;
 		};
 
 		// Enhanced list rendering
@@ -126,7 +126,7 @@
 	}
 
 	.formatted-message :global(code:not(pre code)) {
-		@apply text-emerald-400 bg-surface-800/80 px-1.5 py-0.5 rounded-md text-sm font-mono before:content-none after:content-none;
+		@apply text-blue-400 bg-surface-800/80 px-1.5 py-0.5 rounded-md text-sm font-mono before:content-none after:content-none;
 	}
 
 	.formatted-message :global(pre) {
@@ -159,7 +159,7 @@
 	}
 
 	.formatted-message :global(blockquote) {
-		@apply border-l-4 border-emerald-500/30 pl-4 py-2 my-4 bg-surface-900/50 rounded-r-lg italic text-surface-300;
+		@apply border-l-4 border-blue-500/30 pl-4 py-2 my-4 bg-surface-900/50 rounded-r-lg italic text-surface-300;
 	}
 
 	.formatted-message :global(table) {
@@ -182,4 +182,5 @@
 		@apply border-b border-white/5;
 	}
 </style>
+
 

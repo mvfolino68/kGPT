@@ -38,13 +38,13 @@
 	<!-- Retro Sidebar -->
 	<aside class="w-60 bg-surface-900/80 backdrop-blur-xl flex flex-col border-r retro-border">
 		<!-- Logo Header -->
-		<div class="px-5 py-4 border-b retro-border-green">
+		<div class="px-5 py-4 border-b retro-border-blue">
 			<div class="flex items-center gap-3">
-				<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center border retro-border-green">
+				<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center border retro-border-blue data-stream-glow">
 					<img src={kgptLogo} alt="kGPT" class="w-6 h-6" />
 				</div>
 				<div>
-					<h1 class="text-lg font-bold font-mono text-emerald-400 text-glow-green leading-tight tracking-tight">kGPT</h1>
+					<h1 class="text-lg font-bold font-mono text-confluent-primary text-glow-blue leading-tight tracking-tight">kGPT</h1>
 					<p class="text-[10px] font-mono text-surface-500 tracking-wider uppercase">kafka + ai</p>
 				</div>
 			</div>
@@ -58,11 +58,11 @@
 					href={item.href}
 					class="flex items-center gap-3 px-4 py-3 font-mono text-sm rounded transition-all duration-200
 						{isActive
-						? 'bg-emerald-500/10 text-emerald-400 border retro-border-green shadow-lg shadow-emerald-500/10'
+						? 'bg-blue-500/10 text-confluent-primary border retro-border-blue shadow-lg shadow-blue-500/10'
 						: 'text-surface-400 hover:bg-surface-800/60 hover:text-surface-200 border border-transparent'}"
 				>
 					<!-- Retro bracket indicator for active -->
-					<span class="w-4 text-xs {isActive ? 'text-emerald-400' : 'text-transparent'}">
+					<span class="w-4 text-xs {isActive ? 'text-confluent-primary' : 'text-transparent'}">
 						{isActive ? '[' : ''}
 					</span>
 
@@ -92,7 +92,7 @@
 
 					<span class="flex-1">{item.label}</span>
 
-					<span class="w-4 text-xs {isActive ? 'text-emerald-400' : 'text-transparent'}">
+					<span class="w-4 text-xs {isActive ? 'text-confluent-primary' : 'text-transparent'}">
 						{isActive ? ']' : ''}
 					</span>
 				</a>

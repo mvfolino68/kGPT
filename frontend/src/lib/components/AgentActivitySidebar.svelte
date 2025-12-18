@@ -1,22 +1,27 @@
 <script lang="ts">
 	import {
-		currentAgentTrace,
+		displayedAgentTrace,
+		selectedMessageId,
 		showAgentActivity,
 		toggleAgentActivity,
+		selectMessageForTrace,
+		isProcessing,
 		type AgentActivity,
 		type RoutingDecision,
 		type RetrievalResults,
-		type ValidationResults
+		type ValidationResults,
+		type WebSearchResults
 	} from '$lib/stores/chat';
 
 	// Agent display configuration
 	const agentConfig: Record<string, { label: string; icon: string; color: string }> = {
 		router: { label: 'Router', icon: 'M13 10V3L4 14h7v7l9-11h-7z', color: 'text-violet-400' },
 		retrieval: { label: 'Retrieval', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', color: 'text-blue-400' },
-		kafka: { label: 'Kafka', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', color: 'text-emerald-400' },
+		kafka: { label: 'Kafka', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', color: 'text-blue-400' },
 		admin: { label: 'Admin', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z', color: 'text-amber-400' },
+		web_search: { label: 'Web Search', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', color: 'text-blue-400' },
 		validation: { label: 'Validation', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-cyan-400' },
-		synthesis: { label: 'Synthesis', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', color: 'text-emerald-400' },
+		synthesis: { label: 'Synthesis', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', color: 'text-cyan-400' },
 		error: { label: 'Error', icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z', color: 'text-red-400' }
 	};
 
@@ -41,46 +46,86 @@
 
 	let expandedSections = $state<Record<string, boolean>>({});
 
-	function toggleSection(section: string) {
-		expandedSections[section] = !expandedSections[section];
+	function toggleSection(section: string, event?: MouseEvent) {
+		if (event) {
+			event.stopPropagation();
+		}
+		const current = expandedSections[section] ?? false;
+		expandedSections = { ...expandedSections, [section]: !current };
 	}
 
 	// Reactive data from store
-	let trace = $derived($currentAgentTrace);
+	let trace = $derived($displayedAgentTrace);
 	let isVisible = $derived($showAgentActivity);
+	let isViewingHistory = $derived($selectedMessageId !== null);
+	let isStreaming = $derived($isProcessing);
+
+	function handleClearSelection() {
+		selectMessageForTrace(null);
+	}
 </script>
 
 {#if isVisible}
 	<aside class="w-80 bg-surface-900/70 backdrop-blur-xl border-l retro-border flex flex-col overflow-hidden">
 		<!-- Header -->
 		<div class="p-4 border-b retro-border flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+			<div class="flex items-center gap-2 flex-1 min-w-0">
+				<svg class="w-4 h-4 {isViewingHistory ? 'text-violet-400' : 'text-confluent-primary'} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+					{#if isViewingHistory}
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+					{:else}
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+					{/if}
 				</svg>
-				<span class="text-[11px] font-bold font-mono text-surface-400 uppercase tracking-[0.15em]">Agent Pipeline</span>
+				<div class="flex flex-col min-w-0">
+					<span class="text-[11px] font-bold font-mono text-surface-400 uppercase tracking-[0.15em]">
+						{isViewingHistory ? 'Saved Trace' : 'Agent Pipeline'}
+					</span>
+					{#if isViewingHistory}
+						<span class="text-[9px] font-mono text-violet-400 truncate">Click message to view its trace</span>
+					{:else if isStreaming}
+						<span class="text-[9px] font-mono text-confluent-primary animate-pulse">Live</span>
+					{/if}
+				</div>
 			</div>
-			<button
-				type="button"
-				onclick={toggleAgentActivity}
-				class="retro-button px-1.5 py-1 text-surface-500 hover:text-surface-300"
-				aria-label="Close agent activity"
-			>
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-				</svg>
-			</button>
+			<div class="flex items-center gap-1">
+				{#if isViewingHistory}
+					<button
+						type="button"
+						onclick={handleClearSelection}
+						class="retro-button px-2 py-1 text-[10px] font-mono text-violet-400 hover:text-violet-300"
+						aria-label="Show live trace"
+					>
+						Live
+					</button>
+				{/if}
+				<button
+					type="button"
+					onclick={toggleAgentActivity}
+					class="retro-button px-1.5 py-1 text-surface-500 hover:text-surface-300"
+					aria-label="Close agent activity"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
 		</div>
 
 		<!-- Content -->
 		<div class="flex-1 overflow-y-auto p-4 space-y-4">
-			{#if trace.agentTimeline.length === 0}
+			{#if trace.agentTimeline.length === 0 && !trace.routingDecision}
 				<div class="text-center py-8 text-surface-500 text-sm">
 					<svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
 					</svg>
-					<p class="font-mono">No agent activity yet</p>
-					<p class="text-xs text-surface-600 mt-1 font-mono">Send a message to see the pipeline</p>
+					{#if isViewingHistory}
+						<p class="font-mono">No trace data saved</p>
+						<p class="text-xs text-surface-600 mt-1 font-mono">Older messages may not have trace data</p>
+					{:else}
+						<p class="font-mono">No agent activity yet</p>
+						<p class="text-xs text-surface-600 mt-1 font-mono">Send a message to see the pipeline</p>
+					{/if}
 				</div>
 			{:else}
 				<!-- Agent Timeline -->
@@ -91,7 +136,7 @@
 						<div class="retro-card rounded-lg overflow-hidden hover:bg-surface-800/60 transition-colors">
 							<button
 								type="button"
-								onclick={() => toggleSection(activity.agent)}
+								onclick={(e) => toggleSection(activity.agent, e)}
 								class="w-full px-3 py-2.5 flex items-center gap-3"
 							>
 								<!-- Status indicator with LED -->
@@ -138,7 +183,7 @@
 					<div class="space-y-2">
 						<button
 							type="button"
-							onclick={() => toggleSection('routing')}
+							onclick={(e) => toggleSection('routing', e)}
 							class="w-full flex items-center gap-2 text-xs font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 transition-colors"
 						>
 							<svg
@@ -177,10 +222,13 @@
 								{/if}
 								<div class="flex flex-wrap gap-2 pt-1">
 									{#if trace.routingDecision.needs_cluster}
-										<span class="px-2 py-0.5 text-xs rounded bg-emerald-500/20 text-emerald-400">cluster</span>
+										<span class="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400">cluster</span>
 									{/if}
 									{#if trace.routingDecision.needs_retrieval}
 										<span class="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400">retrieval</span>
+									{/if}
+									{#if trace.routingDecision.needs_web_search}
+										<span class="px-2 py-0.5 text-xs rounded bg-blue-500/20 text-blue-400">web search</span>
 									{/if}
 									{#if trace.routingDecision.needs_admin}
 										<span class="px-2 py-0.5 text-xs rounded bg-amber-500/20 text-amber-400">admin</span>
@@ -196,7 +244,7 @@
 					<div class="space-y-2">
 						<button
 							type="button"
-							onclick={() => toggleSection('retrieval')}
+							onclick={(e) => toggleSection('retrieval', e)}
 							class="w-full flex items-center gap-2 text-xs font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 transition-colors"
 						>
 							<svg
@@ -241,12 +289,54 @@
 					</div>
 				{/if}
 
+				<!-- Web Search Results -->
+				{#if trace.webSearchResults}
+					<div class="space-y-2">
+						<button
+							type="button"
+							onclick={(e) => toggleSection('web_search', e)}
+							class="w-full flex items-center gap-2 text-xs font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 transition-colors"
+						>
+							<svg
+								class="w-3 h-3 transition-transform {expandedSections['web_search'] ? 'rotate-90' : ''}"
+								fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+							</svg>
+							Web Search ({trace.webSearchResults.total} results)
+						</button>
+
+						{#if expandedSections['web_search']}
+							<div class="bg-surface-800/60 rounded-lg border border-blue-500/20 p-3 space-y-2 max-h-64 overflow-y-auto">
+								{#each trace.webSearchResults.results as result}
+									<a
+										href={result.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="block p-2 rounded bg-surface-900/60 hover:bg-surface-800/60 transition-colors border border-white/5 hover:border-blue-500/30"
+									>
+										<div class="text-xs font-mono text-blue-300 truncate mb-1">{result.title}</div>
+										<div class="text-[10px] font-mono text-surface-500 truncate">{result.url}</div>
+										{#if result.highlights && result.highlights.length > 0}
+											<div class="mt-1.5 text-xs text-surface-400 line-clamp-2">
+												{#each result.highlights.slice(0, 1) as highlight}
+													<span>{highlight}</span>
+												{/each}
+											</div>
+										{/if}
+									</a>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				<!-- Validation Results -->
 				{#if trace.validationResults}
 					<div class="space-y-2">
 						<button
 							type="button"
-							onclick={() => toggleSection('validation')}
+							onclick={(e) => toggleSection('validation', e)}
 							class="w-full flex items-center gap-2 text-xs font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 transition-colors"
 						>
 							<svg

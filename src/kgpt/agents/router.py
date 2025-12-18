@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
 from kgpt.agents.state import AgentState
+from kgpt.agents.web_search import is_web_search_enabled
 from kgpt.llm import get_llm
 
 ROUTER_SYSTEM_PROMPT = """You are a senior technical router for a Kafka/Confluent expert system.
@@ -36,24 +37,46 @@ Use this when the user asks:
 - "What admin operations can you perform?"
 - "Help" or "How do I use this?"
 
+### Web Search (IMPORTANT - be proactive):
+Set needs_web_search=true for MOST knowledge questions. Only skip web search for:
+- Simple greetings or help requests
+- Questions about the user's OWN cluster state
+- Admin operations on the user's cluster
+- Very basic/fundamental concepts that don't change (e.g., "what is a topic?")
+
+Otherwise, DEFAULT to needs_web_search=true when:
+- ANY question about Kafka features, capabilities, or how things work
+- Questions about best practices, recommendations, or "how should I..."
+- Questions about troubleshooting, debugging, or error messages
+- Questions comparing approaches or asking "which is better"
+- Questions about performance, tuning, or optimization
+- Questions about specific versions, features, or releases
+- Questions about integrations with other tools
+- Any question where current/complete information would help
+
+The web provides up-to-date information that complements our documentation.
+When in doubt, search the web - it's better to have more context than less.
+
 ### Response Format:
 Respond with ONLY a valid JSON object, no other text. Fields:
 - "route": One of "retrieval", "kafka", "admin", "both", "direct", or "help"
 - "sub_goals": List of 1-3 specific sub-questions (empty list for "direct" or "help")
+- "needs_web_search": Boolean - whether to search the web for current info
 - "reasoning": Brief explanation of your routing choice
 
 Example:
-{{"route": "retrieval", "sub_goals": ["Kafka producer configuration options"], "reasoning": "Documentation lookup needed"}}
+{{"route": "retrieval", "sub_goals": ["Kafka producer configuration options"], "needs_web_search": true, "reasoning": "Documentation + web for current best practices"}}
+
+Example for simple greeting:
+{{"route": "direct", "sub_goals": [], "needs_web_search": false, "reasoning": "Simple greeting, no search needed"}}
 
 Example for admin:
-{{"route": "admin", "sub_goals": ["Delete topic orders"], "reasoning": "User wants to delete a topic from their cluster"}}
-
-Example for help:
-{{"route": "help", "sub_goals": [], "reasoning": "User is asking about available capabilities"}}"""
+{{"route": "admin", "sub_goals": ["Delete topic orders"], "needs_web_search": false, "reasoning": "User wants to delete a topic from their cluster"}}"""
 
 
 ROUTER_USER_PROMPT = """Question: {question}
 Has cluster connection: {has_cluster}
+Web search available: {web_search_available}
 
 Analyze the question and provide your routing decision:"""
 
@@ -87,7 +110,7 @@ def extract_json(text: str) -> dict:
 
 def create_router_agent():
     """Create the router agent chain."""
-    llm = get_llm(temperature=0)  # Router should be deterministic
+    llm = get_llm(temperature=0, streaming=False)  # Router should be deterministic
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -111,18 +134,22 @@ async def router_node(state: AgentState) -> dict:
     try:
         chain = create_router_agent()
 
-        # Check if we have a cluster connection (check global context, not state)
+        # Check if we have a cluster connection
         from kgpt.agents.kafka_agent import get_cluster_context
 
         cluster_context = get_cluster_context()
         has_cluster = cluster_context is not None
 
-        logger.info(f"Router: has_cluster={has_cluster}")
+        # Check if web search is available
+        web_search_available = is_web_search_enabled()
+
+        logger.debug(f"Router: has_cluster={has_cluster}, web_search={web_search_available}")
 
         response = await chain.ainvoke(
             {
                 "question": state["question"],
                 "has_cluster": "Yes" if has_cluster else "No",
+                "web_search_available": "Yes" if web_search_available else "No",
             }
         )
 
@@ -134,6 +161,7 @@ async def router_node(state: AgentState) -> dict:
         needs_cluster = route in ["kafka", "both", "admin"]
         needs_retrieval = route in ["retrieval", "both"]
         needs_admin = route == "admin"
+        needs_web_search = result.get("needs_web_search", False) and web_search_available
 
         # If no cluster connected but kafka/admin route requested, fall back to retrieval
         if needs_cluster and not has_cluster:
@@ -144,6 +172,7 @@ async def router_node(state: AgentState) -> dict:
                     "sub_goals": [],
                     "needs_cluster_context": False,
                     "needs_retrieval": False,
+                    "needs_web_search": False,
                     "needs_admin_operation": False,
                     "error": "No Kafka cluster connected. Please connect to a cluster in the Cluster page before performing admin operations.",
                 }
@@ -157,8 +186,9 @@ async def router_node(state: AgentState) -> dict:
 
         reasoning = result.get("reasoning", "")
         logger.info(
-            f"Router decision: route={route}, needs_cluster={needs_cluster}, "
-            f"needs_retrieval={needs_retrieval}, needs_admin={needs_admin}, sub_goals={result.get('sub_goals')}, reasoning={reasoning}"
+            f"Router decision: route={route}, cluster={needs_cluster}, "
+            f"retrieval={needs_retrieval}, web_search={needs_web_search}, "
+            f"admin={needs_admin}"
         )
 
         return {
@@ -167,6 +197,7 @@ async def router_node(state: AgentState) -> dict:
             "reasoning": reasoning,
             "needs_cluster_context": needs_cluster,
             "needs_retrieval": needs_retrieval,
+            "needs_web_search": needs_web_search,
             "needs_admin_operation": needs_admin,
         }
 
@@ -178,6 +209,8 @@ async def router_node(state: AgentState) -> dict:
             "sub_goals": [state["question"]],
             "needs_cluster_context": False,
             "needs_retrieval": True,
+            "needs_web_search": False,
+            "needs_admin_operation": False,
             "error": str(e),
         }
 

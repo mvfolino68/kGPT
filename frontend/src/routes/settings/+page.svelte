@@ -15,30 +15,17 @@
 	let error = $state<string | null>(null);
 	let success = $state<string | null>(null);
 
-	// Current active configuration
-	let activeProvider = $state('');
-	let activeModel = $state('');
+	// OpenAI state
+	let openaiConfigured = $state(false);
+	let openaiSource = $state<'env' | 'db' | null>(null);
+	let openaiValid = $state(false);
+	let openaiValidating = $state(false);
+	let openaiModels = $state<string[]>([]);
+	let openaiSelectedModel = $state('');
+	let openaiError = $state<string | null>(null);
 
-	// Provider state
-	interface ProviderConfig {
-		configured: boolean;
-		source: 'env' | 'db' | null;
-		validating: boolean;
-		valid: boolean;
-		models: string[];
-		selectedModel: string;
-		error: string | null;
-	}
-
-	let providerConfigs = $state<Record<string, ProviderConfig>>({
-		openai: { configured: false, source: null, validating: false, valid: false, models: [], selectedModel: '', error: null },
-		anthropic: { configured: false, source: null, validating: false, valid: false, models: [], selectedModel: '', error: null },
-		openrouter: { configured: false, source: null, validating: false, valid: false, models: [], selectedModel: '', error: null },
-		ollama: { configured: false, source: null, validating: false, valid: false, models: [], selectedModel: '', error: null }
-	});
-
-	// For adding/updating keys
-	let showAddKey = $state<string | null>(null);
+	// For adding/updating OpenAI key
+	let showAddKey = $state(false);
 	let isUpdatingKey = $state(false);
 	let newKeyInput = $state('');
 	let newKeyValidating = $state(false);
@@ -46,41 +33,33 @@
 	let newKeyModels = $state<string[]>([]);
 	let newKeySelectedModel = $state('');
 
-	// Ollama host
-	let ollamaHost = $state('http://ollama:11434');
-
 	// Embedding settings
 	let embeddingProvider = $state('fastembed');
 	let embeddingModel = $state('BAAI/bge-small-en-v1.5');
 	let huggingFaceToken = $state('');
 	let hasHuggingFaceToken = $state(false);
 
+	// Exa web search settings
+	let exaApiKey = $state('');
+	let hasExaApiKey = $state(false);
+	let webSearchEnabled = $state(true);
+
+	// Cohere reranking settings
+	let cohereApiKey = $state('');
+	let hasCohereApiKey = $state(false);
+
 	// Onboarding
 	let isOnboarding = $state(false);
-	let onboardingStep = $state(1);
-
-	const PROVIDERS: Record<string, { name: string; keyPrefix: string; docsUrl: string }> = {
-		openai: { name: 'OpenAI', keyPrefix: 'sk-', docsUrl: 'https://platform.openai.com/api-keys' },
-		anthropic: { name: 'Anthropic', keyPrefix: 'sk-ant-', docsUrl: 'https://console.anthropic.com/settings/keys' },
-		openrouter: { name: 'OpenRouter', keyPrefix: 'sk-or-', docsUrl: 'https://openrouter.ai/keys' },
-		ollama: { name: 'Ollama', keyPrefix: '', docsUrl: 'https://ollama.ai' }
-	};
 
 	const EMBEDDING_PROVIDERS = [
 		{ value: 'fastembed', label: 'FastEmbed (Local)' },
-		{ value: 'openai', label: 'OpenAI' },
-		{ value: 'ollama', label: 'Ollama' }
+		{ value: 'openai', label: 'OpenAI' }
 	];
 
 	const EMBEDDING_MODELS: Record<string, string[]> = {
 		fastembed: ['BAAI/bge-small-en-v1.5', 'BAAI/bge-base-en-v1.5', 'snowflake/arctic-embed-m'],
-		openai: ['text-embedding-3-small', 'text-embedding-3-large'],
-		ollama: ['nomic-embed-text', 'mxbai-embed-large']
+		openai: ['text-embedding-3-small', 'text-embedding-3-large']
 	};
-
-	const hasAnyProvider = $derived(
-		Object.values(providerConfigs).some(p => p.configured && p.valid)
-	);
 
 	async function loadSettings() {
 		loading = true;
@@ -88,40 +67,23 @@
 
 		try {
 			settings = await getSettings();
-			activeProvider = settings.llm_provider || '';
-			activeModel = settings.llm_model || '';
-			ollamaHost = settings.ollama_host || 'http://ollama:11434';
+			openaiSelectedModel = settings.llm_model || '';
 			embeddingProvider = settings.embedding_provider || 'fastembed';
 			embeddingModel = settings.embedding_model || 'BAAI/bge-small-en-v1.5';
 			hasHuggingFaceToken = settings.has_huggingface_token || false;
+			hasCohereApiKey = settings.has_cohere_key || false;
+			hasExaApiKey = settings.has_exa_key || false;
+			webSearchEnabled = settings.web_search_enabled ?? true;
 
-			// Check which providers are configured
-			const configuredProviders: string[] = [];
-
+			// Check if OpenAI is configured
 			if (settings.openai_key?.configured) {
-				providerConfigs = { ...providerConfigs, openai: { ...providerConfigs.openai, configured: true, source: settings.openai_key.source } };
-				configuredProviders.push('openai');
-			}
-			if (settings.anthropic_key?.configured) {
-				providerConfigs = { ...providerConfigs, anthropic: { ...providerConfigs.anthropic, configured: true, source: settings.anthropic_key.source } };
-				configuredProviders.push('anthropic');
-			}
-			if (settings.openrouter_key?.configured) {
-				providerConfigs = { ...providerConfigs, openrouter: { ...providerConfigs.openrouter, configured: true, source: settings.openrouter_key.source } };
-				configuredProviders.push('openrouter');
+				openaiConfigured = true;
+				openaiSource = settings.openai_key.source;
+				await validateOpenAI();
 			}
 
-			providerConfigs = { ...providerConfigs, ollama: { ...providerConfigs.ollama, configured: true, source: null } };
-
-			// Validate all configured providers
-			await Promise.all(configuredProviders.map(p => validateProvider(p)));
-			await validateProvider('ollama');
-
-			if (!activeProvider || !providerConfigs[activeProvider]?.valid) {
-				const validProvider = Object.entries(providerConfigs).find(([_, c]) => c.valid);
-				if (!validProvider) {
-					isOnboarding = true;
-				}
+			if (!openaiConfigured || !openaiValid) {
+				isOnboarding = true;
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to load settings';
@@ -130,80 +92,35 @@
 		}
 	}
 
-	async function validateProvider(provider: string) {
-		providerConfigs = { ...providerConfigs, [provider]: { ...providerConfigs[provider], validating: true, error: null } };
+	async function validateOpenAI() {
+		openaiValidating = true;
+		openaiError = null;
 
 		try {
-			const result =
-				provider === 'ollama'
-					? await validateApiKey(provider, '__USE_STORED__', { ollama_host: ollamaHost })
-					: await validateApiKey(provider, '__USE_STORED__');
-			providerConfigs = {
-				...providerConfigs,
-				[provider]: {
-					...providerConfigs[provider],
-					validating: false,
-					valid: result.valid,
-					models: result.models,
-					selectedModel: result.models.includes(activeModel) ? activeModel : (result.models[0] || ''),
-					error: result.valid ? null : result.message
-				}
-			};
+			const result = await validateApiKey('openai', '__USE_STORED__');
+			openaiValid = result.valid;
+			openaiModels = result.models;
+			if (result.models.length > 0) {
+				openaiSelectedModel = result.models.includes(openaiSelectedModel)
+					? openaiSelectedModel
+					: result.models[0];
+			}
+			openaiError = result.valid ? null : result.message;
 		} catch (e) {
-			providerConfigs = {
-				...providerConfigs,
-				[provider]: { ...providerConfigs[provider], validating: false, valid: false, error: e instanceof Error ? e.message : 'Failed' }
-			};
-		}
-	}
-
-	async function switchToProvider(provider: string) {
-		const config = providerConfigs[provider];
-		if (!config.valid || !config.selectedModel) return;
-
-		saving = true;
-		try {
-			const updates: Partial<Settings> = { llm_provider: provider, llm_model: config.selectedModel };
-			if (provider === 'ollama') updates.ollama_host = ollamaHost;
-			await updateSettings(updates);
-			activeProvider = provider;
-			activeModel = config.selectedModel;
-			success = `Switched to ${PROVIDERS[provider].name}`;
-			setTimeout(() => { success = null; }, 2000);
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed';
+			openaiValid = false;
+			openaiError = e instanceof Error ? e.message : 'Validation failed';
 		} finally {
-			saving = false;
-		}
-	}
-
-	async function updateModel() {
-		const config = providerConfigs[activeProvider];
-		if (!config || config.selectedModel === activeModel) return;
-
-		saving = true;
-		try {
-			await updateSettings({ llm_model: config.selectedModel });
-			activeModel = config.selectedModel;
-			success = 'Model updated';
-			setTimeout(() => { success = null; }, 2000);
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed';
-		} finally {
-			saving = false;
+			openaiValidating = false;
 		}
 	}
 
 	async function validateNewKey() {
-		if (!showAddKey || !newKeyInput.trim()) return;
+		if (!newKeyInput.trim()) return;
 		newKeyValidating = true;
 		newKeyError = null;
 
 		try {
-			const result =
-				showAddKey === 'ollama'
-					? await validateApiKey(showAddKey, newKeyInput.trim(), { ollama_host: ollamaHost })
-					: await validateApiKey(showAddKey, newKeyInput.trim());
+			const result = await validateApiKey('openai', newKeyInput.trim());
 			if (result.valid) {
 				newKeyModels = result.models;
 				newKeySelectedModel = result.models[0] || '';
@@ -218,23 +135,21 @@
 	}
 
 	async function saveNewKey() {
-		if (!showAddKey || !newKeyInput.trim() || !newKeySelectedModel) return;
+		if (!newKeyInput.trim() || !newKeySelectedModel) return;
 		saving = true;
 
 		try {
-			const updates: Partial<Settings> = { llm_provider: showAddKey, llm_model: newKeySelectedModel };
-			if (showAddKey === 'openai') updates.openai_api_key = newKeyInput.trim();
-			if (showAddKey === 'anthropic') updates.anthropic_api_key = newKeyInput.trim();
-			if (showAddKey === 'openrouter') updates.openrouter_api_key = newKeyInput.trim();
-
-			await updateSettings(updates);
-			providerConfigs = {
-				...providerConfigs,
-				[showAddKey]: { configured: true, source: 'db', validating: false, valid: true, models: newKeyModels, selectedModel: newKeySelectedModel, error: null }
-			};
-			activeProvider = showAddKey;
-			activeModel = newKeySelectedModel;
-			success = `${PROVIDERS[showAddKey].name} configured!`;
+			await updateSettings({
+				llm_provider: 'openai',
+				llm_model: newKeySelectedModel,
+				openai_api_key: newKeyInput.trim()
+			});
+			openaiConfigured = true;
+			openaiSource = 'db';
+			openaiValid = true;
+			openaiModels = newKeyModels;
+			openaiSelectedModel = newKeySelectedModel;
+			success = 'OpenAI API key saved!';
 			cancelAddKey();
 			isOnboarding = false;
 			setTimeout(() => { success = null; }, 2000);
@@ -246,7 +161,7 @@
 	}
 
 	function cancelAddKey() {
-		showAddKey = null;
+		showAddKey = false;
 		isUpdatingKey = false;
 		newKeyInput = '';
 		newKeyError = null;
@@ -254,8 +169,8 @@
 		newKeySelectedModel = '';
 	}
 
-	function startUpdateKey(provider: string) {
-		showAddKey = provider;
+	function startUpdateKey() {
+		showAddKey = true;
 		isUpdatingKey = true;
 		newKeyInput = '';
 		newKeyError = null;
@@ -263,11 +178,31 @@
 		newKeySelectedModel = '';
 	}
 
+	async function updateModel() {
+		if (!openaiSelectedModel) return;
+
+		saving = true;
+		try {
+			await updateSettings({ llm_model: openaiSelectedModel });
+			success = 'Model updated';
+			setTimeout(() => { success = null; }, 2000);
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed';
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function saveEmbeddingSettings() {
 		saving = true;
 		try {
-			const updates: Partial<Settings> = { embedding_provider: embeddingProvider, embedding_model: embeddingModel };
-			if (huggingFaceToken.trim()) updates.huggingface_token = huggingFaceToken.trim();
+			const updates: Partial<Settings> = {
+				embedding_provider: embeddingProvider,
+				embedding_model: embeddingModel
+			};
+			if (huggingFaceToken.trim()) {
+				updates.huggingface_token = huggingFaceToken.trim();
+			}
 			await updateSettings(updates);
 			hasHuggingFaceToken = hasHuggingFaceToken || !!huggingFaceToken.trim();
 			huggingFaceToken = '';
@@ -280,22 +215,53 @@
 		}
 	}
 
-	function selectModel(provider: string, model: string) {
-		providerConfigs = { ...providerConfigs, [provider]: { ...providerConfigs[provider], selectedModel: model } };
+	async function saveExaSettings() {
+		saving = true;
+		try {
+			const updates: Partial<Settings> = { web_search_enabled: webSearchEnabled };
+			if (exaApiKey.trim()) {
+				updates.exa_api_key = exaApiKey.trim();
+			}
+			await updateSettings(updates);
+			hasExaApiKey = hasExaApiKey || !!exaApiKey.trim();
+			exaApiKey = '';
+			success = 'Web search settings saved';
+			setTimeout(() => { success = null; }, 2000);
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed';
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function saveCohereSettings() {
+		saving = true;
+		try {
+			if (cohereApiKey.trim()) {
+				await updateSettings({ cohere_api_key: cohereApiKey.trim() });
+				hasCohereApiKey = true;
+				cohereApiKey = '';
+				success = 'Cohere API key saved';
+				setTimeout(() => { success = null; }, 2000);
+			}
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed';
+		} finally {
+			saving = false;
+		}
 	}
 
 	onMount(() => { loadSettings(); });
 </script>
 
 <div class="flex flex-col h-full bg-surface-950">
-	<!-- Retro Header -->
 	<RetroHeader path="kgpt/settings" flag="--configure">
 		{#snippet rightContent()}
-			{#if activeProvider && activeModel && !isOnboarding}
-				<div class="px-3 py-1.5 retro-card-glow-green rounded font-mono text-xs flex items-center gap-2">
+			{#if openaiValid && openaiSelectedModel && !isOnboarding}
+				<div class="px-3 py-1.5 retro-card-glow-blue rounded font-mono text-xs flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" pulse />
 					<span class="text-surface-500">active:</span>
-					<span class="text-emerald-400">{activeProvider}/{activeModel}</span>
+					<span class="text-confluent-primary">openai/{openaiSelectedModel}</span>
 				</div>
 			{/if}
 		{/snippet}
@@ -313,7 +279,7 @@
 			{#if success}
 				<div class="retro-card-glow-green rounded p-3 font-mono text-sm text-emerald-400 flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" />
-					<span class="text-emerald-500">✓</span> {success}
+					<span class="text-emerald-500">ok</span> {success}
 				</div>
 			{/if}
 
@@ -325,250 +291,120 @@
 					</div>
 				</RetroCard>
 
-			{:else if isOnboarding && !hasAnyProvider}
+			{:else if isOnboarding && !openaiValid}
 				<!-- ONBOARDING -->
 				<div class="space-y-6">
-					<RetroCard variant="glow-green" class="text-center py-6">
-						<h2 class="text-2xl font-bold font-mono text-emerald-400 mb-2 text-glow-green">WELCOME TO kGPT</h2>
-						<p class="text-surface-400 font-mono text-sm">Configure an LLM provider to get started</p>
-					</RetroCard>
+				<RetroCard variant="glow-blue" class="text-center py-6">
+					<h2 class="text-2xl font-bold font-mono text-confluent-primary mb-2 text-glow-blue">WELCOME TO kGPT</h2>
+					<p class="text-surface-400 font-mono text-sm">Configure your OpenAI API key to get started</p>
+				</RetroCard>
 
-					{#if !showAddKey}
-						<div class="space-y-2">
-							{#each Object.entries(PROVIDERS) as [key, provider]}
-								<RetroButton
-									onclick={() => { showAddKey = key; onboardingStep = 2; }}
-									class="w-full flex items-center gap-4 p-4 text-left font-mono justify-between"
-								>
-									<div class="flex-1">
-										<div class="text-surface-100 font-bold">{provider.name}</div>
-										<div class="text-xs text-surface-500">
-											{key === 'ollama' ? 'Local models, no API key' : 'Requires API key'}
-										</div>
-									</div>
-									<span class="text-emerald-400">→</span>
-								</RetroButton>
-							{/each}
-						</div>
-					{:else}
-						{@const provider = PROVIDERS[showAddKey]}
-						<RetroCard variant="glow-cyan">
-							<div class="flex items-center gap-3 border-b retro-border pb-3 mb-4">
-								<RetroButton size="sm" onclick={cancelAddKey}>← back</RetroButton>
-								<span class="text-surface-600 font-mono">|</span>
-								<span class="font-mono text-surface-100 uppercase tracking-wider">{provider.name}</span>
+					<RetroCard variant="glow-cyan">
+						<div class="space-y-4">
+							<div>
+								<label for="api-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">OpenAI API Key</label>
+								<input
+									id="api-key"
+									type="password"
+									bind:value={newKeyInput}
+									placeholder="sk-..."
+									class="w-full retro-input rounded"
+								/>
+								<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
+									# get key at platform.openai.com/api-keys
+								</a>
 							</div>
-
-							<div class="space-y-4">
-								{#if showAddKey === 'ollama'}
-									<div>
-										<label for="ollama-host" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Host</label>
-										<input id="ollama-host" type="text" bind:value={ollamaHost} placeholder="http://localhost:11434"
-											class="w-full retro-input rounded" />
-									</div>
+							{#if newKeyError}
+								<p class="text-sm font-mono text-red-400">{newKeyError}</p>
+							{/if}
+							{#if newKeyModels.length === 0}
+								<RetroButton
+									onclick={validateNewKey}
+									disabled={newKeyValidating || !newKeyInput.trim()}
+									variant="primary"
+									class="w-full"
+								>
+									{newKeyValidating ? 'validating...' : 'validate key'}
+								</RetroButton>
+							{:else}
+								<div class="space-y-3 pt-2 border-t border-surface-700">
+									<label for="new-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
+									<select id="new-model" bind:value={newKeySelectedModel} class="w-full retro-input rounded">
+										{#each newKeyModels as model}
+											<option value={model}>{model}</option>
+										{/each}
+									</select>
 									<RetroButton
-										onclick={() => validateProvider('ollama')}
-										disabled={providerConfigs.ollama.validating}
+										onclick={saveNewKey}
+										disabled={saving}
 										variant="primary"
 										class="w-full"
 									>
-										{providerConfigs.ollama.validating ? 'testing...' : 'test connection'}
+										{saving ? 'saving...' : 'save & continue'}
 									</RetroButton>
-									{#if providerConfigs.ollama.valid && providerConfigs.ollama.models.length > 0}
-										<div class="space-y-2">
-											<label for="ollama-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
-											<select id="ollama-model" bind:value={providerConfigs.ollama.selectedModel}
-												class="w-full retro-input rounded">
-												{#each providerConfigs.ollama.models as model}
-													<option value={model}>{model}</option>
-												{/each}
-											</select>
-											<RetroButton
-												onclick={() => { switchToProvider('ollama'); isOnboarding = false; }}
-												disabled={saving}
-												variant="primary"
-												class="w-full"
-											>
-												{saving ? 'saving...' : 'use ollama →'}
-											</RetroButton>
-										</div>
-									{:else if providerConfigs.ollama.error}
-										<div class="retro-card-glow-amber rounded p-3 flex items-center gap-2">
-											<StatusIndicator status="error" size="sm" />
-											<p class="text-sm font-mono text-red-400">{providerConfigs.ollama.error}</p>
-										</div>
-									{/if}
-								{:else}
-									<div>
-										<label for="api-key" class="block text-xs font-mono text-surface-500 mb-1">--api-key</label>
-										<input id="api-key" type="password" bind:value={newKeyInput} placeholder={provider.keyPrefix + '...'}
-											class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500" />
-										<a href={provider.docsUrl} target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-											# get key at {provider.docsUrl.replace('https://', '')}
-										</a>
-									</div>
-									{#if newKeyError}
-										<p class="text-sm font-mono text-red-400">{newKeyError}</p>
-									{/if}
-									{#if newKeyModels.length === 0}
-										<button onclick={validateNewKey} disabled={newKeyValidating || !newKeyInput.trim()}
-											class="w-full py-2 bg-surface-700 hover:bg-surface-600 text-surface-100 rounded font-mono text-sm disabled:opacity-50">
-											{newKeyValidating ? 'validating...' : 'validate key'}
-										</button>
-									{:else}
-										<div class="space-y-2 pt-2 border-t border-surface-700">
-											<label for="new-model" class="block text-xs font-mono text-surface-500">--model</label>
-											<select id="new-model" bind:value={newKeySelectedModel}
-												class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100">
-												{#each newKeyModels as model}
-													<option value={model}>{model}</option>
-												{/each}
-										</select>
-										<RetroButton
-											variant="primary"
-											class="w-full"
-											onclick={saveNewKey}
-											disabled={saving}
-										>
-											{saving ? 'saving...' : `use ${provider.name.toLowerCase()} →`}
-										</RetroButton>
-										</div>
-									{/if}
-								{/if}
-							</div>
-						</RetroCard>
-					{/if}
+								</div>
+							{/if}
+						</div>
+					</RetroCard>
 				</div>
 
 			{:else}
 				<!-- MAIN SETTINGS -->
 
-			<!-- Active Provider -->
-			{#if activeProvider && providerConfigs[activeProvider]?.valid}
-				{@const config = providerConfigs[activeProvider]}
-				<RetroCard variant="glow-green" noPadding>
-					<div class="px-4 py-2 border-b retro-border bg-emerald-900/10 flex items-center justify-between">
-						<div class="flex items-center gap-2">
-							<span class="font-mono text-surface-100">{PROVIDERS[activeProvider].name}</span>
-							<span class="text-xs px-1.5 py-0.5 bg-emerald-600 text-white rounded font-mono">active</span>
-							{#if config.source}
-								<span class="text-xs px-1.5 py-0.5 rounded font-mono {config.source === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
-									{config.source === 'env' ? 'env' : 'saved'}
+			<!-- OpenAI Configuration -->
+			<RetroCard variant="glow-blue" noPadding>
+				<div class="px-4 py-2 border-b retro-border bg-blue-900/10 flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="font-mono text-surface-100">OpenAI</span>
+						<span class="text-xs px-1.5 py-0.5 bg-blue-600 text-white rounded font-mono">active</span>
+							{#if openaiSource}
+								<span class="text-xs px-1.5 py-0.5 rounded font-mono {openaiSource === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
+									{openaiSource === 'env' ? 'env' : 'saved'}
 								</span>
 							{/if}
 						</div>
-						{#if activeProvider !== 'ollama'}
-							<RetroButton size="sm" onclick={() => startUpdateKey(activeProvider)}>
-								update key
-							</RetroButton>
-						{/if}
+						<RetroButton size="sm" onclick={startUpdateKey}>
+							update key
+						</RetroButton>
 					</div>
 					<div class="p-4">
-						<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
+						<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Model</label>
 						<div class="flex gap-2">
-							<select id="active-model" value={config.selectedModel} onchange={(e) => selectModel(activeProvider, e.currentTarget.value)}
-								class="flex-1 retro-input rounded">
-								{#each config.models as model}
+							<select
+								id="active-model"
+								bind:value={openaiSelectedModel}
+								class="flex-1 retro-input rounded"
+							>
+								{#each openaiModels as model}
 									<option value={model}>{model}</option>
 								{/each}
 							</select>
-							{#if config.selectedModel !== activeModel}
-								<RetroButton variant="primary" onclick={updateModel} disabled={saving}>
-									{saving ? '...' : 'update'}
-								</RetroButton>
-							{/if}
+							<RetroButton variant="primary" onclick={updateModel} disabled={saving}>
+								{saving ? '...' : 'update'}
+							</RetroButton>
 						</div>
 					</div>
 				</RetroCard>
-			{/if}
 
-			<!-- Other Providers -->
-			<RetroCard noPadding>
-				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-					<span class="text-blue-400 font-mono text-xs">></span>
-					<span class="font-mono text-sm text-surface-300">switch --provider</span>
-				</div>
-				<div class="divide-y divide-surface-700">
-						{#each Object.entries(PROVIDERS) as [key, provider]}
-							{#if key !== activeProvider}
-								{@const config = providerConfigs[key]}
-								<div class="p-4 flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<span class="font-mono text-surface-100">{provider.name}</span>
-										{#if config.configured && config.source}
-											<span class="text-xs px-1.5 py-0.5 rounded font-mono {config.source === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
-												{config.source === 'env' ? 'env' : 'saved'}
-											</span>
-										{/if}
-										{#if config.validating}
-											<span class="text-xs font-mono text-surface-500 animate-pulse">checking...</span>
-										{/if}
-									</div>
-
-									<div class="flex items-center gap-2">
-										{#if config.valid && config.models.length > 0}
-											<select bind:value={config.selectedModel}
-												class="px-2 py-1 bg-surface-900 border border-surface-600 rounded font-mono text-xs text-surface-100">
-												{#each config.models as model}
-													<option value={model}>{model}</option>
-												{/each}
-											</select>
-											<button onclick={() => switchToProvider(key)} disabled={saving}
-												class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded font-mono text-xs">
-												switch
-											</button>
-											{#if key !== 'ollama'}
-												<button onclick={() => startUpdateKey(key)}
-													class="px-2 py-1 text-xs font-mono text-surface-500 hover:text-surface-300 hover:bg-surface-700 rounded transition-colors">
-													update
-												</button>
-											{/if}
-										{:else if config.configured && !config.valid && !config.validating}
-											<span class="text-xs font-mono text-red-400">{config.error || 'error'}</span>
-											<button onclick={() => validateProvider(key)}
-												class="px-3 py-1 bg-surface-700 hover:bg-surface-600 text-surface-300 rounded font-mono text-xs">
-												retry
-											</button>
-											{#if key !== 'ollama'}
-												<button onclick={() => startUpdateKey(key)}
-													class="px-2 py-1 text-xs font-mono text-surface-500 hover:text-surface-300 hover:bg-surface-700 rounded transition-colors">
-													update
-												</button>
-											{/if}
-										{:else if !config.configured}
-											<button onclick={() => { showAddKey = key; }}
-												class="px-3 py-1 bg-surface-700 hover:bg-surface-600 text-surface-300 rounded font-mono text-xs">
-												add key
-											</button>
-										{/if}
-									</div>
-								</div>
-							{/if}
-					{/each}
-				</div>
-			</RetroCard>
-
-			<!-- Embeddings -->
-			<RetroCard noPadding>
-				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-					<span class="text-purple-400 font-mono text-xs">⚡</span>
-					<span class="font-mono text-sm text-surface-300">embeddings</span>
-				</div>
-				<div class="p-4 space-y-4">
-					<div class="grid grid-cols-2 gap-4">
-						<div>
-							<label for="embed-provider" class="block text-xs font-mono text-surface-500 mb-1">--provider</label>
-							<select id="embed-provider" bind:value={embeddingProvider}
-								class="w-full retro-input rounded">
-								{#each EMBEDDING_PROVIDERS as ep}
-									<option value={ep.value}>{ep.label}</option>
-								{/each}
-							</select>
+				<!-- Embeddings -->
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+						<span class="text-purple-400 font-mono text-xs">$</span>
+						<span class="font-mono text-sm text-surface-300">embeddings</span>
+					</div>
+					<div class="p-4 space-y-4">
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label for="embed-provider" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Provider</label>
+								<select id="embed-provider" bind:value={embeddingProvider} class="w-full retro-input rounded">
+									{#each EMBEDDING_PROVIDERS as ep}
+										<option value={ep.value}>{ep.label}</option>
+									{/each}
+								</select>
 							</div>
 							<div>
-								<label for="embed-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
-								<select id="embed-model" bind:value={embeddingModel}
-									class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500">
+								<label for="embed-model" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Model</label>
+								<select id="embed-model" bind:value={embeddingModel} class="w-full retro-input rounded">
 									{#each EMBEDDING_MODELS[embeddingProvider] || [] as em}
 										<option value={em}>{em}</option>
 									{/each}
@@ -578,104 +414,178 @@
 
 						{#if embeddingProvider === 'fastembed'}
 							<div>
-								<label for="hf-token" class="block text-xs font-mono text-surface-500 mb-1">
-									--huggingface-token
+								<label for="hf-token" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+									HuggingFace Token
 									{#if hasHuggingFaceToken}
-										<span class="text-emerald-400 ml-1">✓ set</span>
+										<span class="text-emerald-400 ml-1">[configured]</span>
 									{/if}
 								</label>
-								<input id="hf-token" type="password" bind:value={huggingFaceToken}
-									placeholder={hasHuggingFaceToken ? '••••••••  (leave empty to keep)' : 'hf_...'}
-									class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 placeholder-surface-600 focus:outline-none focus:border-emerald-500" />
-								<p class="text-xs font-mono text-surface-600 mt-1"># get at huggingface.co/settings/tokens</p>
+								<input
+									id="hf-token"
+									type="password"
+									bind:value={huggingFaceToken}
+									placeholder={hasHuggingFaceToken ? '(leave empty to keep current)' : 'hf_...'}
+									class="w-full retro-input rounded"
+								/>
+								<p class="text-xs font-mono text-surface-600 mt-1"># optional, for private models</p>
 							</div>
 						{/if}
 
-					<div class="flex justify-end">
-						<RetroButton variant="primary" onclick={saveEmbeddingSettings} disabled={saving}>
-							{saving ? 'saving...' : 'save embeddings'}
-						</RetroButton>
+						<div class="flex justify-end">
+							<RetroButton variant="primary" onclick={saveEmbeddingSettings} disabled={saving}>
+								{saving ? 'saving...' : 'save embeddings'}
+							</RetroButton>
+						</div>
 					</div>
-				</div>
-			</RetroCard>
+				</RetroCard>
 
-			<!-- Tips -->
-			<div class="text-xs font-mono text-surface-600 space-y-1">
-				<p># keys can be set via env vars (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)</p>
-				<p># for ollama in docker, use host: http://ollama:11434</p>
-			</div>
-		{/if}
+				<!-- Web Search (Exa) -->
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+						<span class="text-blue-400 font-mono text-xs">@</span>
+						<span class="font-mono text-sm text-surface-300">web search (Exa)</span>
+						{#if hasExaApiKey}
+							<span class="text-xs px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 rounded font-mono ml-auto">configured</span>
+						{/if}
+					</div>
+					<div class="p-4 space-y-4">
+						<div class="flex items-center gap-3">
+							<input
+								type="checkbox"
+								id="web-search-enabled"
+								bind:checked={webSearchEnabled}
+								class="w-4 h-4 rounded border-surface-600 bg-surface-900 text-emerald-500 focus:ring-emerald-500"
+							/>
+							<label for="web-search-enabled" class="text-sm font-mono text-surface-300">
+								Enable web search for real-time information
+							</label>
+						</div>
+
+						<div>
+							<label for="exa-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+								Exa API Key
+								{#if hasExaApiKey}
+									<span class="text-emerald-400 ml-1">[configured]</span>
+								{/if}
+							</label>
+							<input
+								id="exa-key"
+								type="password"
+								bind:value={exaApiKey}
+								placeholder={hasExaApiKey ? '(leave empty to keep current)' : 'exa-...'}
+								class="w-full retro-input rounded"
+							/>
+							<a href="https://dashboard.exa.ai/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
+								# get key at dashboard.exa.ai/api-keys
+							</a>
+						</div>
+
+						<div class="flex justify-end">
+							<RetroButton variant="primary" onclick={saveExaSettings} disabled={saving}>
+								{saving ? 'saving...' : 'save web search'}
+							</RetroButton>
+						</div>
+					</div>
+				</RetroCard>
+
+				<!-- Reranking (Cohere) -->
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+						<span class="text-amber-400 font-mono text-xs">#</span>
+						<span class="font-mono text-sm text-surface-300">reranking (Cohere)</span>
+						{#if hasCohereApiKey}
+							<span class="text-xs px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 rounded font-mono ml-auto">configured</span>
+						{/if}
+					</div>
+					<div class="p-4 space-y-4">
+						<p class="text-sm font-mono text-surface-500">
+							Cohere reranking improves retrieval quality by reordering search results.
+						</p>
+
+						<div>
+							<label for="cohere-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+								Cohere API Key
+								{#if hasCohereApiKey}
+									<span class="text-emerald-400 ml-1">[configured]</span>
+								{/if}
+							</label>
+							<input
+								id="cohere-key"
+								type="password"
+								bind:value={cohereApiKey}
+								placeholder={hasCohereApiKey ? '(leave empty to keep current)' : 'your-cohere-key'}
+								class="w-full retro-input rounded"
+							/>
+							<a href="https://dashboard.cohere.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
+								# get key at dashboard.cohere.com/api-keys
+							</a>
+						</div>
+
+						<div class="flex justify-end">
+							<RetroButton variant="primary" onclick={saveCohereSettings} disabled={saving || !cohereApiKey.trim()}>
+								{saving ? 'saving...' : 'save cohere key'}
+							</RetroButton>
+						</div>
+					</div>
+				</RetroCard>
+
+				<!-- Tips -->
+				<div class="text-xs font-mono text-surface-600 space-y-1">
+					<p># keys can be set via env vars (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
+					<p># without Cohere, reranking falls back to a local cross-encoder model</p>
+				</div>
+			{/if}
+		</div>
 	</div>
-</div>
 
-<!-- Add/Update Key Modal -->
-{#if showAddKey && !isOnboarding}
-	{@const provider = PROVIDERS[showAddKey]}
-	<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-		<RetroCard noPadding class="w-full max-w-md">
-			<div class="px-4 py-3 border-b retro-border flex items-center justify-between">
-				<div class="flex items-center gap-2">
-					<span class="font-mono text-surface-100">
-						{showAddKey === 'ollama' ? 'Configure Ollama' : isUpdatingKey ? `Update ${provider.name} Key` : `Add ${provider.name} Key`}
-					</span>
-				</div>
-				<RetroButton size="sm" onclick={cancelAddKey}>&times;</RetroButton>
+	<!-- Add/Update Key Modal -->
+	{#if showAddKey && !isOnboarding}
+		<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+			<RetroCard noPadding class="w-full max-w-md">
+				<div class="px-4 py-3 border-b retro-border flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="font-mono text-surface-100">
+							{isUpdatingKey ? 'Update OpenAI Key' : 'Add OpenAI Key'}
+						</span>
+					</div>
+					<RetroButton size="sm" onclick={cancelAddKey}>x</RetroButton>
 				</div>
 
 				<div class="p-4 space-y-4">
-					{#if showAddKey === 'ollama'}
-						<div>
-							<label for="modal-ollama-host" class="block text-xs font-mono text-surface-500 mb-1">--host</label>
-							<input id="modal-ollama-host" type="text" bind:value={ollamaHost} placeholder="http://localhost:11434"
-								class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500" />
-						</div>
-						<button onclick={() => validateProvider('ollama')} disabled={providerConfigs.ollama.validating}
-							class="w-full py-2 bg-surface-700 hover:bg-surface-600 text-surface-100 rounded font-mono text-sm">
-							{providerConfigs.ollama.validating ? 'testing...' : 'test connection'}
-						</button>
-						{#if providerConfigs.ollama.valid && providerConfigs.ollama.models.length > 0}
-							<select bind:value={providerConfigs.ollama.selectedModel}
-								class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100">
-								{#each providerConfigs.ollama.models as model}
+					<div>
+						<label for="modal-api-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">API Key</label>
+						<input
+							id="modal-api-key"
+							type="password"
+							bind:value={newKeyInput}
+							placeholder="sk-..."
+							class="w-full retro-input rounded"
+						/>
+						<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
+							get key
+						</a>
+						{#if isUpdatingKey && openaiSource === 'env'}
+							<p class="text-xs font-mono text-amber-400 mt-2"># will override the environment variable key</p>
+						{/if}
+					</div>
+					{#if newKeyError}
+						<p class="text-sm font-mono text-red-400">{newKeyError}</p>
+					{/if}
+					{#if newKeyModels.length === 0}
+						<RetroButton
+							onclick={validateNewKey}
+							disabled={newKeyValidating || !newKeyInput.trim()}
+							class="w-full"
+						>
+							{newKeyValidating ? 'validating...' : 'validate'}
+						</RetroButton>
+					{:else}
+						<div class="space-y-3 pt-2 border-t border-surface-700">
+							<label for="modal-new-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
+							<select id="modal-new-model" bind:value={newKeySelectedModel} class="w-full retro-input rounded">
+								{#each newKeyModels as model}
 									<option value={model}>{model}</option>
 								{/each}
-						</select>
-						<RetroButton
-							variant="primary"
-							class="w-full"
-							onclick={() => { switchToProvider('ollama'); cancelAddKey(); }}
-						>
-							switch to ollama
-						</RetroButton>
-						{:else if providerConfigs.ollama.error}
-							<p class="text-sm font-mono text-red-400">{providerConfigs.ollama.error}</p>
-						{/if}
-					{:else}
-						<div>
-							<label for="modal-api-key" class="block text-xs font-mono text-surface-500 mb-1">--api-key</label>
-							<input id="modal-api-key" type="password" bind:value={newKeyInput} placeholder={provider.keyPrefix + '...'}
-								class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500" />
-							<a href={provider.docsUrl} target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">get key →</a>
-							{#if isUpdatingKey && providerConfigs[showAddKey]?.source === 'env'}
-								<p class="text-xs font-mono text-amber-400 mt-2"># will override the environment variable key</p>
-							{/if}
-						</div>
-						{#if newKeyError}
-							<p class="text-sm font-mono text-red-400">{newKeyError}</p>
-						{/if}
-						{#if newKeyModels.length === 0}
-							<button onclick={validateNewKey} disabled={newKeyValidating || !newKeyInput.trim()}
-								class="w-full py-2 bg-surface-700 hover:bg-surface-600 text-surface-100 rounded font-mono text-sm disabled:opacity-50">
-								{newKeyValidating ? 'validating...' : 'validate'}
-							</button>
-						{:else}
-							<div class="space-y-3 pt-2 border-t border-surface-700">
-								<label for="modal-new-model" class="block text-xs font-mono text-surface-500">--model</label>
-								<select id="modal-new-model" bind:value={newKeySelectedModel}
-									class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100">
-									{#each newKeyModels as model}
-										<option value={model}>{model}</option>
-									{/each}
 							</select>
 							<RetroButton
 								variant="primary"
@@ -683,13 +593,12 @@
 								onclick={saveNewKey}
 								disabled={saving}
 							>
-								{saving ? 'saving...' : isUpdatingKey ? 'update & switch' : 'save & switch'}
+								{saving ? 'saving...' : isUpdatingKey ? 'update key' : 'save key'}
 							</RetroButton>
-							</div>
-						{/if}
+						</div>
 					{/if}
-			</div>
-		</RetroCard>
-	</div>
-{/if}
+				</div>
+			</RetroCard>
+		</div>
+	{/if}
 </div>

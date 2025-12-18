@@ -18,6 +18,7 @@ class AgentState(TypedDict):
     # Routing decisions
     needs_cluster_context: bool
     needs_retrieval: bool
+    needs_web_search: bool  # Whether to search the web for current info
     needs_admin_operation: bool  # Whether this is an admin operation request
     route: str  # "retrieval", "kafka", "admin", "both", or "direct"
 
@@ -27,8 +28,8 @@ class AgentState(TypedDict):
     # Retrieved documents from the retrieval agent
     retrieved_docs: list[Document]
 
-    # Validated/filtered documents
-    validated_docs: list[Document]
+    # Web search results from Exa
+    web_results: list[dict]
 
     # Cluster context from the Kafka agent (if applicable)
     cluster_context: dict | None
@@ -39,8 +40,8 @@ class AgentState(TypedDict):
     # The final synthesized answer
     answer: str
 
-    # Source citations
-    citations: list[str]
+    # Source citations (now includes both doc and web sources)
+    citations: list[dict]
 
     # Conversation history (for context)
     messages: Annotated[list, add_messages]
@@ -54,12 +55,5 @@ class RouterDecision(TypedDict):
 
     route: str  # "retrieval", "kafka", "both", or "direct"
     sub_goals: list[str]
-    reasoning: str
-
-
-class ValidationResult(TypedDict):
-    """Result from the validation agent."""
-
-    is_relevant: bool
-    confidence: float
+    needs_web_search: bool
     reasoning: str

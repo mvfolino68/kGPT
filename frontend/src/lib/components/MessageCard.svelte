@@ -2,13 +2,13 @@
 	interface Props {
 		title?: string;
 		iconType?: 'cluster' | 'info' | 'success' | 'warning' | 'error' | 'edit' | 'help' | 'check' | 'x';
-		iconColor?: 'emerald' | 'blue' | 'violet' | 'amber' | 'red';
+		iconColor?: 'blue' | 'emerald' | 'violet' | 'amber' | 'red';
 		children: any;
 		class?: string;
 		variant?: 'default' | 'info' | 'success' | 'warning' | 'error';
 	}
 
-	let { title, iconType, iconColor = 'emerald', children, class: className = '', variant = 'default' }: Props = $props();
+	let { title, iconType, iconColor = 'blue', children, class: className = '', variant = 'default' }: Props = $props();
 
 	const variantStyles = {
 		default: 'bg-surface-900/80 border-white/5',
@@ -72,4 +72,5 @@
 		{@render children()}
 	</div>
 </div>
+
 

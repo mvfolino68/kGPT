@@ -4,11 +4,11 @@
 @import 'tailwindcss/utilities' layer(utilities);
 
 /* ============================================================================
-   RETRO DESIGN SYSTEM - Terminal/CRT Inspired
+   CONFLUENT DESIGN SYSTEM - Modern Kafka/Streaming Inspired
    ============================================================================ */
 
 @theme {
-  /* Surface colors - deeper blacks for retro feel */
+  /* Surface colors - Slate-based for modern dark theme */
   --color-surface-50: 248 250 252;
   --color-surface-100: 241 245 249;
   --color-surface-200: 226 232 240;
@@ -19,11 +19,11 @@
   --color-surface-700: 51 65 85;
   --color-surface-800: 30 41 59;
   --color-surface-900: 15 23 42;
-  --color-surface-950: 8 12 24;
+  --color-surface-950: 2 6 23;
 }
 
 :root {
-  /* Surface colors */
+  /* Surface colors - Slate-based */
   --color-surface-50: 248 250 252;
   --color-surface-100: 241 245 249;
   --color-surface-200: 226 232 240;
@@ -34,31 +34,45 @@
   --color-surface-700: 51 65 85;
   --color-surface-800: 30 41 59;
   --color-surface-900: 15 23 42;
-  --color-surface-950: 8 12 24;
+  --color-surface-950: 2 6 23;
 
-  /* Retro accent colors - CRT inspired */
-  --retro-green: 52 211 153;        /* emerald-400 - primary accent */
-  --retro-green-bright: 110 231 183; /* emerald-300 - highlights */
-  --retro-cyan: 34 211 238;          /* cyan-400 - secondary */
-  --retro-amber: 251 191 36;         /* amber-400 - warnings */
-  --retro-orange: 251 146 60;        /* orange-400 - alerts */
-  --retro-red: 248 113 113;          /* red-400 - errors */
-  --retro-purple: 192 132 252;       /* purple-400 - special */
-  --retro-blue: 96 165 250;          /* blue-400 - info */
+  /* Confluent/Kafka brand colors */
+  --confluent-blue: 0 84 151;           /* #005497 - Kafka blue */
+  --confluent-blue-light: 96 165 250;   /* #60A5FA - Light blue */
+  --confluent-blue-bright: 59 130 246;  /* #3B82F6 - Bright blue */
+  --confluent-navy: 30 58 138;          /* #1E3A8A - Deep navy */
+  --confluent-cyan: 34 211 238;         /* #22D3EE - Cyan accent */
+  --confluent-teal: 20 184 166;         /* #14B8A6 - Teal */
+  --confluent-purple: 139 92 246;       /* #8B5CF6 - Purple accent */
+
+  /* Primary brand colors - Confluent Blue focus */
+  --confluent-primary: 96 165 250;      /* Main brand blue */
+  --confluent-accent: 34 211 238;       /* Streaming data cyan */
+  --confluent-highlight: 59 130 246;    /* Interactive highlights */
+
+  /* Legacy color variables for compatibility */
+  --retro-green: 34 197 94;             /* Success green */
+  --retro-cyan: 34 211 238;             /* Cyan accent */
+  --retro-blue: 96 165 250;             /* Primary blue */
+
+  /* Status colors */
+  --status-success: 34 197 94;          /* #22C55E - Green */
+  --status-warning: 251 191 36;         /* #FBBF24 - Amber */
+  --status-error: 239 68 68;            /* #EF4444 - Red */
+  --status-info: 59 130 246;            /* #3B82F6 - Blue */
 
   /* Animation timing */
   --transition-fast: 120ms;
   --transition-normal: 200ms;
   --transition-slow: 350ms;
 
-  /* Retro effects */
+  /* Effects */
   --glow-intensity: 0.4;
-  --scanline-opacity: 0.03;
   --border-width: 1px;
 }
 
 /* ============================================================================
-   TYPOGRAPHY - Retro Tech
+   TYPOGRAPHY
    ============================================================================ */
 
 html {
@@ -74,7 +88,7 @@ body {
   position: relative;
 }
 
-/* Monospace font stack for terminal elements */
+/* Monospace font stack */
 .font-mono,
 .retro-mono {
   font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
@@ -82,151 +96,132 @@ body {
 }
 
 /* ============================================================================
-   RETRO EFFECTS - Scanlines & CRT
-   ============================================================================ */
-
-/* Subtle scanline effect overlay */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0) 0px,
-    rgba(0, 0, 0, 0) 1px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 1px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 2px
-  );
-  animation: scanline 8s linear infinite;
-}
-
-@keyframes scanline {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(2px); }
-}
-
-/* Subtle CRT flicker on body */
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.98; }
-}
-
-/* ============================================================================
-   RETRO GLOW EFFECTS
+   GLOW EFFECTS - Blue/Cyan based
    ============================================================================ */
 
 /* LED glow utility classes */
-.led-glow-green {
+.led-glow-blue {
   box-shadow:
-    0 0 8px rgba(var(--retro-green), 0.6),
-    0 0 16px rgba(var(--retro-green), 0.3),
-    inset 0 0 8px rgba(var(--retro-green), 0.2);
+    0 0 8px rgba(var(--confluent-primary), 0.6),
+    0 0 16px rgba(var(--confluent-primary), 0.3),
+    inset 0 0 8px rgba(var(--confluent-primary), 0.2);
 }
 
 .led-glow-cyan {
   box-shadow:
-    0 0 8px rgba(var(--retro-cyan), 0.6),
-    0 0 16px rgba(var(--retro-cyan), 0.3),
-    inset 0 0 8px rgba(var(--retro-cyan), 0.2);
+    0 0 8px rgba(var(--confluent-cyan), 0.6),
+    0 0 16px rgba(var(--confluent-cyan), 0.3),
+    inset 0 0 8px rgba(var(--confluent-cyan), 0.2);
+}
+
+.led-glow-green {
+  box-shadow:
+    0 0 8px rgba(var(--status-success), 0.6),
+    0 0 16px rgba(var(--status-success), 0.3),
+    inset 0 0 8px rgba(var(--status-success), 0.2);
 }
 
 .led-glow-amber {
   box-shadow:
-    0 0 8px rgba(var(--retro-amber), 0.6),
-    0 0 16px rgba(var(--retro-amber), 0.3),
-    inset 0 0 8px rgba(var(--retro-amber), 0.2);
+    0 0 8px rgba(var(--status-warning), 0.6),
+    0 0 16px rgba(var(--status-warning), 0.3),
+    inset 0 0 8px rgba(var(--status-warning), 0.2);
 }
 
 .led-glow-red {
   box-shadow:
-    0 0 8px rgba(var(--retro-red), 0.6),
-    0 0 16px rgba(var(--retro-red), 0.3),
-    inset 0 0 8px rgba(var(--retro-red), 0.2);
+    0 0 8px rgba(var(--status-error), 0.6),
+    0 0 16px rgba(var(--status-error), 0.3),
+    inset 0 0 8px rgba(var(--status-error), 0.2);
 }
 
 /* Text glow for headings/important text */
-.text-glow-green {
+.text-glow-blue {
   text-shadow:
-    0 0 10px rgba(var(--retro-green), 0.8),
-    0 0 20px rgba(var(--retro-green), 0.4),
-    0 0 30px rgba(var(--retro-green), 0.2);
+    0 0 10px rgba(var(--confluent-primary), 0.8),
+    0 0 20px rgba(var(--confluent-primary), 0.4),
+    0 0 30px rgba(var(--confluent-primary), 0.2);
 }
 
 .text-glow-cyan {
   text-shadow:
-    0 0 10px rgba(var(--retro-cyan), 0.8),
-    0 0 20px rgba(var(--retro-cyan), 0.4);
+    0 0 10px rgba(var(--confluent-cyan), 0.8),
+    0 0 20px rgba(var(--confluent-cyan), 0.4);
+}
+
+.text-glow-green {
+  text-shadow:
+    0 0 10px rgba(var(--status-success), 0.8),
+    0 0 20px rgba(var(--status-success), 0.4);
 }
 
 .text-glow-amber {
   text-shadow:
-    0 0 10px rgba(var(--retro-amber), 0.8),
-    0 0 20px rgba(var(--retro-amber), 0.4);
+    0 0 10px rgba(var(--status-warning), 0.8),
+    0 0 20px rgba(var(--status-warning), 0.4);
 }
 
 /* Border glow effects */
-.border-glow-green {
+.border-glow-blue {
   box-shadow:
-    0 0 12px rgba(var(--retro-green), 0.3),
-    inset 0 0 12px rgba(var(--retro-green), 0.1);
+    0 0 12px rgba(var(--confluent-primary), 0.3),
+    inset 0 0 12px rgba(var(--confluent-primary), 0.1);
 }
 
 .border-glow-cyan {
   box-shadow:
-    0 0 12px rgba(var(--retro-cyan), 0.3),
-    inset 0 0 12px rgba(var(--retro-cyan), 0.1);
+    0 0 12px rgba(var(--confluent-cyan), 0.3),
+    inset 0 0 12px rgba(var(--confluent-cyan), 0.1);
 }
 
 .border-glow-amber {
   box-shadow:
-    0 0 12px rgba(var(--retro-amber), 0.3),
-    inset 0 0 12px rgba(var(--retro-amber), 0.1);
+    0 0 12px rgba(var(--status-warning), 0.3),
+    inset 0 0 12px rgba(var(--status-warning), 0.1);
 }
 
 /* Hover glow effects */
-.hover-glow-green:hover {
+.hover-glow-blue:hover {
   box-shadow:
-    0 0 16px rgba(var(--retro-green), 0.4),
-    inset 0 0 16px rgba(var(--retro-green), 0.1);
+    0 0 16px rgba(var(--confluent-primary), 0.4),
+    inset 0 0 16px rgba(var(--confluent-primary), 0.1);
   transition: box-shadow var(--transition-normal) ease;
 }
 
 .hover-glow-cyan:hover {
   box-shadow:
-    0 0 16px rgba(var(--retro-cyan), 0.4),
-    inset 0 0 16px rgba(var(--retro-cyan), 0.1);
+    0 0 16px rgba(var(--confluent-cyan), 0.4),
+    inset 0 0 16px rgba(var(--confluent-cyan), 0.1);
   transition: box-shadow var(--transition-normal) ease;
 }
 
 /* ============================================================================
-   RETRO BORDERS & BOXES
+   BORDERS & BOXES
    ============================================================================ */
 
-/* Terminal-style box borders */
 .retro-border {
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }
 
-.retro-border-green {
-  border: 1px solid rgba(var(--retro-green), 0.3);
+.retro-border-blue {
+  border: 1px solid rgba(var(--confluent-primary), 0.3);
 }
 
 .retro-border-cyan {
-  border: 1px solid rgba(var(--retro-cyan), 0.3);
+  border: 1px solid rgba(var(--confluent-cyan), 0.3);
 }
 
 .retro-border-amber {
-  border: 1px solid rgba(var(--retro-amber), 0.3);
+  border: 1px solid rgba(var(--status-warning), 0.3);
 }
 
 .retro-border-red {
-  border: 1px solid rgba(var(--retro-red), 0.3);
+  border: 1px solid rgba(var(--status-error), 0.3);
+}
+
+.retro-border-green {
+  border: 1px solid rgba(var(--status-success), 0.3);
 }
 
 /* Double border effect */
@@ -236,34 +231,8 @@ body::before {
   outline-offset: -3px;
 }
 
-/* Corner brackets (retro terminal style) */
-.retro-corners::before,
-.retro-corners::after,
-.retro-corners > *::before,
-.retro-corners > *::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 1px solid rgba(var(--retro-green), 0.5);
-}
-
-.retro-corners::before {
-  top: -1px;
-  left: -1px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.retro-corners::after {
-  top: -1px;
-  right: -1px;
-  border-left: none;
-  border-bottom: none;
-}
-
 /* ============================================================================
-   RETRO BUTTONS
+   BUTTONS
    ============================================================================ */
 
 .retro-button {
@@ -280,9 +249,9 @@ body::before {
 
 .retro-button:hover:not(:disabled) {
   background: rgba(var(--color-surface-700), 0.9);
-  border-color: rgba(var(--retro-green), 0.5);
-  color: rgb(var(--retro-green));
-  box-shadow: 0 0 12px rgba(var(--retro-green), 0.2);
+  border-color: rgba(var(--confluent-primary), 0.5);
+  color: rgb(var(--confluent-primary));
+  box-shadow: 0 0 12px rgba(var(--confluent-primary), 0.2);
 }
 
 .retro-button:active:not(:disabled) {
@@ -295,29 +264,40 @@ body::before {
 }
 
 .retro-button-primary {
-  background: rgba(var(--retro-green), 0.15);
-  border-color: rgba(var(--retro-green), 0.4);
-  color: rgb(var(--retro-green));
+  background: rgba(var(--confluent-primary), 0.15);
+  border-color: rgba(var(--confluent-primary), 0.4);
+  color: rgb(var(--confluent-primary));
 }
 
 .retro-button-primary:hover:not(:disabled) {
-  background: rgba(var(--retro-green), 0.25);
-  box-shadow: 0 0 16px rgba(var(--retro-green), 0.3);
+  background: rgba(var(--confluent-primary), 0.25);
+  box-shadow: 0 0 16px rgba(var(--confluent-primary), 0.3);
+}
+
+.retro-button-confluent {
+  background: linear-gradient(135deg, rgba(var(--confluent-primary), 0.2), rgba(var(--confluent-accent), 0.15));
+  border-color: rgba(var(--confluent-primary), 0.5);
+  color: rgb(var(--confluent-primary));
+}
+
+.retro-button-confluent:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(var(--confluent-primary), 0.3), rgba(var(--confluent-accent), 0.25));
+  box-shadow: 0 0 20px rgba(var(--confluent-primary), 0.4);
 }
 
 .retro-button-danger {
-  background: rgba(var(--retro-red), 0.15);
-  border-color: rgba(var(--retro-red), 0.4);
-  color: rgb(var(--retro-red));
+  background: rgba(var(--status-error), 0.15);
+  border-color: rgba(var(--status-error), 0.4);
+  color: rgb(var(--status-error));
 }
 
 .retro-button-danger:hover:not(:disabled) {
-  background: rgba(var(--retro-red), 0.25);
-  box-shadow: 0 0 16px rgba(var(--retro-red), 0.3);
+  background: rgba(var(--status-error), 0.25);
+  box-shadow: 0 0 16px rgba(var(--status-error), 0.3);
 }
 
 /* ============================================================================
-   RETRO INPUTS
+   INPUTS
    ============================================================================ */
 
 .retro-input {
@@ -332,8 +312,8 @@ body::before {
 
 .retro-input:focus {
   outline: none;
-  border-color: rgba(var(--retro-green), 0.5);
-  box-shadow: 0 0 12px rgba(var(--retro-green), 0.2);
+  border-color: rgba(var(--confluent-primary), 0.5);
+  box-shadow: 0 0 12px rgba(var(--confluent-primary), 0.2);
 }
 
 .retro-input::placeholder {
@@ -349,7 +329,7 @@ body::before {
 
 .retro-input-wrapper::before {
   content: '[';
-  color: rgba(var(--retro-green), 0.5);
+  color: rgba(var(--confluent-primary), 0.5);
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.2rem;
   margin-right: 0.5rem;
@@ -357,14 +337,14 @@ body::before {
 
 .retro-input-wrapper::after {
   content: ']';
-  color: rgba(var(--retro-green), 0.5);
+  color: rgba(var(--confluent-primary), 0.5);
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.2rem;
   margin-left: 0.5rem;
 }
 
 /* ============================================================================
-   RETRO ANIMATIONS
+   ANIMATIONS
    ============================================================================ */
 
 @keyframes blink {
@@ -377,17 +357,12 @@ body::before {
   50% { opacity: 0.6; }
 }
 
-@keyframes flicker-subtle {
-  0%, 100% { opacity: 1; }
-  45%, 55% { opacity: 0.97; }
-}
-
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 8px rgba(var(--retro-green), 0.4);
+    box-shadow: 0 0 8px rgba(var(--confluent-primary), 0.4);
   }
   50% {
-    box-shadow: 0 0 16px rgba(var(--retro-green), 0.6);
+    box-shadow: 0 0 16px rgba(var(--confluent-primary), 0.6);
   }
 }
 
@@ -433,10 +408,6 @@ body::before {
   animation: pulse-slow 3s ease-in-out infinite;
 }
 
-.animate-flicker {
-  animation: flicker-subtle 0.15s ease-in-out infinite;
-}
-
 .animate-glow-pulse {
   animation: glow-pulse 2s ease-in-out infinite;
 }
@@ -454,7 +425,7 @@ body::before {
 }
 
 /* ============================================================================
-   RETRO CARDS
+   CARDS
    ============================================================================ */
 
 .retro-card {
@@ -470,18 +441,30 @@ body::before {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.retro-card-glow-green {
-  border-color: rgba(var(--retro-green), 0.3);
-  box-shadow: 0 0 20px rgba(var(--retro-green), 0.1);
+.retro-card-glow-blue {
+  border-color: rgba(var(--confluent-primary), 0.3);
+  box-shadow: 0 0 20px rgba(var(--confluent-primary), 0.1);
 }
 
 .retro-card-glow-cyan {
-  border-color: rgba(var(--retro-cyan), 0.3);
-  box-shadow: 0 0 20px rgba(var(--retro-cyan), 0.1);
+  border-color: rgba(var(--confluent-cyan), 0.3);
+  box-shadow: 0 0 20px rgba(var(--confluent-cyan), 0.1);
+}
+
+.retro-card-glow-green {
+  border-color: rgba(var(--status-success), 0.3);
+  box-shadow: 0 0 20px rgba(var(--status-success), 0.1);
+}
+
+.retro-card-confluent {
+  background: rgba(var(--color-surface-900), 0.6);
+  border: 1px solid rgba(var(--confluent-primary), 0.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(var(--confluent-primary), 0.12);
 }
 
 /* ============================================================================
-   RETRO PROGRESS BARS
+   PROGRESS BARS
    ============================================================================ */
 
 .retro-progress {
@@ -495,13 +478,13 @@ body::before {
 .retro-progress-bar {
   background: linear-gradient(
     90deg,
-    rgba(var(--retro-green), 0.8),
-    rgba(var(--retro-green), 0.5)
+    rgba(var(--confluent-primary), 0.8),
+    rgba(var(--confluent-primary), 0.5)
   );
   height: 100%;
   transition: width var(--transition-slow) ease;
   position: relative;
-  box-shadow: 0 0 12px rgba(var(--retro-green), 0.6);
+  box-shadow: 0 0 12px rgba(var(--confluent-primary), 0.6);
 }
 
 /* Segmented progress bar effect */
@@ -533,33 +516,41 @@ body::before {
   display: inline-block;
 }
 
-.led-green {
-  background: rgb(var(--retro-green));
+.led-blue {
+  background: rgb(var(--confluent-primary));
   box-shadow:
-    0 0 8px rgba(var(--retro-green), 0.8),
-    0 0 16px rgba(var(--retro-green), 0.4),
-    inset 0 0 6px rgba(var(--retro-green), 0.3);
+    0 0 8px rgba(var(--confluent-primary), 0.8),
+    0 0 16px rgba(var(--confluent-primary), 0.4),
+    inset 0 0 6px rgba(var(--confluent-primary), 0.3);
+}
+
+.led-green {
+  background: rgb(var(--status-success));
+  box-shadow:
+    0 0 8px rgba(var(--status-success), 0.8),
+    0 0 16px rgba(var(--status-success), 0.4),
+    inset 0 0 6px rgba(var(--status-success), 0.3);
 }
 
 .led-cyan {
-  background: rgb(var(--retro-cyan));
+  background: rgb(var(--confluent-cyan));
   box-shadow:
-    0 0 8px rgba(var(--retro-cyan), 0.8),
-    0 0 16px rgba(var(--retro-cyan), 0.4);
+    0 0 8px rgba(var(--confluent-cyan), 0.8),
+    0 0 16px rgba(var(--confluent-cyan), 0.4);
 }
 
 .led-amber {
-  background: rgb(var(--retro-amber));
+  background: rgb(var(--status-warning));
   box-shadow:
-    0 0 8px rgba(var(--retro-amber), 0.8),
-    0 0 16px rgba(var(--retro-amber), 0.4);
+    0 0 8px rgba(var(--status-warning), 0.8),
+    0 0 16px rgba(var(--status-warning), 0.4);
 }
 
 .led-red {
-  background: rgb(var(--retro-red));
+  background: rgb(var(--status-error));
   box-shadow:
-    0 0 8px rgba(var(--retro-red), 0.8),
-    0 0 16px rgba(var(--retro-red), 0.4);
+    0 0 8px rgba(var(--status-error), 0.8),
+    0 0 16px rgba(var(--status-error), 0.4);
 }
 
 .led-off {
@@ -582,20 +573,25 @@ button, a, input, textarea, select {
   transition: all var(--transition-normal) ease;
 }
 
-/* Focus styles with retro green */
+/* Focus styles with blue accent */
 *:focus-visible {
-  outline: 2px solid rgba(var(--retro-green), 0.6);
+  outline: 2px solid rgba(var(--confluent-primary), 0.6);
   outline-offset: 2px;
 }
 
-/* Selection with retro green */
+/* Text selection - visible and on-brand */
 ::selection {
-  background: rgba(var(--retro-green), 0.3);
-  color: rgb(var(--color-surface-100));
+  background: rgba(var(--confluent-primary), 0.4);
+  color: rgb(var(--color-surface-50));
+}
+
+::-moz-selection {
+  background: rgba(var(--confluent-primary), 0.4);
+  color: rgb(var(--color-surface-50));
 }
 
 /* ============================================================================
-   SCROLLBAR - Retro Style
+   SCROLLBAR - Modern Style
    ============================================================================ */
 
 ::-webkit-scrollbar {
@@ -609,19 +605,20 @@ button, a, input, textarea, select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(var(--retro-green), 0.3);
-  border: 1px solid rgba(var(--retro-green), 0.5);
+  background: rgba(var(--confluent-primary), 0.3);
+  border: 1px solid rgba(var(--confluent-primary), 0.5);
+  border-radius: 4px;
   transition: background var(--transition-normal) ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--retro-green), 0.5);
+  background: rgba(var(--confluent-primary), 0.5);
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--retro-green), 0.3) rgba(var(--color-surface-900), 0.5);
+  scrollbar-color: rgba(var(--confluent-primary), 0.3) rgba(var(--color-surface-900), 0.5);
 }
 
 /* ============================================================================
@@ -653,3 +650,76 @@ button, a, input, textarea, select {
 
 .border-surface-600 { border-color: rgb(var(--color-surface-600)); }
 .border-surface-700 { border-color: rgb(var(--color-surface-700)); }
+
+/* Confluent color utilities */
+.text-confluent-blue { color: rgb(var(--confluent-blue-light)); }
+.text-confluent-cyan { color: rgb(var(--confluent-cyan)); }
+.text-confluent-primary { color: rgb(var(--confluent-primary)); }
+.bg-confluent-blue { background-color: rgb(var(--confluent-blue-light)); }
+.bg-confluent-primary { background-color: rgb(var(--confluent-primary)); }
+.border-confluent-blue { border-color: rgb(var(--confluent-blue-light)); }
+.border-confluent-primary { border-color: rgb(var(--confluent-primary)); }
+
+/* Confluent Card Variant */
+.confluent-card {
+  background: rgba(var(--color-surface-900), 0.6);
+  border: 1px solid rgba(var(--confluent-primary), 0.3);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(var(--confluent-primary), 0.1);
+  position: relative;
+}
+
+.confluent-card-elevated {
+  background: rgba(var(--color-surface-800), 0.7);
+  border: 1px solid rgba(var(--confluent-primary), 0.4);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(var(--confluent-primary), 0.15);
+}
+
+/* Data Stream Glow Effect */
+.data-stream-glow {
+  box-shadow:
+    0 0 12px rgba(var(--confluent-accent), 0.4),
+    0 0 24px rgba(var(--confluent-accent), 0.2),
+    inset 0 0 16px rgba(var(--confluent-accent), 0.1);
+}
+
+/* Streaming Animation */
+@keyframes stream-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    box-shadow: 0 0 8px rgba(var(--confluent-accent), 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(var(--confluent-accent), 0.6);
+  }
+}
+
+.animate-stream {
+  animation: stream-pulse 2s ease-in-out infinite;
+}
+
+/* Flowing data lines background effect */
+@keyframes data-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.data-flow-bg {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--confluent-accent), 0.03) 25%,
+    rgba(var(--confluent-primary), 0.03) 50%,
+    rgba(var(--confluent-accent), 0.03) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: data-flow 8s linear infinite;
+}
