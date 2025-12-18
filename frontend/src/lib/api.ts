@@ -234,11 +234,24 @@ export interface DocumentSource {
 	indexed_at?: string;
 }
 
+export type SourceType = 'url' | 'github' | 'file' | 'sitemap';
+
 export interface IngestRequest {
-	source_type: 'sitemap' | 'github' | 'url' | 'upload';
-	name: string;
+	source_type: SourceType;
+	name?: string; // Optional - will be auto-generated if empty and auto_name is true
 	url?: string;
 	collection_name?: string;
+	auto_name?: boolean; // Default true - use AI to generate a smart name
+}
+
+export interface NameSuggestionRequest {
+	url: string;
+	source_type?: SourceType;
+}
+
+export interface NameSuggestionResponse {
+	suggestions: string[];
+	smart_name: string | null;
 }
 
 export interface KafkaCluster {
@@ -436,6 +449,16 @@ export interface IngestionStatus {
 	chunks_embedded?: number;
 	error?: string;
 	elapsed_seconds?: number;
+}
+
+export async function suggestName(request: NameSuggestionRequest): Promise<NameSuggestionResponse> {
+	const response = await fetch(`${API_BASE}/documents/sources/suggest-name`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(request)
+	});
+	if (!response.ok) throw new Error(`Name suggestion failed: ${response.statusText}`);
+	return response.json();
 }
 
 export async function ingestDocument(request: IngestRequest): Promise<IngestResponse> {

@@ -19,6 +19,7 @@
 		purgeAllData,
 		getChunkAnalytics,
 		getAgentGraph,
+		suggestName,
 		type DocumentSource,
 		type CollectionsResponse,
 		type VectorSearchResponse,
@@ -28,7 +29,8 @@
 		type ChunkResult,
 		type SyncStatusResponse,
 		type ChunkAnalytics,
-		type AgentGraphInfo
+		type AgentGraphInfo,
+		type SourceType
 	} from '$lib/api';
 	import { RetroHeader, RetroButton, StatusIndicator, RetroCard } from '$lib/components';
 
@@ -52,9 +54,14 @@
 	let cleanupLoading = $state(false);
 
 	// Form state
-	let sourceType = $state<'sitemap' | 'github' | 'url'>('sitemap');
+	let sourceType = $state<SourceType>('url');
 	let sourceName = $state('');
 	let sourceUrl = $state('');
+	let useSmartNaming = $state(true);
+	let nameSuggestions = $state<string[]>([]);
+	let smartName = $state<string | null>(null);
+	let fetchingName = $state(false);
+	let urlDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Delete confirmation state
 	let confirmingDeleteId = $state<number | null>(null);
@@ -134,28 +141,62 @@
 	let chunkAnalytics = $state<ChunkAnalytics | null>(null);
 	let analyticsLoading = $state(false);
 
-	// Preset sources
-	const presetSources = [
-		{ name: 'htmx', type: 'sitemap' as const, url: 'https://htmx.org/sitemap.xml', size: '~180' },
-		{
-			name: 'fastapi',
-			type: 'sitemap' as const,
-			url: 'https://fastapi.tiangolo.com/sitemap.xml',
-			size: '~150'
-		},
-		{
-			name: 'kafka',
-			type: 'sitemap' as const,
-			url: 'https://kafka.apache.org/sitemap.xml',
-			size: '~500'
-		},
-		{
-			name: 'confluent',
-			type: 'sitemap' as const,
-			url: 'https://docs.confluent.io/home/sitemap.xml',
-			size: '5k+'
-		}
+	// Source type options for internal docs
+	const sourceTypeOptions: { value: SourceType; label: string; description: string }[] = [
+		{ value: 'url', label: 'URL', description: 'Single page (wiki, docs, article)' },
+		{ value: 'github', label: 'GitHub', description: 'Repository docs (public or private)' },
+		{ value: 'file', label: 'File', description: 'Upload PDF, markdown, or text' }
 	];
+
+	// =========================================================================
+	// Smart Naming Functions
+	// =========================================================================
+
+	async function fetchNameSuggestions(url: string) {
+		if (!url || !url.startsWith('http')) {
+			nameSuggestions = [];
+			smartName = null;
+			return;
+		}
+
+		fetchingName = true;
+		try {
+			const response = await suggestName({ url, source_type: sourceType });
+			nameSuggestions = response.suggestions;
+			smartName = response.smart_name;
+
+			// Auto-fill name if smart naming is enabled and name is empty
+			if (useSmartNaming && !sourceName && smartName) {
+				sourceName = smartName;
+			}
+		} catch (e) {
+			console.error('Failed to fetch name suggestions:', e);
+		} finally {
+			fetchingName = false;
+		}
+	}
+
+	function handleUrlInput(url: string) {
+		sourceUrl = url;
+
+		// Debounce the name suggestion fetch
+		if (urlDebounceTimer) {
+			clearTimeout(urlDebounceTimer);
+		}
+
+		if (url && url.startsWith('http')) {
+			urlDebounceTimer = setTimeout(() => {
+				fetchNameSuggestions(url);
+			}, 500);
+		} else {
+			nameSuggestions = [];
+			smartName = null;
+		}
+	}
+
+	function selectNameSuggestion(name: string) {
+		sourceName = name;
+	}
 
 	// =========================================================================
 	// Sources Tab Functions
@@ -350,14 +391,15 @@
 	}
 
 	async function handleIngest() {
-		if (!sourceName.trim() || !sourceUrl.trim()) return;
+		if (!sourceUrl.trim()) return;
 		ingesting = true;
 		error = null;
 		try {
 			const result = await ingestDocument({
 				source_type: sourceType,
-				name: sourceName,
-				url: sourceUrl
+				name: sourceName || undefined, // Let backend auto-generate if empty
+				url: sourceUrl,
+				auto_name: useSmartNaming && !sourceName
 			});
 			activeIngestions.set(result.source_id, {
 				status: 'running',
@@ -369,8 +411,11 @@
 			ingestionStartTimes.set(result.source_id, Date.now());
 			ingestionStartTimes = new Map(ingestionStartTimes);
 			startPolling();
+			// Reset form
 			sourceName = '';
 			sourceUrl = '';
+			nameSuggestions = [];
+			smartName = null;
 			await loadDocuments();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to start ingestion';
@@ -415,12 +460,6 @@
 		} finally {
 			confirmingDeleteId = null;
 		}
-	}
-
-	function selectPreset(preset: (typeof presetSources)[0]) {
-		sourceType = preset.type;
-		sourceName = preset.name;
-		sourceUrl = preset.url;
 	}
 
 	function getStatusColor(status: string): string {
@@ -678,76 +717,124 @@
 			{#if activeTab === 'sources'}
 				<!-- Ingest form -->
 				<RetroCard noPadding>
-				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-					<span class="text-confluent-accent font-mono text-xs">+</span>
-					<span class="font-mono text-sm text-surface-300">ingest --source</span>
+				<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<span class="text-confluent-accent font-mono text-xs">+</span>
+						<span class="font-mono text-sm text-surface-300">add internal docs</span>
+					</div>
+					<span class="text-xs text-surface-500 font-mono">use Exa web search for public docs</span>
 				</div>
 
-					<div class="p-4 space-y-4">
-						<!-- Quick presets -->
-						<div class="flex items-center gap-2 flex-wrap">
-							<span class="text-surface-500 font-mono text-xs">presets:</span>
-							{#each presetSources as preset}
-								<RetroButton
-									size="sm"
-									onclick={() => selectPreset(preset)}
-								>
-									{preset.name}<span class="text-surface-500 ml-1">({preset.size})</span>
-								</RetroButton>
-							{/each}
+				<div class="p-4 space-y-4">
+					<!-- Source type selection -->
+					<div class="flex gap-2">
+						{#each sourceTypeOptions as option}
+							<button
+								type="button"
+								onclick={() => (sourceType = option.value)}
+								class="flex-1 p-3 rounded-lg border transition-all text-left {sourceType === option.value
+									? 'border-confluent-primary bg-confluent-primary/10'
+									: 'border-surface-700 bg-surface-800/50 hover:border-surface-600'}"
+							>
+								<div class="font-mono text-sm {sourceType === option.value ? 'text-confluent-primary' : 'text-surface-300'}">
+									{option.label}
+								</div>
+								<div class="text-xs text-surface-500 mt-0.5">{option.description}</div>
+							</button>
+						{/each}
+					</div>
+
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							handleIngest();
+						}}
+						class="space-y-4"
+					>
+						<!-- URL input with smart suggestions -->
+						<div>
+							<label class="block text-xs font-mono text-surface-500 mb-1.5">
+								{sourceType === 'github' ? 'Repository URL' : 'Page URL'}
+							</label>
+							<div class="relative">
+								<input
+									type="url"
+									value={sourceUrl}
+									oninput={(e) => handleUrlInput(e.currentTarget.value)}
+									placeholder={sourceType === 'github'
+										? 'https://github.com/org/repo'
+										: 'https://internal.wiki.com/page'}
+									class="w-full retro-input rounded pr-10"
+								/>
+								{#if fetchingName}
+									<div class="absolute right-3 top-1/2 -translate-y-1/2">
+										<svg class="w-4 h-4 animate-spin text-surface-500" fill="none" viewBox="0 0 24 24">
+											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+										</svg>
+									</div>
+								{/if}
+							</div>
 						</div>
 
-						<form
-							onsubmit={(e) => {
-								e.preventDefault();
-								handleIngest();
-							}}
-							class="space-y-3"
-						>
-							<div class="grid grid-cols-12 gap-3">
-								<div class="col-span-2">
-									<label class="block text-xs font-mono text-surface-500 mb-1">--type</label>
-									<select
-										bind:value={sourceType}
-										class="w-full retro-input rounded"
-									>
-										<option value="sitemap">sitemap</option>
-										<option value="github">github</option>
-										<option value="url">url</option>
-									</select>
-								</div>
-								<div class="col-span-3">
-									<label class="block text-xs font-mono text-surface-500 mb-1">--name</label>
+						<!-- Name input with suggestions -->
+						<div>
+							<div class="flex items-center justify-between mb-1.5">
+								<label class="text-xs font-mono text-surface-500">Name</label>
+								<label class="flex items-center gap-1.5 text-xs font-mono text-surface-500 cursor-pointer">
 									<input
-										type="text"
-										bind:value={sourceName}
-										placeholder="source-name"
-										class="w-full retro-input rounded"
+										type="checkbox"
+										bind:checked={useSmartNaming}
+										class="w-3 h-3 rounded bg-surface-700 border-surface-600"
 									/>
-								</div>
-								<div class="col-span-5">
-									<label class="block text-xs font-mono text-surface-500 mb-1">--url</label>
-									<input
-										type="url"
-										bind:value={sourceUrl}
-										placeholder="https://..."
-										class="w-full retro-input rounded"
-									/>
-								</div>
-								<div class="col-span-2 flex items-end">
-									<RetroButton
-										type="submit"
-										variant="primary"
-										class="w-full"
-										disabled={ingesting || !sourceName.trim() || !sourceUrl.trim()}
-									>
-										{ingesting ? 'running...' : 'run'}
-									</RetroButton>
-								</div>
+									<span>AI naming</span>
+								</label>
 							</div>
-						</form>
-					</div>
-				</RetroCard>
+							<input
+								type="text"
+								bind:value={sourceName}
+								placeholder={smartName || 'auto-generated from URL'}
+								class="w-full retro-input rounded"
+							/>
+
+							<!-- Name suggestions -->
+							{#if nameSuggestions.length > 0 && !sourceName}
+								<div class="flex flex-wrap gap-1.5 mt-2">
+									{#each nameSuggestions as suggestion}
+										<button
+											type="button"
+											onclick={() => selectNameSuggestion(suggestion)}
+											class="px-2 py-1 text-xs font-mono bg-surface-800 hover:bg-surface-700 text-surface-300 rounded border border-surface-700 hover:border-surface-600 transition-colors"
+										>
+											{suggestion}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+
+						<!-- Submit -->
+						<div class="flex items-center justify-between pt-2">
+							<div class="text-xs text-surface-500 font-mono">
+								{#if smartName && useSmartNaming && !sourceName}
+									Will use: <span class="text-confluent-primary">{smartName}</span>
+								{:else if sourceName}
+									Using: <span class="text-surface-300">{sourceName}</span>
+								{:else}
+									Name will be auto-generated
+								{/if}
+							</div>
+							<RetroButton
+								type="submit"
+								variant="primary"
+								disabled={ingesting || !sourceUrl.trim()}
+							>
+								{ingesting ? 'indexing...' : 'add to knowledge base'}
+							</RetroButton>
+						</div>
+					</form>
+				</div>
+			</RetroCard>
 
 			<!-- Success message for destructive operations -->
 			{#if lastDestructiveResult}

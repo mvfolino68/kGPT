@@ -12,9 +12,11 @@ from kgpt.api.schemas import (
     DocumentSource,
     IngestRequest,
     IngestResponse,
-    SourceType,
+    NameSuggestionRequest,
+    NameSuggestionResponse,
 )
 from kgpt.db import get_db
+from kgpt.ingestion import generate_smart_name, suggest_names_for_url
 
 router = APIRouter()
 
@@ -228,6 +230,28 @@ async def list_documents() -> DocumentsListResponse:
     )
 
 
+@router.post("/suggest-name", response_model=NameSuggestionResponse)
+async def suggest_name(request: NameSuggestionRequest) -> NameSuggestionResponse:
+    """Get AI-powered name suggestions for a document source URL."""
+    # Get quick suggestions from URL parsing
+    suggestions = suggest_names_for_url(request.url)
+
+    # Get smart AI-generated name
+    smart_name = None
+    try:
+        smart_name = await generate_smart_name(
+            url=request.url,
+            source_type=request.source_type.value,
+        )
+    except Exception as e:
+        logger.warning(f"Smart naming failed: {e}")
+
+    return NameSuggestionResponse(
+        suggestions=suggestions,
+        smart_name=smart_name,
+    )
+
+
 @router.post("/ingest", response_model=IngestResponse)
 async def ingest_documents(
     request: IngestRequest,
@@ -238,24 +262,52 @@ async def ingest_documents(
 
     This endpoint returns immediately and runs ingestion in the background.
     Use GET /documents/{id}/status to check progress.
+
+    If name is not provided and auto_name is True, an AI-generated name will be used.
     """
     db = get_db()
 
+    # Generate smart name if needed
+    source_name = request.name
+    if not source_name and request.auto_name and request.url:
+        try:
+            source_name = await generate_smart_name(
+                url=request.url,
+                source_type=request.source_type.value,
+            )
+        except Exception as e:
+            logger.warning(f"Smart naming failed, using URL fallback: {e}")
+            from kgpt.ingestion import suggest_names_for_url
+
+            suggestions = suggest_names_for_url(request.url)
+            source_name = suggestions[0] if suggestions else "Unnamed Source"
+    elif not source_name:
+        source_name = "Unnamed Source"
+
     # Create document source entry
     source_id = db.add_document_source(
-        name=request.name,
+        name=source_name,
         source_type=request.source_type.value,
         url=request.url,
         collection_name=request.collection_name,
     )
 
+    # Update request with the resolved name for the background task
+    request_with_name = IngestRequest(
+        name=source_name,
+        source_type=request.source_type,
+        url=request.url,
+        collection_name=request.collection_name,
+        auto_name=False,
+    )
+
     # Start background ingestion
-    background_tasks.add_task(run_ingestion, source_id, request)
+    background_tasks.add_task(run_ingestion, source_id, request_with_name)
 
     return IngestResponse(
         source_id=source_id,
         status="started",
-        message=f"Ingestion started for {request.name}",
+        message=f"Ingestion started for {source_name}",
     )
 
 
@@ -343,25 +395,5 @@ async def delete_document_source(source_id: int) -> dict:
     }
 
 
-@router.post("/ingest/confluent")
-async def ingest_confluent_docs(background_tasks: BackgroundTasks) -> IngestResponse:
-    """Convenience endpoint to ingest Confluent documentation."""
-    request = IngestRequest(
-        name="Confluent Documentation",
-        source_type=SourceType.SITEMAP,
-        url="https://docs.confluent.io/home/sitemap.xml",
-        collection_name="kgpt_docs",
-    )
-    return await ingest_documents(request, background_tasks)
-
-
-@router.post("/ingest/kafka")
-async def ingest_kafka_docs(background_tasks: BackgroundTasks) -> IngestResponse:
-    """Convenience endpoint to ingest Apache Kafka documentation."""
-    request = IngestRequest(
-        name="Apache Kafka Documentation",
-        source_type=SourceType.SITEMAP,
-        url="https://kafka.apache.org/sitemap.xml",
-        collection_name="kgpt_docs",
-    )
-    return await ingest_documents(request, background_tasks)
+# Legacy convenience endpoints removed - use Exa web search for public docs
+# For internal docs, use the /ingest endpoint with URL, GitHub, or File source types

@@ -116,12 +116,16 @@ class UpdateSessionRequest(BaseModel):
 
 
 class SourceType(str, Enum):
-    """Document source types."""
+    """Document source types for internal/custom documentation."""
 
-    SITEMAP = "sitemap"
-    GITHUB = "github"
-    URL = "url"
-    FILE = "file"
+    URL = "url"  # Single page or internal wiki page
+    GITHUB = "github"  # GitHub repo (public or private with token)
+    FILE = "file"  # Uploaded file (PDF, markdown, text)
+    SITEMAP = "sitemap"  # Legacy - kept for backwards compatibility
+    # Future integrations (stubs):
+    # CONFLUENCE = "confluence"
+    # NOTION = "notion"
+    # GOOGLE_DRIVE = "gdrive"
 
 
 class DocumentSource(BaseModel):
@@ -141,10 +145,27 @@ class DocumentSource(BaseModel):
 class IngestRequest(BaseModel):
     """Request to ingest documents."""
 
-    name: str = Field(..., description="Name for this document source")
+    name: str | None = Field(
+        default=None, description="Name for this source (auto-generated if empty)"
+    )
     source_type: SourceType = Field(..., description="Type of source")
-    url: str | None = Field(default=None, description="URL for sitemap/github/url sources")
+    url: str | None = Field(default=None, description="URL for the document source")
     collection_name: str = Field(default="kgpt_docs", description="Qdrant collection name")
+    auto_name: bool = Field(default=True, description="Use AI to generate a smart name")
+
+
+class NameSuggestionRequest(BaseModel):
+    """Request for smart name suggestions."""
+
+    url: str = Field(..., description="URL to generate name for")
+    source_type: SourceType = Field(default=SourceType.URL, description="Type of source")
+
+
+class NameSuggestionResponse(BaseModel):
+    """Response with name suggestions."""
+
+    suggestions: list[str] = Field(default_factory=list, description="List of name suggestions")
+    smart_name: str | None = Field(default=None, description="AI-generated smart name")
 
 
 class IngestResponse(BaseModel):

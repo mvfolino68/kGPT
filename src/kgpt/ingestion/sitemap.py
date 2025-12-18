@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from loguru import logger
 
 from kgpt.ingestion.base import DocumentIngester
+from kgpt.ingestion.preprocessing import preprocess_for_rag
 
 # Predefined documentation sources
 PRESET_SITEMAPS = {
@@ -122,6 +123,7 @@ class SitemapIngester(DocumentIngester):
     def _parse_html_to_text(self, html: str, url: str) -> str:
         """Convert HTML to clean text optimized for embeddings."""
         converter = self._get_markitdown()
+        raw_text = ""
 
         if converter:
             try:
@@ -138,14 +140,26 @@ class SitemapIngester(DocumentIngester):
 
                 try:
                     result = converter.convert(temp_path)
-                    return result.text_content.strip()
+                    raw_text = result.text_content.strip()
                 finally:
                     os.unlink(temp_path)
             except Exception as e:
                 logger.debug(f"MarkItDown failed for {url}: {e}, falling back to BeautifulSoup")
+                raw_text = self._parse_with_beautifulsoup(html)
+        else:
+            # Fallback to BeautifulSoup
+            raw_text = self._parse_with_beautifulsoup(html)
 
-        # Fallback to BeautifulSoup
-        return self._parse_with_beautifulsoup(html)
+        # Apply RAG preprocessing for cleaner embeddings
+        cleaned = preprocess_for_rag(
+            raw_text,
+            clean_boilerplate=True,
+            clean_markdown=True,
+            remove_code=False,  # Keep code - it can be valuable
+            normalize_embedding=False,  # Don't lowercase - keep readability
+        )
+
+        return cleaned
 
     def _parse_with_beautifulsoup(self, html: str) -> str:
         """Fallback parser using BeautifulSoup."""
