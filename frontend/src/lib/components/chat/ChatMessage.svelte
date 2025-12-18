@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { RetroButton, RetroCard, StatusIndicator } from '$lib/components';
+	import { RetroButton, RetroCard, StatusIndicator, AdminResultCard } from '$lib/components';
 	import { SourceDrawer } from '$lib/components/sources';
 	import { normalizeCitation, type Source } from '$lib/components/sources/types';
 	import { renderMarkdown } from '$lib/utils/markdown';
-	import { selectedMessageId, selectMessageForTrace, type MessageAgentTrace } from '$lib/stores/chat';
+	import { selectedMessageId, selectMessageForTrace, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
 
 	interface Props {
 		message: {
@@ -16,6 +16,7 @@
 			citations?: unknown[];
 			actions?: Array<{ label: string; value: string }>;
 			agentTrace?: MessageAgentTrace;
+			adminResult?: AdminOperationResult;
 		};
 		onActionClick: (value: string) => void;
 	}
@@ -195,6 +196,12 @@
 				</RetroCard>
 			{/if}
 
+			<!-- Admin Operation Result (for pending confirmations or executed operations) -->
+			<!-- Show immediately for pending/needs_info ops, or after streaming for executed ops -->
+			{#if message.adminResult && (!message.isStreaming || message.adminResult.pending || message.adminResult.needs_info || message.adminResult.unclear)}
+				<AdminResultCard result={message.adminResult} />
+			{/if}
+
 			<!-- Suggested Actions -->
 			{#if message.actions && message.actions.length > 0 && !message.isStreaming}
 				<div class="flex flex-wrap gap-2 pt-1">
@@ -213,6 +220,8 @@
 <SourceDrawer source={selectedSource} onClose={closeDrawer} />
 
 <style>
+	@reference "../../../app.css";
+
 	/* Prose styling for markdown content */
 	:global(.message-content p) {
 		margin: 0.5rem 0;
@@ -300,5 +309,58 @@
 	}
 	:global(.citation-ref:active) {
 		transform: scale(0.95);
+	}
+
+	/* Enhanced text selection visibility */
+	:global(.message-content) {
+		-webkit-user-select: text;
+		-moz-user-select: text;
+		-ms-user-select: text;
+		user-select: text;
+	}
+
+	:global(.message-content ::selection) {
+		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
+		color: inherit; /* Keep original text color */
+		text-shadow: none;
+	}
+
+	:global(.message-content ::-moz-selection) {
+		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
+		color: inherit; /* Keep original text color */
+		text-shadow: none;
+	}
+
+	/* Standardized image styling - matches FormattedMessage */
+	:global(.message-content .markdown-image-container) {
+		@apply relative my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30;
+		@apply transition-all duration-200;
+	}
+
+	:global(.message-content .markdown-image-container:hover) {
+		@apply border-surface-600/50 shadow-lg;
+	}
+
+	:global(.message-content .markdown-image) {
+		@apply w-full h-auto max-w-full;
+		@apply transition-opacity duration-200;
+		@apply object-contain;
+		display: block;
+	}
+
+	:global(.message-content .image-caption) {
+		@apply text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center;
+		@apply border-t border-surface-700/30 pt-2;
+	}
+
+	/* Ensure images don't break layout */
+	:global(.message-content img) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	/* Handle broken images */
+	:global(.message-content img:not([src])) {
+		display: none;
 	}
 </style>

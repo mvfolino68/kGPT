@@ -83,6 +83,26 @@
 			return '<hr class="my-6 border-white/5">';
 		};
 
+		// Standardized image rendering
+		renderer.image = (href: string, title: string | null, text: string) => {
+			const alt = text || '';
+			const titleAttr = title ? `title="${title.replace(/"/g, '&quot;')}"` : '';
+
+			// Standardized image wrapper with consistent styling
+			return `
+				<div class="markdown-image-container my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30 transition-all duration-200 hover:border-surface-600/50 hover:shadow-lg">
+					<img
+						src="${href.replace(/"/g, '&quot;')}"
+						alt="${alt.replace(/"/g, '&quot;')}"
+						${titleAttr}
+						class="markdown-image w-full h-auto max-w-full transition-opacity duration-200 object-contain"
+						loading="lazy"
+					/>
+					${alt ? `<div class="image-caption text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center border-t border-surface-700/30 pt-2">${alt}</div>` : ''}
+				</div>
+			`;
+		};
+
 		return renderer;
 	}
 
@@ -180,6 +200,59 @@
 
 	.formatted-message :global(tr) {
 		@apply border-b border-white/5;
+	}
+
+	/* Enhanced text selection visibility */
+	.formatted-message {
+		-webkit-user-select: text;
+		-moz-user-select: text;
+		-ms-user-select: text;
+		user-select: text;
+	}
+
+	.formatted-message :global(::selection) {
+		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
+		color: inherit; /* Keep original text color */
+		text-shadow: none;
+	}
+
+	.formatted-message :global(::-moz-selection) {
+		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
+		color: inherit; /* Keep original text color */
+		text-shadow: none;
+	}
+
+	/* Standardized image styling */
+	.formatted-message :global(.markdown-image-container) {
+		@apply relative my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30;
+		@apply transition-all duration-200;
+	}
+
+	.formatted-message :global(.markdown-image-container:hover) {
+		@apply border-surface-600/50 shadow-lg;
+	}
+
+	.formatted-message :global(.markdown-image) {
+		@apply w-full h-auto max-w-full;
+		@apply transition-opacity duration-200;
+		@apply object-contain;
+		display: block;
+	}
+
+	.formatted-message :global(.image-caption) {
+		@apply text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center;
+		@apply border-t border-surface-700/30 pt-2;
+	}
+
+	/* Ensure images don't break layout */
+	.formatted-message :global(img) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	/* Handle broken images */
+	.formatted-message :global(img:not([src])) {
+		display: none;
 	}
 </style>
 

@@ -8,6 +8,7 @@ export { default as RetroCard } from './RetroCard.svelte';
 export { default as RetroButton } from './RetroButton.svelte';
 export { default as RetroHeader } from './RetroHeader.svelte';
 export { default as StatusIndicator } from './StatusIndicator.svelte';
+export { default as Image } from './Image.svelte';
 
 // Chat components
 export * from './chat';

@@ -42,18 +42,23 @@ export interface PartitionDetail {
 
 export interface AdminOperationResult {
 	success: boolean;
+	executed?: boolean;  // True if operation was executed (read operations)
 	pending?: boolean;  // True if awaiting user confirmation
 	needs_info?: boolean;  // True if we need more input from user
 	unclear?: boolean;  // True if AI couldn't determine the operation
 	operation?: string;
-	operation_title?: string;  // Human-readable title
+	operation_name?: string;  // Human-readable operation name
+	operation_title?: string;  // Human-readable title (legacy)
 	params?: Record<string, unknown>;  // Parameters for pending operations
+	data?: Record<string, unknown>;  // Result data from executed operations
 	input_fields?: InputField[];  // Structured input fields to show
 	guidance_message?: string;  // Helpful guidance text
 	available_operations?: AvailableOperation[];  // For unclear status
 	confirmation_message?: string;  // What will happen if confirmed
 	warning_level?: 'low' | 'medium' | 'high';  // Risk level for UI styling
 	warning_message?: string;  // Warning for high-risk operations
+	code_executed?: string;  // Python code that was executed
+	code_preview?: string;  // Python code preview for pending operations
 	topic?: string;
 	group_id?: string;
 	message?: string;

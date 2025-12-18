@@ -1,5 +1,6 @@
 """SSE stream generation for chat responses with agent activity."""
 
+import asyncio
 import json
 import time
 import uuid
@@ -46,6 +47,9 @@ async def generate_sse_stream(
 
     # Save user message to session if provided
     # Also generate smart name if this is the first message
+    # Use a queue to send SSE events from background tasks
+    title_update_queue: asyncio.Queue[str | None] = asyncio.Queue()
+
     if session_id:
         db = get_db()
         session = db.get_chat_session(session_id)
@@ -62,8 +66,6 @@ async def generate_sse_stream(
             # Do this asynchronously without blocking the stream
             if is_first_message and has_default_title:
                 try:
-                    import asyncio
-
                     from kgpt.ingestion.smart_naming import generate_chat_smart_name
 
                     async def update_session_title():
@@ -73,8 +75,11 @@ async def generate_sse_stream(
                             logger.debug(
                                 f"Updated chat session {session_id} with smart name: {smart_name}"
                             )
+                            # Queue the title update to be sent via SSE
+                            await title_update_queue.put(smart_name)
                         except Exception as e:
                             logger.warning(f"Failed to generate smart name for chat: {e}")
+                            await title_update_queue.put(None)
 
                     # Create background task - this won't block the stream
                     try:
@@ -96,6 +101,14 @@ async def generate_sse_stream(
 
         # Use the streaming query method with stage updates and agent events
         async for chunk in orchestrator.query_stream_with_stages(message, history):
+            # Check for title updates from background task (non-blocking)
+            try:
+                while not title_update_queue.empty():
+                    smart_name = title_update_queue.get_nowait()
+                    if smart_name:
+                        yield f"data: {json.dumps({'session_title_update': smart_name})}\n\n"
+            except asyncio.QueueEmpty:
+                pass
             if isinstance(chunk, dict):
                 # Handle stage updates
                 if chunk.get("stage") is not None:
@@ -183,6 +196,15 @@ async def generate_sse_stream(
                             session_id, "assistant", full_response, citations, trace_to_save
                         )
 
+                    # Check for any pending title updates before finishing
+                    try:
+                        while not title_update_queue.empty():
+                            smart_name = title_update_queue.get_nowait()
+                            if smart_name:
+                                yield f"data: {json.dumps({'session_title_update': smart_name})}\n\n"
+                    except asyncio.QueueEmpty:
+                        pass
+
                     # Mark stream as complete and break
                     stream_complete = True
                     break
@@ -234,7 +256,20 @@ async def generate_sse_stream(
 
         # If stream completed normally but loop ended without explicit citations event
         if not stream_complete:
-            logger.warning("Stream ended without sending [DONE] - sending now")
+            logger.warning(
+                f"Stream ended without sending [DONE] - sending now. "
+                f"Response length: {len(full_response)}"
+            )
+
+            # Check for any pending title updates before finishing
+            try:
+                while not title_update_queue.empty():
+                    smart_name = title_update_queue.get_nowait()
+                    if smart_name:
+                        yield f"data: {json.dumps({'session_title_update': smart_name})}\n\n"
+            except asyncio.QueueEmpty:
+                pass
+
             finish_event = {
                 "id": response_id,
                 "object": "chat.completion.chunk",
@@ -254,6 +289,8 @@ async def generate_sse_stream(
                     else None
                 )
                 db.add_chat_message(session_id, "assistant", full_response, [], trace_to_save)
+            elif session_id and not full_response:
+                logger.warning(f"Stream completed but no response content for session {session_id}")
 
     except Exception as e:
         logger.error(f"Streaming error: {e}", exc_info=True)

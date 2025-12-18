@@ -1,99 +1,95 @@
 """Contextual suggested actions generation based on query and cluster state."""
 
+from kgpt.agents.admin import get_suggested_operations
+
 
 def generate_suggested_actions(
     message: str,
     cluster_context: dict | None = None,
     admin_result: dict | None = None,
 ) -> list[dict]:
-    """Generate contextual suggested actions based on the query and cluster state."""
+    """
+    Generate contextual suggested actions based on the query and cluster state.
+
+    Uses the operations discovery module for dynamic operation suggestions,
+    combined with documentation-related suggestions based on the message content.
+    """
     actions = []
     message_lower = message.lower()
 
-    # After admin operation, suggest related follow-ups
+    # After admin operation, use the discovery module for follow-up suggestions
     if admin_result:
         operation = admin_result.get("operation", "")
         success = admin_result.get("success", False)
 
-        if success:
-            if operation == "delete_topic":
-                actions.append(
-                    {
-                        "id": "list-topics",
-                        "label": "List remaining topics",
-                        "type": "query",
-                        "value": "List all topics in the cluster",
-                        "icon": "📋",
-                    }
-                )
-            elif operation == "create_topic":
-                topic = admin_result.get("topic", "")
-                if topic:
-                    actions.append(
-                        {
-                            "id": "describe-new-topic",
-                            "label": f"Describe '{topic}'",
-                            "type": "query",
-                            "value": f"Describe the configuration of topic {topic}",
-                            "icon": "🔍",
-                        }
-                    )
-            elif operation == "alter_topic_config":
-                topic = admin_result.get("topic", "")
-                if topic:
-                    actions.append(
-                        {
-                            "id": "verify-config",
-                            "label": f"Verify '{topic}' config",
-                            "type": "query",
-                            "value": f"Show the current configuration of topic {topic}",
-                            "icon": "✅",
-                        }
-                    )
-        else:
-            # On failure, suggest checking cluster status
+        # Get dynamic suggestions based on the operation
+        suggestions = get_suggested_operations(
+            last_operation=operation,
+            last_success=success,
+            cluster_info=cluster_context,
+        )
+
+        for s in suggestions:
+            # Customize the prompt if we have specific data from the result
+            prompt = s["suggested_prompt"]
+
+            # Replace placeholders with actual values from the result
+            if "[topic_name]" in prompt and admin_result.get("topic"):
+                prompt = prompt.replace("[topic_name]", admin_result["topic"])
+            if "[group_id]" in prompt and admin_result.get("group_id"):
+                prompt = prompt.replace("[group_id]", admin_result["group_id"])
+
+            actions.append(
+                {
+                    "id": s["operation_id"],
+                    "label": s["operation_name"],
+                    "type": "query",
+                    "value": prompt,
+                }
+            )
+
+        # Add failure recovery suggestion
+        if not success:
             actions.append(
                 {
                     "id": "check-cluster",
                     "label": "Check cluster status",
                     "type": "query",
-                    "value": "Show cluster status and health",
-                    "icon": "🔧",
+                    "value": "Describe the cluster",
                 }
             )
 
         return actions[:3]
+
+    # For non-admin responses, combine topic-aware and documentation suggestions
 
     # Cluster-related suggestions
     if cluster_context:
         topics = cluster_context.get("topics", [])
         consumer_groups = cluster_context.get("consumer_groups", [])
 
+        # Topic-specific suggestions
         if "topic" in message_lower and topics:
-            # Suggest exploring specific topics
             if len(topics) > 0:
                 actions.append(
                     {
                         "id": "describe-topic",
                         "label": f"Describe topic '{topics[0]}'",
                         "type": "query",
-                        "value": f"Describe the configuration of topic {topics[0]}",
-                        "icon": "📋",
+                        "value": f"Describe topic {topics[0]}",
                     }
                 )
 
-        # Suggest admin operations for topics
+        # Admin operation suggestions based on intent
         if "delete" in message_lower or "remove" in message_lower:
             if topics and len(topics) > 0:
-                # Find the topic mentioned in the message
                 mentioned_topic = next((t for t in topics if t.lower() in message_lower), topics[0])
                 actions.append(
                     {
                         "id": "confirm-delete",
                         "label": f"Delete topic '{mentioned_topic}'",
                         "type": "operation",
-                        "value": f"Delete the topic {mentioned_topic}",
-                        "icon": "🗑️",
+                        "value": f"Delete topic {mentioned_topic}",
                     }
                 )
 
@@ -103,20 +99,23 @@ def generate_suggested_actions(
                     "id": "create-topic",
                     "label": "Create new topic",
                     "type": "operation",
-                    "value": "Create a new topic called my-topic with 3 partitions",
-                    "icon": "➕",
+                    "value": "Create a topic called my-topic with 3 partitions",
                 }
             )
 
         if "consumer" in message_lower or "lag" in message_lower:
             if consumer_groups:
+                group_id = (
+                    consumer_groups[0].get("group_id")
+                    if isinstance(consumer_groups[0], dict)
+                    else consumer_groups[0]
+                )
                 actions.append(
                     {
-                        "id": "check-lag",
-                        "label": "Check consumer lag",
+                        "id": "describe-group",
+                        "label": "Describe consumer group",
                         "type": "query",
-                        "value": "Show consumer group lag for all groups",
-                        "icon": "⏱️",
+                        "value": f"Describe consumer group {group_id}",
                     }
                 )
 
@@ -126,8 +125,7 @@ def generate_suggested_actions(
                     "id": "list-topics",
                     "label": "List all topics",
                     "type": "query",
-                    "value": "List all topics with their partition counts",
-                    "icon": "📋",
+                    "value": "List all topics",
                 }
             )
 
@@ -139,9 +137,9 @@ def generate_suggested_actions(
                 "label": "Producer configurations",
                 "type": "query",
                 "value": "What are the most important producer configurations?",
-                "icon": "⚙️",
             }
         )
+
     if "consumer" in message_lower and "lag" not in message_lower:
         actions.append(
             {
@@ -149,8 +147,46 @@ def generate_suggested_actions(
                 "label": "Consumer configurations",
                 "type": "query",
                 "value": "What are the most important consumer configurations?",
-                "icon": "⚙️",
             }
+        )
+
+    if "partition" in message_lower:
+        actions.append(
+            {
+                "id": "partition-info",
+                "label": "Partition best practices",
+                "type": "query",
+                "value": "How do I choose the right number of partitions?",
+            }
+        )
+
+    if "replication" in message_lower or "replica" in message_lower:
+        actions.append(
+            {
+                "id": "replication-info",
+                "label": "Replication explained",
+                "type": "query",
+                "value": "How does Kafka replication work?",
+            }
+        )
+
+    # If no suggestions yet, provide helpful defaults
+    if not actions:
+        actions.extend(
+            [
+                {
+                    "id": "help",
+                    "label": "What can you do?",
+                    "type": "query",
+                    "value": "What operations are available?",
+                },
+                {
+                    "id": "list-topics",
+                    "label": "List topics",
+                    "type": "query",
+                    "value": "List all topics",
+                },
+            ]
         )
 
     return actions[:3]  # Limit to 3 suggestions

@@ -16,6 +16,7 @@
 		{ href: '/', label: 'chat', icon: 'terminal' },
 		{ href: '/documents', label: 'documents', icon: 'docs' },
 		{ href: '/cluster', label: 'cluster', icon: 'kafka' },
+		{ href: '/architecture', label: 'architecture', icon: 'graph' },
 		{ href: '/settings', label: 'settings', icon: 'settings' }
 	];
 
@@ -82,6 +83,10 @@
 							<circle cx="6" cy="17" r="1.5"/>
 							<circle cx="18" cy="17" r="1.5"/>
 							<path stroke-linecap="round" d="M12 7v3M9.5 13.5l-2 2M14.5 13.5l2 2"/>
+						</svg>
+					{:else if item.icon === 'graph'}
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
 						</svg>
 					{:else if item.icon === 'settings'}
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

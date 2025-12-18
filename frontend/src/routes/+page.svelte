@@ -170,7 +170,12 @@
 				response,
 				(stage) => {
 					chatMessages.update(msgs =>
-						msgs.map(m => (m.id === assistantId ? { ...m, thinkingStage: stage } : m))
+						msgs.map(m => (m.id === assistantId ? {
+							...m,
+							thinkingStage: stage,
+							// Empty stage means done thinking (for admin ops with no content)
+							isThinking: stage !== '' ? m.isThinking : false
+						} : m))
 					);
 				},
 				(agentEvent) => handleAgentEvent(agentEvent as AgentEvent),
@@ -188,6 +193,16 @@
 					chatMessages.update(msgs =>
 						msgs.map(m => (m.id === assistantId ? { ...m, adminResult: result } : m))
 					);
+				},
+				(title) => {
+					// Update session title when smart name is generated
+					// Backend already updated the database, just update local store
+					if (sessionId) {
+						sessions.update((s) =>
+							s.map((session) => (session.id === sessionId ? { ...session, title } : session))
+						);
+						currentSession.update((s) => (s?.id === sessionId ? { ...s, title } : s));
+					}
 				}
 			)) {
 				if (event.type === 'content') {

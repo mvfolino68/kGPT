@@ -15,63 +15,46 @@ Your job is to analyze the user's question and route to the correct agents.
 
 ### Routing Logic:
 1. **retrieval**: The question is about Kafka concepts, documentation, "how-to" guides, or general knowledge.
-2. **kafka**: The question is about the *current state* of the user's connected cluster (topics, configs, lag).
-3. **admin**: The user wants to PERFORM an action on the cluster (create topic, delete topic, alter config, delete consumer group, add partitions).
-4. **both**: The question compares documentation best practices with the actual cluster state (e.g., "Is my topic X configured correctly?").
-5. **direct**: Simple greetings, or asking about capabilities/help.
-6. **help**: The user is asking what you can do, what operations are available, or asking for help with capabilities.
+2. **admin**: The user wants to interact with their connected cluster - ANY cluster operation including:
+   - READ operations: list topics, describe topic, describe cluster, list consumer groups, get offsets
+   - WRITE operations: create topic, delete topic, alter config, add partitions, delete consumer group
+3. **both**: The question needs BOTH documentation AND cluster context (e.g., "Is my topic X configured correctly?", "Am I following best practices?").
+4. **direct**: Simple greetings.
+5. **help**: The user is asking what you can do, what operations are available, or asking for help.
 
-### Admin Operations (route = "admin"):
-Use this route when the user explicitly wants to:
-- Delete a topic (e.g., "delete the orders topic", "remove topic X")
-- Create a topic (e.g., "create a topic called events", "make a new topic")
-- Describe a topic (e.g., "describe topic orders", "show me details about topic X", "what's the configuration of topic Y")
-- Alter topic configuration (e.g., "change retention to 7 days for topic X", "update config for topic Y")
-- Delete a consumer group (e.g., "delete consumer group my-group")
-- Add partitions (e.g., "add partitions to topic X", "increase partitions to 10 for topic Y")
+### Admin Route (route = "admin") - USE FOR ALL CLUSTER OPERATIONS:
+Use this route when the user wants to:
+- **List/show cluster resources**: "list topics", "show me my topics", "what topics exist", "list consumer groups"
+- **Describe/inspect resources**: "describe topic X", "show topic config", "what are the partitions for topic Y"
+- **Get cluster info**: "show cluster status", "describe the cluster", "how many brokers"
+- **Create resources**: "create a topic called events", "make a new topic"
+- **Modify resources**: "add partitions", "change retention", "alter topic config"
+- **Delete resources**: "delete topic", "remove consumer group"
 
 ### Help Route (route = "help"):
 Use this when the user asks:
 - "What can you do?"
 - "What operations are available?"
-- "What admin operations can you perform?"
 - "Help" or "How do I use this?"
 
-### Web Search (IMPORTANT - be proactive):
-Set needs_web_search=true for MOST knowledge questions. Only skip web search for:
-- Simple greetings or help requests
-- Questions about the user's OWN cluster state
-- Admin operations on the user's cluster
-- Very basic/fundamental concepts that don't change (e.g., "what is a topic?")
-
-Otherwise, DEFAULT to needs_web_search=true when:
-- ANY question about Kafka features, capabilities, or how things work
-- Questions about best practices, recommendations, or "how should I..."
-- Questions about troubleshooting, debugging, or error messages
-- Questions comparing approaches or asking "which is better"
-- Questions about performance, tuning, or optimization
-- Questions about specific versions, features, or releases
-- Questions about integrations with other tools
-- Any question where current/complete information would help
-
-The web provides up-to-date information that complements our documentation.
-When in doubt, search the web - it's better to have more context than less.
+### Web Search:
+Set needs_web_search=true for knowledge/documentation questions where current info helps.
+Set needs_web_search=false for:
+- Cluster operations (admin route)
+- Simple greetings or help
 
 ### Response Format:
-Respond with ONLY a valid JSON object, no other text. Fields:
-- "route": One of "retrieval", "kafka", "admin", "both", "direct", or "help"
-- "sub_goals": List of 1-3 specific sub-questions (empty list for "direct" or "help")
-- "needs_web_search": Boolean - whether to search the web for current info
-- "reasoning": Brief explanation of your routing choice
+Respond with ONLY a valid JSON object. Fields:
+- "route": One of "retrieval", "admin", "both", "direct", or "help"
+- "sub_goals": List of 1-3 specific sub-questions (empty for "direct" or "help")
+- "needs_web_search": Boolean
+- "reasoning": Brief explanation
 
-Example:
-{{"route": "retrieval", "sub_goals": ["Kafka producer configuration options"], "needs_web_search": true, "reasoning": "Documentation + web for current best practices"}}
-
-Example for simple greeting:
-{{"route": "direct", "sub_goals": [], "needs_web_search": false, "reasoning": "Simple greeting, no search needed"}}
-
-Example for admin:
-{{"route": "admin", "sub_goals": ["Delete topic orders"], "needs_web_search": false, "reasoning": "User wants to delete a topic from their cluster"}}"""
+Examples:
+{{"route": "retrieval", "sub_goals": ["Kafka producer configuration"], "needs_web_search": true, "reasoning": "Docs question"}}
+{{"route": "admin", "sub_goals": ["List all topics"], "needs_web_search": false, "reasoning": "User wants to see their cluster topics"}}
+{{"route": "admin", "sub_goals": ["Describe topic orders"], "needs_web_search": false, "reasoning": "User wants topic details"}}
+{{"route": "admin", "sub_goals": ["Create topic events"], "needs_web_search": false, "reasoning": "User wants to create a topic"}}"""
 
 
 ROUTER_USER_PROMPT = """Question: {question}
@@ -158,31 +141,29 @@ async def router_node(state: AgentState) -> dict:
         route = result.get("route", "retrieval")
 
         # Determine what we need based on route
-        needs_cluster = route in ["kafka", "both", "admin"]
+        needs_cluster = route == "both"  # Only "both" needs kafka context alongside docs
         needs_retrieval = route in ["retrieval", "both"]
         needs_admin = route == "admin"
         needs_web_search = result.get("needs_web_search", False) and web_search_available
 
-        # If no cluster connected but kafka/admin route requested, fall back to retrieval
-        if needs_cluster and not has_cluster:
-            if route == "admin":
-                logger.warning("Admin route requested but no cluster connected")
-                return {
-                    "route": "direct",
-                    "sub_goals": [],
-                    "needs_cluster_context": False,
-                    "needs_retrieval": False,
-                    "needs_web_search": False,
-                    "needs_admin_operation": False,
-                    "error": "No Kafka cluster connected. Please connect to a cluster in the Cluster page before performing admin operations.",
-                }
-            else:
-                logger.warning(
-                    "Kafka route requested but no cluster connected, falling back to retrieval"
-                )
-                needs_cluster = False
-                needs_retrieval = True
-                route = "retrieval"
+        # If no cluster connected but admin route requested, show error
+        if needs_admin and not has_cluster:
+            logger.warning("Admin route requested but no cluster connected")
+            return {
+                "route": "direct",
+                "sub_goals": [],
+                "needs_cluster_context": False,
+                "needs_retrieval": False,
+                "needs_web_search": False,
+                "needs_admin_operation": False,
+                "error": "No Kafka cluster connected. Please connect to a cluster in the Cluster page first.",
+            }
+
+        # If "both" route but no cluster, fall back to retrieval only
+        if route == "both" and not has_cluster:
+            logger.warning("Both route requested but no cluster connected, using retrieval only")
+            needs_cluster = False
+            route = "retrieval"
 
         reasoning = result.get("reasoning", "")
         logger.info(
@@ -222,21 +203,23 @@ def route_decision(state: AgentState) -> str:
     Returns the name of the next node to visit.
     """
     if state.get("error"):
-        return "synthesis"  # Go directly to synthesis on error
+        return "synthesis"
 
     route = state.get("route", "retrieval")
 
-    # Direct route or help - skip everything, go straight to synthesis
-    if route in ["direct", "help"]:
+    # Direct responses (greetings) go straight to synthesis
+    if route == "direct":
         return "synthesis"
 
-    # Admin route - go to admin node
+    # Help/capability questions go to the help node
+    if route == "help":
+        return "help"
+
     if state.get("needs_admin_operation"):
         return "admin"
 
-    # Kafka-only or both - start with kafka
+    # "both" route - get cluster context first, then retrieval
     if state.get("needs_cluster_context"):
         return "kafka"
 
-    # Retrieval-only
     return "retrieval"

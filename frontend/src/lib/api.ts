@@ -954,3 +954,110 @@ export async function checkHealth(): Promise<HealthResponse> {
 	if (!response.ok) throw new Error(`Health check failed: ${response.statusText}`);
 	return response.json();
 }
+
+// ============================================================================
+// Operations Discovery API
+// ============================================================================
+
+export interface OperationParam {
+	name: string;
+	label: string;
+	param_type: string;
+	required: boolean;
+	default: unknown;
+	placeholder: string;
+	hint: string;
+	options: string[];
+}
+
+export interface KafkaOperation {
+	id: string;
+	name: string;
+	description: string;
+	category: string;
+	operation_type: 'read' | 'write' | 'destructive';
+	icon: string;
+	params: OperationParam[];
+	requires_confirmation: boolean;
+	available?: boolean;
+	unavailable_reason?: string;
+}
+
+export interface OperationsSummary {
+	total_operations: number;
+	read_operations: number;
+	write_operations: number;
+	destructive_operations: number;
+	categories: string[];
+}
+
+export interface OperationsResponse {
+	cluster_connected: boolean;
+	operations: KafkaOperation[];
+	summary: OperationsSummary;
+}
+
+export interface OperationsByCategory {
+	categories: Record<string, KafkaOperation[]>;
+}
+
+export interface OperationExample {
+	category: string;
+	examples: string[];
+}
+
+export interface OperationSuggestion {
+	operation_id: string;
+	operation_name: string;
+	suggested_prompt: string;
+	type: 'follow_up' | 'explore' | 'common';
+}
+
+export interface SuggestionsResponse {
+	suggestions: OperationSuggestion[];
+	cluster_connected: boolean;
+}
+
+/**
+ * Get all available Kafka admin operations.
+ * Returns operations with availability status based on cluster connection.
+ */
+export async function getAvailableOperations(): Promise<OperationsResponse> {
+	const response = await fetch(`${API_BASE}/cluster/operations`);
+	if (!response.ok) throw new Error(`Failed to get operations: ${response.statusText}`);
+	return response.json();
+}
+
+/**
+ * Get operations grouped by category.
+ */
+export async function getOperationsByCategory(): Promise<OperationsByCategory> {
+	const response = await fetch(`${API_BASE}/cluster/operations/by-category`);
+	if (!response.ok) throw new Error(`Failed to get operations: ${response.statusText}`);
+	return response.json();
+}
+
+/**
+ * Get example prompts for each operation category.
+ */
+export async function getOperationExamples(): Promise<{ examples: OperationExample[] }> {
+	const response = await fetch(`${API_BASE}/cluster/operations/examples`);
+	if (!response.ok) throw new Error(`Failed to get examples: ${response.statusText}`);
+	return response.json();
+}
+
+/**
+ * Get suggested next operations based on context.
+ */
+export async function getOperationSuggestions(
+	lastOperation?: string,
+	lastSuccess: boolean = true
+): Promise<SuggestionsResponse> {
+	const params = new URLSearchParams();
+	if (lastOperation) params.set('last_operation', lastOperation);
+	params.set('last_success', lastSuccess.toString());
+
+	const response = await fetch(`${API_BASE}/cluster/operations/suggestions?${params}`);
+	if (!response.ok) throw new Error(`Failed to get suggestions: ${response.statusText}`);
+	return response.json();
+}

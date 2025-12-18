@@ -3,6 +3,12 @@
 from fastapi import APIRouter, HTTPException
 from loguru import logger
 
+from kgpt.agents.admin import (
+    get_available_operations_for_context,
+    get_operation_examples,
+    get_operations_by_category_dict,
+    get_suggested_operations,
+)
 from kgpt.api.schemas import (
     ClusterConnectRequest,
     ClusterInfo,
@@ -201,3 +207,70 @@ async def connect_demo_cluster() -> ClusterInfo:
         status_code=404,
         detail="Demo Kafka cluster not found. Make sure to run with --profile demo",
     )
+
+
+# ============================================================================
+# Operations Discovery Endpoints
+# ============================================================================
+
+
+@router.get("/operations")
+async def get_operations() -> dict:
+    """
+    Get all available Kafka admin operations.
+
+    Returns operations grouped by category with availability status
+    based on whether a cluster is connected.
+    """
+    return get_available_operations_for_context()
+
+
+@router.get("/operations/by-category")
+async def get_operations_grouped() -> dict:
+    """Get operations grouped by category."""
+    return {
+        "categories": get_operations_by_category_dict(),
+    }
+
+
+@router.get("/operations/examples")
+async def get_examples() -> dict:
+    """Get example prompts for each operation category."""
+    return {
+        "examples": get_operation_examples(),
+    }
+
+
+@router.get("/operations/suggestions")
+async def get_suggestions(
+    last_operation: str | None = None,
+    last_success: bool = True,
+) -> dict:
+    """
+    Get suggested next operations based on context.
+
+    Args:
+        last_operation: ID of the last executed operation
+        last_success: Whether the last operation succeeded
+    """
+    # Get cluster info if connected
+    from kgpt.agents.kafka_agent import get_cluster_context
+
+    cluster_info = None
+    context = get_cluster_context()
+    if context:
+        try:
+            cluster_info = context.get_cluster_metadata()
+        except Exception:
+            pass
+
+    suggestions = get_suggested_operations(
+        last_operation=last_operation,
+        last_success=last_success,
+        cluster_info=cluster_info,
+    )
+
+    return {
+        "suggestions": suggestions,
+        "cluster_connected": context is not None,
+    }

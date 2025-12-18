@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
-from kgpt.agents.admin import admin_node
+from kgpt.agents.admin_node import admin_node
 from kgpt.agents.kafka_agent import kafka_node
 from kgpt.agents.query_enhancer import get_web_search_query
 from kgpt.agents.retrieval import extract_doc_citations, retrieval_node
@@ -19,7 +19,6 @@ from kgpt.agents.synthesis import (
     ADMIN_SYNTHESIS_USER_PROMPT,
     SYNTHESIS_SYSTEM_PROMPT,
     SYNTHESIS_USER_PROMPT,
-    format_admin_result,
     format_cluster_context,
     format_documents,
 )
@@ -32,6 +31,125 @@ from kgpt.llm import get_llm
 
 from .responses import get_help_response
 from .text_utils import extract_text_from_chunk
+
+
+def _format_executed_result(admin_res: dict) -> str:
+    """Format an executed admin operation result for synthesis."""
+    lines = ["Admin Operation Result:"]
+    lines.append(
+        f"- Operation: {admin_res.get('operation_name', admin_res.get('operation', 'Unknown'))}"
+    )
+    lines.append(f"- Status: {'SUCCESS' if admin_res.get('success') else 'FAILED'}")
+
+    if admin_res.get("message"):
+        lines.append(f"- Message: {admin_res['message']}")
+
+    data = admin_res.get("data", {})
+
+    # Format data based on operation type
+    operation = admin_res.get("operation", "")
+
+    if operation == "list_topics":
+        topics = data.get("topics", [])
+        lines.append(f"- Total topics: {len(topics)}")
+        if topics:
+            lines.append("- Topics:")
+            for t in topics[:20]:
+                if isinstance(t, dict):
+                    lines.append(
+                        f"  - {t.get('name', '?')} ({t.get('partitions', '?')} partitions)"
+                    )
+                else:
+                    lines.append(f"  - {t}")
+            if len(topics) > 20:
+                lines.append(f"  ... and {len(topics) - 20} more")
+
+    elif operation == "describe_topic":
+        lines.append(f"- Topic: {data.get('topic', '?')}")
+        lines.append(f"- Partitions: {data.get('partition_count', '?')}")
+        lines.append(f"- Replication Factor: {data.get('replication_factor', '?')}")
+
+        partitions = data.get("partitions", [])
+        if partitions:
+            lines.append("- Partition Details:")
+            for p in partitions[:5]:
+                lines.append(
+                    f"  - Partition {p.get('partition', '?')}: "
+                    f"leader={p.get('leader', '?')}, "
+                    f"replicas={p.get('replicas', [])}, "
+                    f"ISRs={p.get('isrs', [])}"
+                )
+            if len(partitions) > 5:
+                lines.append(f"  ... and {len(partitions) - 5} more partitions")
+
+        config = data.get("configuration", {})
+        if config:
+            lines.append("- Key Configuration:")
+            for k, v in list(config.items())[:10]:
+                lines.append(f"  - {k}: {v}")
+
+    elif operation == "list_consumer_groups":
+        groups = data.get("groups", [])
+        lines.append(f"- Total groups: {len(groups)}")
+        if groups:
+            lines.append("- Groups:")
+            for g in groups[:20]:
+                if isinstance(g, dict):
+                    lines.append(f"  - {g.get('group_id', '?')} (state: {g.get('state', '?')})")
+                else:
+                    lines.append(f"  - {g}")
+            if len(groups) > 20:
+                lines.append(f"  ... and {len(groups) - 20} more")
+
+    elif operation == "describe_consumer_group":
+        lines.append(f"- Group ID: {data.get('group_id', '?')}")
+        lines.append(f"- State: {data.get('state', '?')}")
+        lines.append(f"- Protocol: {data.get('protocol', '?')}")
+        members = data.get("members", [])
+        lines.append(f"- Members: {len(members)}")
+        for m in members[:5]:
+            lines.append(f"  - {m.get('client_id', '?')} @ {m.get('host', '?')}")
+
+    elif operation == "describe_cluster":
+        lines.append(f"- Cluster ID: {data.get('cluster_id', '?')}")
+        lines.append(f"- Controller: Broker {data.get('controller_id', '?')}")
+        lines.append(f"- Brokers: {data.get('broker_count', '?')}")
+        lines.append(f"- Topics: {data.get('topic_count', '?')}")
+        brokers = data.get("brokers", [])
+        if brokers:
+            lines.append("- Broker Details:")
+            for b in brokers:
+                lines.append(
+                    f"  - Broker {b.get('id', '?')}: {b.get('host', '?')}:{b.get('port', '?')}"
+                )
+
+    elif operation == "get_consumer_group_offsets":
+        lines.append(f"- Group ID: {data.get('group_id', '?')}")
+        offsets = data.get("offsets", [])
+        lines.append(f"- Offset entries: {len(offsets)}")
+        for o in offsets[:10]:
+            lines.append(
+                f"  - {o.get('topic', '?')}[{o.get('partition', '?')}]: offset {o.get('offset', '?')}"
+            )
+        if len(offsets) > 10:
+            lines.append(f"  ... and {len(offsets) - 10} more")
+
+    else:
+        # Generic data formatting
+        for key, value in data.items():
+            if isinstance(value, (list, dict)):
+                lines.append(f"- {key}: {len(value) if isinstance(value, list) else 'object'}")
+            else:
+                lines.append(f"- {key}: {value}")
+
+    # Include code that was executed for educational value
+    if admin_res.get("code_executed"):
+        lines.append("\nCode executed:")
+        lines.append("```python")
+        lines.append(admin_res["code_executed"])
+        lines.append("```")
+
+    return "\n".join(lines)
 
 
 async def query_stream_with_stages(
@@ -167,12 +285,12 @@ async def query_stream_with_stages(
 
         # Handle admin operations
         if needs_admin and not state.get("error"):
-            yield {"stage": "Analyzing your request..."}
+            yield {"stage": "Processing admin request..."}
             yield {
                 "agent_event": {
                     "agent": "admin",
                     "status": "started",
-                    "description": "Analyzing admin operation request",
+                    "description": "Processing admin operation",
                 }
             }
 
@@ -181,6 +299,19 @@ async def query_stream_with_stages(
             admin_duration = int((time.time() - admin_start) * 1000)
 
             state = {**state, **admin_result}
+            admin_res = state.get("admin_result", {})
+
+            # Determine operation status for event
+            if admin_res.get("executed"):
+                op_status = "executed"
+            elif admin_res.get("needs_info"):
+                op_status = "needs_info"
+            elif admin_res.get("pending"):
+                op_status = "pending"
+            elif admin_res.get("unclear"):
+                op_status = "unclear"
+            else:
+                op_status = "error" if admin_res.get("error") else "unknown"
 
             yield {
                 "agent_event": {
@@ -188,14 +319,9 @@ async def query_stream_with_stages(
                     "status": "completed",
                     "duration_ms": admin_duration,
                     "result": {
-                        "operation": state.get("admin_result", {}).get("operation"),
-                        "status": (
-                            "needs_info"
-                            if state.get("admin_result", {}).get("needs_info")
-                            else "pending"
-                            if state.get("admin_result", {}).get("pending")
-                            else "ready"
-                        ),
+                        "operation": admin_res.get("operation"),
+                        "operation_name": admin_res.get("operation_name"),
+                        "status": op_status,
                     },
                 }
             }
@@ -203,63 +329,89 @@ async def query_stream_with_stages(
             # Send cluster context and admin result to frontend
             if state.get("cluster_context"):
                 yield {"cluster_context": state["cluster_context"]}
-            if state.get("admin_result"):
-                yield {"admin_result": state["admin_result"]}
+            if admin_res:
+                yield {"admin_result": admin_res}
 
-            # Check the status of the admin analysis
-            admin_res = state.get("admin_result", {})
+            # Handle different admin result states
+            is_executed = admin_res.get("executed", False)
             is_pending = admin_res.get("pending", False)
             needs_info = admin_res.get("needs_info", False)
             is_unclear = admin_res.get("unclear", False)
             has_error = admin_res.get("error")
 
-            # For structured UI cards, don't generate text
-            if needs_info or is_unclear or is_pending:
+            # For executed read operations, generate a natural language response
+            if is_executed and admin_res.get("success"):
+                yield {"stage": "Generating response..."}
+                yield {
+                    "agent_event": {
+                        "agent": "synthesis",
+                        "status": "started",
+                        "description": "Generating response for executed operation",
+                    }
+                }
+
+                # Format the executed operation result for synthesis
+                admin_section = _format_executed_result(admin_res)
+                cluster_section = format_cluster_context(state.get("cluster_context"))
+
+                llm = get_llm(streaming=True)
+                prompt = ChatPromptTemplate.from_messages(
+                    [
+                        ("system", ADMIN_SYNTHESIS_SYSTEM_PROMPT),
+                        ("human", ADMIN_SYNTHESIS_USER_PROMPT),
+                    ]
+                )
+
+                chain = prompt | llm
+
+                content_yielded = False
+                async for chunk in chain.astream(
+                    {
+                        "question": state["question"],
+                        "admin_result": admin_section,
+                        "cluster_section": cluster_section,
+                    }
+                ):
+                    text = extract_text_from_chunk(chunk)
+                    if text:
+                        content_yielded = True
+                        yield text
+
+                if not content_yielded:
+                    # Fallback: use the message from the result
+                    yield admin_res.get("message", "Operation completed successfully.")
+
+                yield {"agent_event": {"agent": "synthesis", "status": "completed"}}
+                yield {"citations": [], "done": True}
+                return
+
+            # For pending write operations, UI handles confirmation - no text needed
+            if is_pending:
                 yield {"stage": ""}
                 yield {"citations": [], "done": True}
                 return
 
-            # For errors, return
+            # For needs_info, UI handles the input form - no text needed
+            if needs_info:
+                yield {"stage": ""}
+                yield {"citations": [], "done": True}
+                return
+
+            # For unclear requests, UI shows operation picker - no text needed
+            if is_unclear:
+                yield {"stage": ""}
+                yield {"citations": [], "done": True}
+                return
+
+            # For errors, show error message
             if has_error:
+                yield f"Error: {has_error}"
                 yield {"stage": ""}
                 yield {"citations": [], "done": True}
                 return
 
-            # Generate response with synthesis
-            yield {"stage": "Generating response..."}
-            yield {
-                "agent_event": {
-                    "agent": "synthesis",
-                    "status": "started",
-                    "description": "Generating response for admin result",
-                }
-            }
-
-            admin_section = format_admin_result(admin_res)
-            cluster_section = format_cluster_context(state.get("cluster_context"))
-
-            llm = get_llm(streaming=True)
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", ADMIN_SYNTHESIS_SYSTEM_PROMPT),
-                    ("human", ADMIN_SYNTHESIS_USER_PROMPT),
-                ]
-            )
-
-            chain = prompt | llm
-
-            async for chunk in chain.astream(
-                {
-                    "question": state["question"],
-                    "admin_result": admin_section,
-                    "cluster_section": cluster_section,
-                }
-            ):
-                text = extract_text_from_chunk(chunk)
-                if text:
-                    yield text
-
-            yield {"agent_event": {"agent": "synthesis", "status": "completed"}}
+            # Fallback for any other state
+            yield {"stage": ""}
             yield {"citations": [], "done": True}
             return
 
@@ -449,6 +601,13 @@ async def query_stream_with_stages(
         if web_section:
             full_context = f"{documents_text}\n\n{web_section}"
 
+        # Check if we have any context to work with
+        has_context = bool(full_context.strip() or cluster_section.strip())
+        logger.debug(
+            f"Synthesis context: docs={len(docs)}, web={len(web_results)}, "
+            f"cluster={bool(state.get('cluster_context'))}, has_context={has_context}"
+        )
+
         llm = get_llm(streaming=True)
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -459,7 +618,9 @@ async def query_stream_with_stages(
 
         chain = prompt | llm
 
-        # Stream tokens
+        # Stream tokens and track if we got any content
+        content_yielded = False
+        chunk_count = 0
         async for chunk in chain.astream(
             {
                 "question": state["question"],
@@ -467,9 +628,20 @@ async def query_stream_with_stages(
                 "documents": full_context,
             }
         ):
+            chunk_count += 1
             text = extract_text_from_chunk(chunk)
             if text:
+                content_yielded = True
                 yield text
+
+        # Log warning if no content was generated
+        if not content_yielded:
+            logger.warning(
+                f"Synthesis generated no content! Chunks received: {chunk_count}, "
+                f"context available: {has_context}"
+            )
+            # Yield a fallback message so the user doesn't see nothing
+            yield "I apologize, but I wasn't able to generate a response. Please try rephrasing your question."
 
         synthesis_duration = int((time.time() - synthesis_start) * 1000)
         yield {
@@ -477,7 +649,11 @@ async def query_stream_with_stages(
                 "agent": "synthesis",
                 "status": "completed",
                 "duration_ms": synthesis_duration,
-                "result": {"docs_used": len(docs), "web_results_used": len(web_results)},
+                "result": {
+                    "docs_used": len(docs),
+                    "web_results_used": len(web_results),
+                    "content_yielded": content_yielded,
+                },
             }
         }
 

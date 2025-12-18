@@ -4,6 +4,7 @@ from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
+from kgpt.agents.help_node import format_help_as_text
 from kgpt.agents.state import AgentState
 from kgpt.llm import get_llm
 
@@ -260,6 +261,10 @@ async def synthesis_node(state: AgentState) -> dict:
             "citations": [],
         }
 
+    # Handle help route - return capabilities and operations
+    if state.get("help_response"):
+        return await _synthesize_help_response(state)
+
     # Get documents
     docs = state.get("retrieved_docs", [])
     web_results = state.get("web_results", [])
@@ -372,4 +377,89 @@ async def synthesis_node(state: AgentState) -> dict:
             "answer": f"I apologize, but I encountered an error generating your answer. Error: {str(e)}",
             "citations": [],
             "error": str(e),
+        }
+
+
+# ============================================================================
+# Help Response Synthesis
+# ============================================================================
+
+HELP_SYNTHESIS_SYSTEM_PROMPT = """You are kGPT, a Kafka expert assistant. The user is asking about your capabilities.
+
+Respond in a friendly, helpful manner. Use the provided capabilities information to explain what you can do.
+
+### Guidelines:
+1. Be conversational but informative
+2. Highlight key capabilities relevant to their question
+3. Give specific examples of prompts they can try
+4. If they're not connected to a cluster, mention they can still ask documentation questions
+5. Don't overwhelm with too much information - keep it scannable
+6. Use markdown formatting for readability
+
+### Response Structure:
+- Brief intro acknowledging their question
+- Key capabilities with examples
+- Suggested next steps based on their context
+- Keep total response under 400 words"""
+
+HELP_SYNTHESIS_USER_PROMPT = """User asked: {question}
+
+{capabilities_info}
+
+Respond helpfully about what you can do and suggest next steps:"""
+
+
+async def _synthesize_help_response(state: AgentState) -> dict:
+    """
+    Synthesize a response for help/capability questions.
+
+    Uses the help_response from the help node to generate a friendly,
+    informative answer about available capabilities.
+    """
+    logger.info("Synthesizing help response...")
+
+    help_response = state.get("help_response", {})
+    suggested_prompts = state.get("suggested_prompts", [])
+
+    # Format the help info for the LLM
+    capabilities_info = format_help_as_text(help_response)
+
+    # Create synthesis chain
+    llm = get_llm(streaming=False)
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", HELP_SYNTHESIS_SYSTEM_PROMPT),
+            ("human", HELP_SYNTHESIS_USER_PROMPT),
+        ]
+    )
+
+    chain = prompt | llm
+
+    try:
+        result = await chain.ainvoke(
+            {
+                "question": state["question"],
+                "capabilities_info": capabilities_info,
+            }
+        )
+
+        answer = result.content
+
+        logger.info(f"Help synthesis complete. Answer length: {len(answer)}")
+
+        return {
+            "answer": answer,
+            "citations": [],
+            "suggested_prompts": suggested_prompts,
+            "help_response": help_response,  # Pass through for UI
+        }
+
+    except Exception as e:
+        logger.error(f"Help synthesis error: {e}")
+        # Fallback to formatted text
+        return {
+            "answer": capabilities_info,
+            "citations": [],
+            "suggested_prompts": suggested_prompts,
+            "help_response": help_response,
         }

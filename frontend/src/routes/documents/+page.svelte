@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import {
 		getDocuments,
 		ingestDocument,
@@ -18,7 +20,6 @@
 		cleanupStaleEntries,
 		purgeAllData,
 		getChunkAnalytics,
-		getAgentGraph,
 		suggestName,
 		type DocumentSource,
 		type CollectionsResponse,
@@ -29,7 +30,6 @@
 		type ChunkResult,
 		type SyncStatusResponse,
 		type ChunkAnalytics,
-		type AgentGraphInfo,
 		type SourceType
 	} from '$lib/api';
 	import { RetroHeader, RetroButton, StatusIndicator, RetroCard } from '$lib/components';
@@ -38,9 +38,32 @@
 	// State
 	// =========================================================================
 
-	// Tab navigation
-	type Tab = 'sources' | 'search' | 'browse' | 'pipeline' | 'agents';
-	let activeTab = $state<Tab>('sources');
+	// Tab navigation with URL support
+	type Tab = 'sources' | 'search' | 'browse' | 'pipeline';
+	const validTabs: Tab[] = ['sources', 'search', 'browse', 'pipeline'];
+
+	// Get initial tab from URL or default to 'sources'
+	function getTabFromUrl(): Tab {
+		const tabParam = $page.url.searchParams.get('tab');
+		if (tabParam && validTabs.includes(tabParam as Tab)) {
+			return tabParam as Tab;
+		}
+		return 'sources';
+	}
+
+	let activeTab = $state<Tab>(getTabFromUrl());
+
+	// Update URL when tab changes
+	function setActiveTab(tab: Tab) {
+		activeTab = tab;
+		const url = new URL($page.url);
+		if (tab === 'sources') {
+			url.searchParams.delete('tab');
+		} else {
+			url.searchParams.set('tab', tab);
+		}
+		goto(url.toString(), { replaceState: true, noScroll: true });
+	}
 
 	// Sources tab state
 	let documents = $state<DocumentSource[]>([]);
@@ -123,10 +146,6 @@
 	let demoQuery = $state('');
 	let demoResult = $state<RAGDemoResponse | null>(null);
 	let demoLoading = $state(false);
-
-	// Agent Graph tab state
-	let agentGraph = $state<AgentGraphInfo | null>(null);
-	let agentGraphLoading = $state(false);
 
 	// Embedding demo state
 	let embedText1 = $state('');
@@ -607,23 +626,6 @@
 		}
 	}
 
-	// =========================================================================
-	// Agent Graph Tab Functions
-	// =========================================================================
-
-	async function loadAgentGraph() {
-		agentGraphLoading = true;
-		try {
-			agentGraph = await getAgentGraph();
-			console.log('Agent graph loaded:', agentGraph);
-		} catch (e) {
-			console.error('Failed to load agent graph:', e);
-			error = e instanceof Error ? e.message : 'Failed to load agent graph';
-		} finally {
-			agentGraphLoading = false;
-		}
-	}
-
 	async function handleEmbedCompare() {
 		if (!embedText1.trim() || !embedText2.trim()) return;
 		embedLoading = true;
@@ -667,9 +669,6 @@
 		if (activeTab === 'pipeline' && !pipelineInfo) {
 			loadPipelineInfo();
 			loadAnalytics();
-		}
-		if (activeTab === 'agents' && !agentGraph) {
-			loadAgentGraph();
 		}
 	});
 </script>
@@ -717,11 +716,10 @@
 			{ id: 'sources' as Tab, label: 'Sources' },
 			{ id: 'search' as Tab, label: 'Search' },
 			{ id: 'browse' as Tab, label: 'Browse' },
-			{ id: 'pipeline' as Tab, label: 'RAG Pipeline' },
-			{ id: 'agents' as Tab, label: 'Agent Graph' }
+			{ id: 'pipeline' as Tab, label: 'RAG Pipeline' }
 		] as tab}
 			<button
-				onclick={() => (activeTab = tab.id)}
+				onclick={() => setActiveTab(tab.id)}
 				class="px-4 py-2.5 font-mono text-sm transition-all {activeTab === tab.id
 					? 'text-confluent-primary border-b-2 border-confluent-primary bg-surface-900/50'
 					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/30 border-b-2 border-transparent'}"
@@ -2072,121 +2070,7 @@
 				</RetroCard>
 			{/if}
 
-			<!-- ================================================================= -->
-			<!-- AGENT GRAPH TAB -->
-			<!-- ================================================================= -->
-			{:else if activeTab === 'agents'}
-				{#if agentGraphLoading}
-					<div class="p-8 text-center font-mono text-surface-500">
-						<span class="animate-pulse">loading agent graph...</span>
-					</div>
-				{:else if agentGraph}
-					<RetroCard noPadding>
-						<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-							<span class="text-emerald-400 font-mono text-xs">🤖</span>
-							<span class="font-mono text-sm text-surface-300">Multi-Agent System Architecture</span>
-						</div>
-
-						<div class="p-4 space-y-6">
-							<!-- Description -->
-							<div class="bg-surface-900 rounded-lg border border-surface-700 p-4">
-								<pre class="text-xs text-surface-300 font-mono whitespace-pre-wrap">{agentGraph.description}</pre>
-							</div>
-
-							<!-- Agent Nodes -->
-							<section>
-								<h3 class="font-mono text-sm text-surface-300 mb-3">Available Agents</h3>
-								<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-									{#each agentGraph.nodes as node}
-										<div class="retro-card rounded-lg p-3 flex items-start gap-3">
-											<!-- Agent icon -->
-											<div class="flex-shrink-0">
-												<svg class="w-5 h-5 {node.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-													<path stroke-linecap="round" stroke-linejoin="round" d={node.icon} />
-												</svg>
-											</div>
-
-											<!-- Agent info -->
-											<div class="flex-1 min-w-0">
-												<h4 class="font-mono text-sm {node.color} font-bold">{node.label}</h4>
-												<p class="text-xs text-surface-400 mt-1">{node.description}</p>
-											</div>
-										</div>
-									{/each}
-								</div>
-							</section>
-
-							<!-- Execution Paths -->
-							<section>
-								<h3 class="font-mono text-sm text-surface-300 mb-3">Execution Flow</h3>
-								<div class="bg-surface-900 rounded-lg border border-surface-700 p-4 space-y-3">
-									<p class="text-xs text-surface-400 font-mono mb-4">
-										The router analyzes each query and determines the optimal execution path through the agent graph:
-									</p>
-
-									{#each agentGraph.edges as edge, i}
-										{#if edge.from_node === 'START'}
-											<div class="flex items-center gap-3 text-xs font-mono">
-												<span class="text-violet-400">[START]</span>
-												<svg class="w-4 h-4 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-												</svg>
-												<span class="text-violet-400">{edge.to_node}</span>
-											</div>
-										{:else if edge.to_node === 'END'}
-											<div class="flex items-center gap-3 text-xs font-mono">
-												<span class="text-emerald-400">{edge.from_node}</span>
-												<svg class="w-4 h-4 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-												</svg>
-												<span class="text-surface-500">[END]</span>
-											</div>
-										{:else}
-											<div class="flex items-start gap-3 text-xs font-mono">
-												<span class="{agentGraph.nodes.find(n => n.name === edge.from_node)?.color || 'text-surface-400'}">{edge.from_node}</span>
-												<svg class="w-4 h-4 text-surface-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-												</svg>
-												<div class="flex-1">
-													<span class="{agentGraph.nodes.find(n => n.name === edge.to_node)?.color || 'text-surface-400'}">{edge.to_node}</span>
-													{#if edge.condition}
-														<div class="text-surface-500 mt-0.5">
-															<span class="text-surface-600">if</span> {edge.condition}
-														</div>
-													{/if}
-												</div>
-											</div>
-										{/if}
-									{/each}
-								</div>
-							</section>
-
-							<!-- Real-time Observation -->
-							<section class="bg-amber-900/20 border border-amber-800/30 rounded-lg p-4">
-								<div class="flex items-start gap-3">
-									<svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-									</svg>
-									<div>
-										<h4 class="font-mono text-sm text-amber-400 font-bold mb-1">See It In Action</h4>
-										<p class="text-xs text-surface-300 font-mono">
-											Watch the agent pipeline in real-time by opening the <span class="text-emerald-400">Agent Activity</span> sidebar
-											in the Chat page. You'll see each agent activate, the routing decisions, and the data flowing through the system.
-										</p>
-									</div>
-								</div>
-							</section>
-						</div>
-					</RetroCard>
-				{:else}
-					<div class="p-8 text-center font-mono text-surface-500">
-						<p>Failed to load agent graph</p>
-						<RetroButton size="sm" onclick={loadAgentGraph} class="mt-4">
-							retry
-						</RetroButton>
-					</div>
-				{/if}
-			{/if}
+		{/if}
 		</div>
 	</div>
 </div>

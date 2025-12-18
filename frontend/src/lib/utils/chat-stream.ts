@@ -11,6 +11,7 @@ export interface StreamEvent {
 	admin_result?: any;
 	citations?: string[];
 	actions?: Array<{ label: string; value: string }>;
+	session_title_update?: string;
 	choices?: Array<{ delta?: { content?: unknown } }>;
 }
 
@@ -27,7 +28,8 @@ export async function* processSSEStream(
 	onValidationResults?: (results: any) => void,
 	onWebResults?: (results: any) => void,
 	onClusterContext?: (context: any) => void,
-	onAdminResult?: (result: any) => void
+	onAdminResult?: (result: any) => void,
+	onSessionTitleUpdate?: (title: string) => void
 ): AsyncGenerator<{ type: 'content' | 'citations' | 'actions'; data: any }, void, unknown> {
 	if (!response.body) throw new Error('No response body');
 
@@ -121,6 +123,12 @@ export async function* processSSEStream(
 					// Handle admin result
 					if (parsed.admin_result) {
 						onAdminResult?.(parsed.admin_result);
+						continue;
+					}
+
+					// Handle session title update
+					if (parsed.session_title_update) {
+						onSessionTitleUpdate?.(parsed.session_title_update);
 						continue;
 					}
 

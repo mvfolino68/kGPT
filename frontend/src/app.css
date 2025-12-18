@@ -579,15 +579,54 @@ button, a, input, textarea, select {
   outline-offset: 2px;
 }
 
-/* Text selection - visible and on-brand */
+/* Text selection - traditional highlighter style (yellow/amber) */
+/* This keeps text readable while providing clear visual feedback */
 ::selection {
-  background: rgba(var(--confluent-primary), 0.4);
-  color: rgb(var(--color-surface-50));
+  background: rgba(255, 235, 59, 0.6); /* Yellow highlighter - traditional */
+  color: inherit; /* Keep original text color for readability */
+  text-shadow: none;
 }
 
 ::-moz-selection {
-  background: rgba(var(--confluent-primary), 0.4);
-  color: rgb(var(--color-surface-50));
+  background: rgba(255, 235, 59, 0.6); /* Yellow highlighter - traditional */
+  color: inherit; /* Keep original text color for readability */
+  text-shadow: none;
+}
+
+/* Ensure text is selectable everywhere unless explicitly disabled */
+* {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Buttons and interactive elements can still prevent selection for better UX */
+button,
+.retro-button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+[role="tab"],
+[role="menuitem"] {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Code blocks and preformatted text should be selectable */
+code,
+pre,
+.message-content,
+.prose,
+.formatted-message {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 /* ============================================================================
@@ -722,4 +761,63 @@ button, a, input, textarea, select {
   );
   background-size: 200% 100%;
   animation: data-flow 8s linear infinite;
+}
+
+/* ============================================================================
+   STANDARDIZED IMAGE STYLING
+   ============================================================================ */
+
+/* Global image container styling for markdown content */
+.markdown-image-container {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(var(--color-surface-700), 0.5);
+  background: rgba(var(--color-surface-900), 0.3);
+  transition: all 200ms ease;
+}
+
+.markdown-image-container:hover {
+  border-color: rgba(var(--color-surface-600), 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-image {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  display: block;
+  transition: opacity 200ms ease;
+  object-fit: contain;
+}
+
+.image-caption {
+  font-size: 0.75rem;
+  color: rgb(var(--color-surface-500));
+  font-family: var(--font-mono);
+  margin-top: 0.5rem;
+  padding: 0 0.75rem 0.5rem;
+  text-align: center;
+  border-top: 1px solid rgba(var(--color-surface-700), 0.3);
+  padding-top: 0.5rem;
+}
+
+/* Ensure all images respect container boundaries */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* GIF-specific enhancements */
+img[src$='.gif'],
+img[src$='.GIF'] {
+  cursor: pointer;
+}
+
+/* Responsive image adjustments */
+@media (max-width: 768px) {
+  .markdown-image-container {
+    margin: 0.75rem 0;
+  }
 }

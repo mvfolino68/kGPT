@@ -431,11 +431,11 @@
 							</div>
 						{/if}
 
-						<div class="flex justify-end">
-							<RetroButton variant="primary" onclick={saveEmbeddingSettings} disabled={saving}>
-								{saving ? 'saving...' : 'save embeddings'}
-							</RetroButton>
-						</div>
+					<div class="flex justify-end">
+						<RetroButton onclick={saveEmbeddingSettings} disabled={saving || (embeddingProvider === 'fastembed' && !huggingFaceToken.trim())}>
+							{saving ? 'saving...' : 'save embeddings'}
+						</RetroButton>
+					</div>
 					</div>
 				</RetroCard>
 
@@ -480,11 +480,11 @@
 							</a>
 						</div>
 
-						<div class="flex justify-end">
-							<RetroButton variant="primary" onclick={saveExaSettings} disabled={saving}>
-								{saving ? 'saving...' : 'save web search'}
-							</RetroButton>
-						</div>
+					<div class="flex justify-end">
+						<RetroButton onclick={saveExaSettings} disabled={saving || !exaApiKey.trim()}>
+							{saving ? 'saving...' : 'save web search'}
+						</RetroButton>
+					</div>
 					</div>
 				</RetroCard>
 
@@ -521,11 +521,11 @@
 							</a>
 						</div>
 
-						<div class="flex justify-end">
-							<RetroButton variant="primary" onclick={saveCohereSettings} disabled={saving || !cohereApiKey.trim()}>
-								{saving ? 'saving...' : 'save cohere key'}
-							</RetroButton>
-						</div>
+					<div class="flex justify-end">
+						<RetroButton onclick={saveCohereSettings} disabled={saving || !cohereApiKey.trim()}>
+							{saving ? 'saving...' : 'save cohere key'}
+						</RetroButton>
+					</div>
 					</div>
 				</RetroCard>
 
