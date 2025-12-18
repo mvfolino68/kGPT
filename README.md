@@ -1,153 +1,236 @@
-# kGPT formerly known as kafkaGPT
+# kGPT
 
-**What if you could ask a question and get an answer from the Confluent documentation?**
+**A modern multi-agent documentation assistant for Kafka and Confluent**
 
-This repo is an implementation of a locally hosted chatbot specifically focused on question answering over the [Confluent documentation](https://docs.confluent.io/).
-Built with [OpenAI ChatGPT API](https://openai.com/blog/introducing-chatgpt-and-whisper-apis), [LangChain](https://github.com/hwchase17/langchain/) and [FastAPI](https://fastapi.tiangolo.com/).
+kGPT is an AI-powered chatbot that helps you navigate Kafka and Confluent documentation, with the ability to connect to your live Kafka clusters for context-aware answers.
 
-The app leverages LangChain's streaming support and async API to update the page in real time for multiple users.
+## Features
 
----
+- **Multi-Agent Architecture**: Uses LangGraph to orchestrate specialized agents for routing, retrieval, validation, and synthesis
+- **Multiple LLM Providers**: Support for OpenRouter, OpenAI, Anthropic, and Ollama (local) via LiteLLM
+- **Bring Your Own Docs**: Index custom documentation from sitemaps, GitHub repos, URLs, or file uploads
+- **Kafka Cluster Integration**: Connect to your clusters for context-aware answers about topics, configs, and consumer groups
+- **Demo Mode**: Optional demo Kafka cluster with sample topics and events
+- **Modern Stack**: FastAPI backend + Svelte 5 frontend with Tailwind CSS
 
-## ✅ Running locally (MacOS/Linux)
+## Quick Start
 
-**Note: this app requires OpenAI's ChatGPT API. It costs money to use the API.** More information here: [OpenAI ChatGPT](https://openai.com/pricing)
+### Option 1: Docker (Production)
 
-1. Clone the repo:
-   1. `git clone git@github.com:mvfolino68/kGPT.git`
-2. Install dependencies: **_tested on Python 3.10.9_**
-   1. from within the repo, setup a virtual environment: `python3 -m venv _venv`
-   2. activate the virtual environment: `source _venv/bin/activate`
-   3. install dependencies: `pip install -r requirements.txt`
-3. Set up an OpenAI API Key:
-   1. you can use the [OpenAI API](https://openai.com/product#made-for-developers) documentation to set up an API key.
-   2. set the environment variables for your API key. See [Environment Variables](#environment-variables) for more information.
-4. Setup a vectorstore:
-   1. option 1: Use the existing vectorstore:
-      1. download the vectorstore from here and place it in the root directory of the repo. [download here](https://drive.google.com/uc?export=download&id=1HPa7FX282_1Lzbkhupoh8BibtN2xXEZ5)
-   2. option 2: Create a new vectorstore:
-      1. Note: this method will take a while to run due to the size of the Confluent docs.
-      2. run `python ingest.py` to ingest Confluent docs data into the vectorstore (only needs to be done once).
-      3. you can use other [Document Loaders](https://langchain.readthedocs.io/en/latest/modules/document_loaders.html) to load your own data into the vectorstore.
-5. Run the app: `make start`
-6. Open [localhost:9000](http://localhost:9000) in your browser.
-7. Ask a question! 🎉
-
-## Environment Variables
-
-You can set these environment variables in a `.env` file in the root directory of the project. See the `.env.example` file for an example.
-
-### If Using OpenAI API Directly Set these Variables:
-
-| Variable | Description | Link |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | Your OpenAI API key. | [OpenAI Authentication](https://beta.openai.com/docs/api-reference/authentication) |
-| `OPENAI_API_TYPE` | `"open_ai"` if using OpenAI API. | - |
-| `OPENAI_API_BASE` | Leave this blank if using OpenAI API directly. | - |
-| `AZURE_OPENAI_DEPLOYMENT_NAME` | Leave this blank if using OpenAI API directly. | - |
-| `AZURE_OPENAI_MODEL` | Leave this blank if using OpenAI API directly. | - |
-| `OPENAI_API_VERSION` | Leave this blank if using OpenAI API directly. | - |
-
-### If Using Azure OpenAI Set these Variables:
-
-| Variable | Description | Link |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | Your Azure OpenAI API key. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python#retrieve-key-and-endpoint) |
-| `OPENAI_API_TYPE` | Set this to `"azure"` if using Azure OpenAI. | - |
-| `OPENAI_API_BASE` | The base URL for your Azure OpenAI resource. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python) |
-| `AZURE_OPENAI_DEPLOYMENT_NAME` | The name of your Azure OpenAI deployment. | - |
-| `AZURE_OPENAI_MODEL` | The name of the model you are using. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?tabs=command-line&pivots=programming-language-python) |
-| `OPENAI_API_VERSION` | The OpenAI API version and should align with the model you are using. | [Azure OpenAI Quickstart](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/concepts/models#model-summary-table-and-region-availability) |
-
-### If Using Pinecone As Vectorstore Set these Variables:
-
-| Variable | Description | Link |
-| --- | --- | --- |
-| `PINECONE_API_KEY` | Your Pinecone API key. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
-| `PINECONE_ENVIRONMENT` | The name of your Pinecone environment. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
-| `PINECONE_INDEX` | The name of the Pinecone index. | [Pinecone Quickstart](https://docs.pinecone.io/docs/quickstart) |
-
-
-## 🐳 Running locally (Docker)
-
-This method requires that you have Docker installed on your machine. To install Docker, follow the instructions [here](https://docs.docker.com/get-docker/). This setup assumes that you set up your environment variables in a `.env` file in the root directory of the project.
-
-```shell
-docker build -t kgpt .
-docker run --env-file .env -p 9000:9000 kgpt
+```bash
+git clone https://github.com/mvfolino68/kGPT.git
+cd kGPT
+docker compose up
 ```
 
-## 📸 Screenshots
+Open <http://localhost:3000> and configure your LLM provider in Settings.
 
-![gif](./static/kafkagpt.gif)
+### Option 2: Development Mode (Recommended for Contributors)
+
+```bash
+git clone https://github.com/mvfolino68/kGPT.git
+cd kGPT
+
+# Install dependencies
+make install
+
+# Start development environment (hot-reload enabled)
+make dev
+```
+
+Open <http://localhost:5173> (frontend) and <http://localhost:8000/docs> (API).
+
+**Development mode is much faster** - code changes reload instantly without rebuilding Docker images.
+
+### Docker Options
+
+| Command | What Starts | Use Case |
+|---------|-------------|----------|
+| `docker compose up` | Frontend + Backend + Qdrant | Quick start with cloud LLM |
+| `docker compose --profile ollama up` | + Ollama | Local LLM, no API key |
+| `docker compose --profile demo up` | + Kafka demo | Test Kafka features |
+| `docker compose --profile ollama --profile demo up` | Everything | Full demo experience |
+
+### Make Commands (Development)
+
+| Command | Description |
+|---------|-------------|
+| `make install` | Install all dependencies |
+| `make dev` | Start full dev environment with hot-reload |
+| `make dev-infra` | Start only infrastructure (Qdrant) |
+| `make dev-backend` | Start backend with hot-reload |
+| `make dev-frontend` | Start frontend with hot-reload |
+| `make lint` | Run linters |
+| `make test` | Run tests |
+| `make build` | Build Docker images |
+
+Run `make help` for the full list.
+
+### Access Points
+
+| Mode | Frontend | API Docs |
+|------|----------|----------|
+| **Development** | <http://localhost:5173> | <http://localhost:8000/docs> |
+| **Docker** | <http://localhost:3000> | <http://localhost:8000/docs> |
+
+## Usage
+
+### First-Time Setup
+
+1. **Start the app** (either `make dev` or `docker compose up`)
+2. **Open the frontend** in your browser
+3. **Go to Settings** and configure your LLM provider:
+   - Enter your API key (OpenAI, Anthropic, or OpenRouter)
+   - Or select Ollama for local inference
+4. **Start chatting!**
+
+### Adding Documentation Sources
+
+1. Go to the **Documents** page
+2. Use quick presets (Confluent Docs, Apache Kafka Docs) or add custom sources:
+   - Sitemap URL (e.g., `https://docs.confluent.io/home/sitemap.xml`)
+   - GitHub repository URL
+3. Click **Start Indexing** and watch the progress
+
+**Note**: Large documentation sites (like Confluent) can take 10-30 minutes to fully index. You'll see real-time progress including:
+
+- Current stage (fetching, loading, chunking, embedding)
+- Pages loaded and chunks created
+- Elapsed time
+
+### Connecting a Kafka Cluster
+
+#### Demo Mode
+
+If you started with `--profile demo`:
+
+1. Go to the **Cluster** page
+2. Click **"Connect Demo Cluster"**
+3. Explore demo topics: `orders`, `users`, `inventory`, `payments`, `notifications`
+
+#### Your Own Cluster
+
+1. Go to the **Cluster** page
+2. Enter your cluster details:
+   - Bootstrap servers, Security protocol
+   - SASL credentials (if required)
+3. Click **"Connect"**
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Svelte 5 Frontend                         │
+│  ┌─────────┐  ┌──────────┐  ┌─────────┐  ┌──────────┐      │
+│  │  Chat   │  │Documents │  │ Cluster │  │ Settings │      │
+│  └────┬────┘  └────┬─────┘  └────┬────┘  └────┬─────┘      │
+└───────┼────────────┼─────────────┼────────────┼─────────────┘
+        │            │             │            │
+        ▼            ▼             ▼            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    FastAPI Backend                          │
+│  /api/chat    /api/documents   /api/cluster   /api/settings │
+└───────┼────────────┼─────────────┼────────────┼─────────────┘
+        │            │             │            │
+        ▼            │             │            │
+┌─────────────────────────────────────────────────────────────┐
+│                Multi-Agent System (LangGraph)                │
+│  ┌────────┐   ┌───────────┐   ┌────────────┐   ┌─────────┐ │
+│  │ Router │──▶│ Retrieval │──▶│ Validation │──▶│Synthesis│ │
+│  └────┬───┘   └───────────┘   └────────────┘   └─────────┘ │
+│       │                                              ▲      │
+│       ▼                                              │      │
+│  ┌─────────────┐                                     │      │
+│  │ Kafka Agent │─────────────────────────────────────┘      │
+│  └─────────────┘                                            │
+└─────────────────────────────────────────────────────────────┘
+        │                                       │
+        ▼                                       ▼
+┌───────────────┐                     ┌────────────────┐
+│    Qdrant     │                     │  LLM Provider  │
+│ (Vector Store)│                     │ OpenAI/Claude/ │
+└───────────────┘                     │    Ollama      │
+                                      └────────────────┘
+```
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LLM_PROVIDER` | `openai` | LLM provider: `openai`, `anthropic`, `openrouter`, `ollama` |
+| `LLM_MODEL` | `gpt-4o` | Default LLM model |
+| `OPENAI_API_KEY` | - | OpenAI API key |
+| `ANTHROPIC_API_KEY` | - | Anthropic API key |
+| `OPENROUTER_API_KEY` | - | OpenRouter API key (access all models) |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant server URL |
+| `EMBEDDING_PROVIDER` | `fastembed` | Embedding provider: `fastembed`, `openai`, `ollama`, `cohere` |
+| `EMBEDDING_MODEL` | `BAAI/bge-small-en-v1.5` | Embedding model name |
+
+See [`.env.example`](.env.example) for all available options.
+
+### UI Configuration
+
+All settings can be configured through the **Settings** page in the UI - no environment variables required!
+
+## Development
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed setup, testing, and contribution guidelines.
+
+### Quick Reference
+
+```bash
+# Install everything
+make install
+
+# Start dev environment (hot-reload)
+make dev
+
+# Run linters
+make lint
+make lint-fix
+
+# Run tests
+make test
+
+# Build Docker images
+make build
+```
+
+## Project Structure
+
+```
+kgpt/
+├── Makefile                 # Development commands
+├── docker-compose.yml       # Production Docker stack
+├── docker-compose.dev.yml   # Development infrastructure
+├── pyproject.toml           # Backend dependencies
+├── frontend/                # Svelte 5 + Tailwind CSS
+│   └── src/
+│       ├── routes/          # Pages (chat, documents, cluster, settings)
+│       └── lib/api.ts       # Backend API client
+└── src/kgpt/
+    ├── api/                 # FastAPI routes
+    ├── agents/              # LangGraph multi-agent system
+    ├── ingestion/           # Document loaders (sitemap, github)
+    ├── vectorstore/         # Qdrant integration
+    ├── llm/                 # LLM providers
+    └── db/                  # SQLite persistence
+```
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- Built with [LangChain](https://langchain.com/), [LangGraph](https://langchain-ai.github.io/langgraph/), [FastAPI](https://fastapi.tiangolo.com/), and [SvelteKit](https://kit.svelte.dev/)
+- UI powered by [Tailwind CSS](https://tailwindcss.com/)
+- Vector search powered by [Qdrant](https://qdrant.tech/)
+- Local LLM support via [Ollama](https://ollama.ai/)
 
 ---
 
-## 🤔 How it works
-
-### 📝 Ingestion (run once to create the vectorstore)
-
-1. Pull html from the [Confluent documentation](https://docs.confluent.io/) using `sitemap.xml` and BeautifulSoup to clean the html.
-2. Load the data into DocumentStore using LangChain's [UstructuredHTML Loader](https://langchain.readthedocs.io/en/latest/modules/document_loaders/examples/html.html).
-3. Chunk the documents into smaller chunks using LangChain's [TextSplitter](https://langchain.readthedocs.io/en/latest/reference/modules/text_splitter.html).
-4. Create embeddings for each chunk using OpenAI's [OpenAI Embeddings](https://platform.openai.com/docs/guides/embeddings).
-5. Load the embeddings into a vectorstore using LangChain's [vectorstore wrapper](https://langchain.readthedocs.io/en/latest/reference/modules/vectorstore.html).
-   1. FAISS is used as the vectorstore in this example. More information on FAISS can be found [here](https://ai.facebook.com/tools/faiss/).
-
-### 📝 Question-Answering
-
-1. User accesses text input box and chat history via the web app.
-2. The web app sends the chat history and user input to the backend. The backend uses LangChain's [ConversationalRetrievalChain](https://langchain.readthedocs.io/en/latest/modules/indexes/chain_examples/chat_vector_db.html) to:
-   1. Determine what a standalone question would be (using ChatGPT).
-   2. Look up relevant documents from the vectorstore.
-   3. Pass the standalone question and relevant documents to ChatGPT to generate a final answer.
-3. Return the final answer to the web app and add the answer to the chat history.
-
-Diagram:
-![diagram](./templates/kGPT.png)
-
-## Troubleshooting
-
-1. If you receive an error like this:
-
-   ```shell
-   WARNING:/Users/<user>/Documents/kGPT/.venv/lib/python3.10/site-packages/langchain/chat_models/openai.py:Retrying langchain.chat_models.openai.acompletion_with_retry.<locals>._completion_with_retry in 4.0 seconds as it raised APIConnectionError: Error communicating with OpenAI.
-
-   ```
-
-   [Check here to see the fix](https://github.com/hwchase17/chat-langchain/issues/14)
-
-2. If you receive this error when using the download vectorstore:
-
-   ```shell
-
-   ERROR:root:IndexFlat.search() missing 3 required positional arguments: 'k', 'distances', and 'labels'
-
-   ```
-
-   Rerun the `ingest.py` script to create a new vectorstore.
-
-## 🚀 Helpful Links
-
-Blog Posts:
-
-- [Initial Launch](https://blog.langchain.dev/langchain-chat/)
-- [OpenAI ChatGPT](https://blog.langchain.dev/openai-chatgpt/)
-- [Video Explaination](https://www.youtube.com/watch?v=prbloUGlvLE)
-
-## Contributing to kGPT
-
-I'm happy to accept contributions to this project. Please open an issue or a pull request.
-
-## Future Work
-
-- Make the app available online (currently only available locally). This will require a hosting service that can support the vectorstore and the web app.
-- Allow users to input their own OpenAI API key in the frontend.
-- Include more documentation sites.
-- Tune the ChatVectorDBChain to improve the quality of the answers.
-- Produce the chat history as a topic.
-
-## Follow me on Twitter & LinkedIn
-
-Twitter: [@mvfolino68](https://twitter.com/mvfolino68)
-LinkedIn: [mfolino](https://www.linkedin.com/in/mfolino/)
+**Made by [Michael Folino](https://www.linkedin.com/in/mfolino/)** | [Twitter](https://twitter.com/mvfolino68) | [GitHub](https://github.com/mvfolino68/kGPT)

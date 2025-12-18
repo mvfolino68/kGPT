@@ -1,8 +1,61 @@
-.env
-.env.local
-Makefile
-README.md
-example.txt
-ingest.py
+# Git
+.git
 .gitignore
-_venv/
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts
+build/
+dist/
+*.whl
+
+# Data and caches
+data/
+*.pkl
+*.pickle
+.cache/
+.pytest_cache/
+
+# Environment
+.env
+.env.*
+
+# Docs
+*.md
+!README.md
+
+# Old files
+requirements.txt
+main.py
+query_data.py
+ingest.py
+callback.py
+constants.py
+schemas.py
+templates/
+Makefile
+examples.txt
+
+# Frontend (built separately)
+frontend/
+
+# Tests
+tests/

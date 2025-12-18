@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Terminal-style kGPT logo -->
+  <!-- Background -->
+  <rect x="2" y="2" width="44" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <!-- Terminal bar -->
+  <rect x="2" y="2" width="44" height="10" rx="6" fill="#0f172a"/>
+  <rect x="2" y="8" width="44" height="4" fill="#0f172a"/>
+  <!-- Window controls -->
+  <circle cx="10" cy="7" r="2" fill="#ef4444"/>
+  <circle cx="17" cy="7" r="2" fill="#f59e0b"/>
+  <circle cx="24" cy="7" r="2" fill="#10b981"/>
+  <!-- K letter -->
+  <path d="M12 18v16M12 26l7-8M12 26l7 8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Cursor -->
+  <rect x="28" y="18" width="2" height="16" fill="#10b981" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  <!-- Streaming dots -->
+  <circle cx="36" cy="20" r="1.5" fill="#10b981"/>
+  <circle cx="36" cy="26" r="1.5" fill="#10b981" opacity="0.6"/>
+  <circle cx="36" cy="32" r="1.5" fill="#10b981" opacity="0.3"/>
+</svg>

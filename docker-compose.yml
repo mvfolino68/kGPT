@@ -1,9 +1,211 @@
-version: '3.6'
+# kGPT Docker Compose Configuration
+#
+# Quick Start:
+#   docker compose up                              # Core services (frontend + backend + Qdrant)
+#   docker compose --profile ollama up             # + Local LLM (Ollama)
+#   docker compose --profile demo up               # + Demo Kafka cluster
+#   docker compose --profile ollama --profile demo up  # Everything
+#
+# Access:
+#   Frontend: http://localhost:3000
+#   API Docs: http://localhost:8000/docs
 
 services:
-  kgpt:
+  # ===========================================
+  # CORE SERVICES (always started)
+  # ===========================================
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  backend:
     build: .
     ports:
-      - 9000:9000
+      - "8000:8000"
     environment:
-      - 'OPENAI_API_KEY='
+      - QDRANT_URL=http://qdrant:6333
+      - LLM_PROVIDER=openai
+      - EMBEDDING_PROVIDER=fastembed
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    volumes:
+      - kgpt_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6333 && echo -e \"GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===========================================
+  # OPTIONAL: Local LLM (Ollama)
+  # Start with: docker compose --profile ollama up
+  # ===========================================
+
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llama3.2 && wait"]
+    restart: unless-stopped
+
+  # ===========================================
+  # OPTIONAL: Demo Kafka Cluster
+  # Start with: docker compose --profile demo up
+  # ===========================================
+
+  kafka:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  # Demo data generator - creates topics and produces sample events
+  kafka-demo-setup:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "Setting up demo Kafka topics..."
+
+        # Create demo topics
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic users --partitions 3 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic inventory --partitions 3 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payments --partitions 6 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic notifications --partitions 3 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic audit-logs --partitions 1 --replication-factor 1
+        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic click-events --partitions 12 --replication-factor 1
+
+        echo "Demo topics created!"
+        kafka-topics --bootstrap-server kafka:9092 --list
+
+        echo "Producing sample events..."
+
+        # Produce sample order events
+        for i in $$(seq 1 50); do
+          echo "{\"order_id\": \"ORD-$$i\", \"user_id\": \"user-$$((RANDOM % 100))\", \"amount\": $$((RANDOM % 1000 + 10)).$$((RANDOM % 100)), \"status\": \"pending\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
+            kafka-console-producer --bootstrap-server kafka:9092 --topic orders 2>/dev/null
+        done
+
+        # Produce sample user events
+        for i in $$(seq 1 20); do
+          echo "{\"user_id\": \"user-$$i\", \"email\": \"user$$i@example.com\", \"action\": \"login\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
+            kafka-console-producer --bootstrap-server kafka:9092 --topic users 2>/dev/null
+        done
+
+        # Produce sample inventory events
+        for i in $$(seq 1 30); do
+          echo "{\"product_id\": \"SKU-$$((RANDOM % 500))\", \"quantity\": $$((RANDOM % 100)), \"warehouse\": \"WH-$$((RANDOM % 5 + 1))\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
+            kafka-console-producer --bootstrap-server kafka:9092 --topic inventory 2>/dev/null
+        done
+
+        echo "Demo data produced!"
+        echo "Demo Kafka cluster is ready!"
+        echo ""
+        echo "Connect to: kafka:9092 (internal) or localhost:9094 (external)"
+    restart: "no"
+
+  # Demo consumer group simulator
+  kafka-demo-consumer:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "Starting demo consumer groups..."
+
+        # Start a consumer for orders (simulates order-processor service)
+        kafka-console-consumer --bootstrap-server kafka:9092 \
+          --topic orders \
+          --group order-processor \
+          --from-beginning \
+          --max-messages 10 &
+
+        # Start a consumer for payments (simulates payment-service)
+        kafka-console-consumer --bootstrap-server kafka:9092 \
+          --topic payments \
+          --group payment-service \
+          --from-beginning \
+          --max-messages 5 &
+
+        # Start a consumer for notifications (simulates notification-service)
+        kafka-console-consumer --bootstrap-server kafka:9092 \
+          --topic notifications \
+          --group notification-service \
+          --from-beginning \
+          --max-messages 5 &
+
+        # Keep container alive to maintain consumer group registrations
+        sleep infinity
+    restart: unless-stopped
+
+volumes:
+  kgpt_data:
+  qdrant_data:
+  ollama_data:
+  kafka_data:

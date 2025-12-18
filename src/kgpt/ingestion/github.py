@@ -1,0 +1,181 @@
+"""GitHub repository document ingester."""
+
+import shutil
+import tempfile
+from pathlib import Path
+from urllib.parse import urlparse
+
+from langchain_core.documents import Document
+from loguru import logger
+
+from kgpt.ingestion.base import DocumentIngester
+
+
+class GitHubIngester(DocumentIngester):
+    """Ingest documents from a GitHub repository."""
+
+    # File extensions to include
+    SUPPORTED_EXTENSIONS = {
+        ".md",
+        ".mdx",
+        ".txt",
+        ".rst",
+        ".py",
+        ".java",
+        ".scala",
+        ".js",
+        ".ts",
+        ".go",
+        ".yaml",
+        ".yml",
+        ".json",
+        ".properties",
+        ".conf",
+    }
+
+    # Directories to skip
+    SKIP_DIRS = {
+        ".git",
+        "__pycache__",
+        "node_modules",
+        ".venv",
+        "venv",
+        "build",
+        "dist",
+        ".idea",
+        ".vscode",
+    }
+
+    def __init__(
+        self,
+        url: str,
+        branch: str = "main",
+        include_code: bool = True,
+        chunk_size: int = 1500,
+        chunk_overlap: int = 200,
+    ):
+        """
+        Initialize GitHub ingester.
+
+        Args:
+            url: GitHub repository URL
+            branch: Branch to clone
+            include_code: Whether to include code files (not just docs)
+            chunk_size: Size of text chunks
+            chunk_overlap: Overlap between chunks
+        """
+        super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        self.url = self._normalize_url(url)
+        self.branch = branch
+        self.include_code = include_code
+        self._temp_dir: Path | None = None
+
+    def _normalize_url(self, url: str) -> str:
+        """Normalize GitHub URL to HTTPS format."""
+        url = url.strip().rstrip("/")
+        if not url.endswith(".git"):
+            url = f"{url}.git"
+        if url.startswith("git@"):
+            # Convert SSH to HTTPS
+            url = url.replace("git@github.com:", "https://github.com/")
+        return url
+
+    def get_source_name(self) -> str:
+        """Get source name from repo URL."""
+        parsed = urlparse(self.url)
+        path = parsed.path.rstrip(".git")
+        return path.split("/")[-1] or "github-repo"
+
+    def get_source_type(self) -> str:
+        """Get source type."""
+        return "github"
+
+    def get_collection_name(self) -> str:
+        """Get collection name based on repo."""
+        parsed = urlparse(self.url)
+        path = parsed.path.strip("/").rstrip(".git")
+        name = path.replace("/", "_").replace("-", "_").lower()
+        return f"github_{name}"
+
+    def _clone_repo(self) -> Path:
+        """Clone the repository to a temporary directory."""
+        import git
+
+        self._temp_dir = Path(tempfile.mkdtemp())
+        logger.info(f"Cloning {self.url} to {self._temp_dir}")
+
+        try:
+            git.Repo.clone_from(
+                self.url,
+                self._temp_dir,
+                branch=self.branch,
+                depth=1,  # Shallow clone
+            )
+            return self._temp_dir
+        except Exception as e:
+            logger.error(f"Error cloning repository: {e}")
+            self._cleanup()
+            raise
+
+    def _cleanup(self):
+        """Clean up temporary directory."""
+        if self._temp_dir and self._temp_dir.exists():
+            shutil.rmtree(self._temp_dir)
+            self._temp_dir = None
+
+    def _should_include_file(self, file_path: Path) -> bool:
+        """Check if a file should be included."""
+        # Check extension
+        if file_path.suffix.lower() not in self.SUPPORTED_EXTENSIONS:
+            return False
+
+        # Skip non-doc files if include_code is False
+        if not self.include_code:
+            doc_extensions = {".md", ".mdx", ".txt", ".rst"}
+            if file_path.suffix.lower() not in doc_extensions:
+                return False
+
+        # Check if in a skipped directory
+        return all(parent.name not in self.SKIP_DIRS for parent in file_path.parents)
+
+    def load_documents(self) -> list[Document]:
+        """Load documents from the GitHub repository."""
+        try:
+            repo_path = self._clone_repo()
+            documents = []
+
+            for file_path in repo_path.rglob("*"):
+                if not file_path.is_file():
+                    continue
+
+                if not self._should_include_file(file_path):
+                    continue
+
+                try:
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
+                    if not content.strip():
+                        continue
+
+                    # Create relative path for metadata
+                    rel_path = file_path.relative_to(repo_path)
+
+                    doc = Document(
+                        page_content=content,
+                        metadata={
+                            "source": str(rel_path),
+                            "file_type": file_path.suffix.lower(),
+                            "repo_url": self.url.rstrip(".git"),
+                            "branch": self.branch,
+                        },
+                    )
+                    documents.append(doc)
+
+                except Exception as e:
+                    logger.warning(f"Error reading {file_path}: {e}")
+                    continue
+
+            logger.info(f"Loaded {len(documents)} files from repository")
+            return documents
+
+        finally:
+            self._cleanup()
