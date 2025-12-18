@@ -292,12 +292,12 @@
 	function handleAdminFormSubmit(messageId: string, operation: string, existingParams: Record<string, unknown>) {
 		// Merge form values with existing params
 		const formData = { ...existingParams, ...adminFormValues };
-		
+
 		// If we have a valid operation and all required fields, execute directly
 		if (operation && operation !== '') {
 			// Validate required fields based on operation
 			let hasAllRequiredFields = false;
-			
+
 			if (operation === 'create_topic') {
 				hasAllRequiredFields = !!formData.topic_name;
 			} else if (operation === 'delete_topic') {
@@ -311,7 +311,7 @@
 			} else if (operation === 'describe_consumer_group') {
 				hasAllRequiredFields = !!formData.group_id;
 			}
-			
+
 			// If we have all required fields, execute directly
 			if (hasAllRequiredFields) {
 				// Clear form values
@@ -321,7 +321,7 @@
 				return;
 			}
 		}
-		
+
 		// Otherwise, send a natural language message for re-analysis
 		let message = '';
 

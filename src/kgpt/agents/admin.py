@@ -60,7 +60,7 @@ class AdminAnalysisResult(BaseModel):
 
     operation: str | None = Field(
         default=None,
-        description="Operation type: create_topic, delete_topic, alter_topic_config, delete_consumer_group, add_partitions, describe_consumer_group, or null if unclear",
+        description="Operation type: create_topic, delete_topic, describe_topic, alter_topic_config, delete_consumer_group, add_partitions, describe_consumer_group, or null if unclear",
     )
     operation_title: str = Field(
         description="Human-readable title for the operation (e.g., 'Create New Topic')"
@@ -103,16 +103,19 @@ ADMIN_ANALYZER_SYSTEM_PROMPT = """You are a Kafka admin assistant. Analyze the u
 2. **delete_topic**: Delete a topic
    - Required: topic_name
 
-3. **alter_topic_config**: Modify topic configuration
+3. **describe_topic**: Get detailed information about a topic (partitions, replicas, configuration)
+   - Required: topic_name
+
+4. **alter_topic_config**: Modify topic configuration
    - Required: topic_name, config_key, config_value
 
-4. **delete_consumer_group**: Delete a consumer group
+5. **delete_consumer_group**: Delete a consumer group
    - Required: group_id
 
-5. **add_partitions**: Add partitions to a topic
+6. **add_partitions**: Add partitions to a topic
    - Required: topic_name, new_total_partitions
 
-6. **describe_consumer_group**: Get details about a consumer group
+7. **describe_consumer_group**: Get details about a consumer group
    - Required: group_id
 
 ### Response Guidelines:
@@ -211,7 +214,11 @@ def normalize_admin_analysis_result(data: dict) -> dict:
     # Ensure operation is set if we can infer it from input_fields
     if not normalized.get("operation") and normalized.get("input_fields"):
         # Try to infer operation from required fields
-        input_field_names = [f.get("name") or f.get("field_name") for f in normalized["input_fields"] if isinstance(f, dict)]
+        input_field_names = [
+            f.get("name") or f.get("field_name")
+            for f in normalized["input_fields"]
+            if isinstance(f, dict)
+        ]
         if "topic_name" in input_field_names and "num_partitions" in input_field_names:
             normalized["operation"] = "create_topic"
         elif "topic_name" in input_field_names and "new_total_partitions" in input_field_names:
@@ -224,7 +231,7 @@ def normalize_admin_analysis_result(data: dict) -> dict:
         elif "group_id" in input_field_names:
             # Could be delete_consumer_group or describe_consumer_group
             pass
-    
+
     # Ensure operation_title exists (required field)
     if "operation_title" not in normalized:
         operation = normalized.get("operation", "")
