@@ -234,7 +234,7 @@ export interface DocumentSource {
 	indexed_at?: string;
 }
 
-export type SourceType = 'url' | 'github' | 'file' | 'sitemap';
+export type SourceType = 'url' | 'github' | 'file' | 'text' | 'sitemap';
 
 export interface IngestRequest {
 	source_type: SourceType;
@@ -245,7 +245,8 @@ export interface IngestRequest {
 }
 
 export interface NameSuggestionRequest {
-	url: string;
+	url?: string;
+	content?: string;
 	source_type?: SourceType;
 }
 

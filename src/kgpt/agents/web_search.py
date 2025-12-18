@@ -157,11 +157,14 @@ def extract_web_citations(results: list[dict]) -> list[dict]:
     for result in results:
         # Build content preview from highlights or content
         content_preview = ""
+        highlights_list = []
         if result.get("highlights"):
             highlights = result["highlights"]
             if isinstance(highlights, list):
+                highlights_list = highlights
                 content_preview = " ... ".join(highlights[:3])
             else:
+                highlights_list = [highlights]
                 content_preview = highlights
         elif result.get("content"):
             content_preview = result["content"][:500]
@@ -172,6 +175,10 @@ def extract_web_citations(results: list[dict]) -> list[dict]:
             "type": "web",
             "content_preview": content_preview,
         }
+
+        # Include highlights separately for UI display
+        if highlights_list:
+            citation["highlights"] = highlights_list
 
         # Add metadata for educational display
         metadata = {}

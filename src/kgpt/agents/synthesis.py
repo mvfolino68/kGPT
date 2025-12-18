@@ -333,23 +333,29 @@ async def synthesis_node(state: AgentState) -> dict:
                 seen_urls.add(url)
                 # Include content preview from web search results
                 content_preview = ""
+                highlights_list = []
                 if result.get("highlights"):
                     highlights = result["highlights"]
                     if isinstance(highlights, list):
+                        highlights_list = highlights
                         content_preview = " ... ".join(highlights[:3])
                     else:
+                        highlights_list = [highlights]
                         content_preview = highlights
                 elif result.get("content"):
                     content_preview = result["content"][:500]
 
-                citations.append(
-                    {
-                        "title": result.get("title", "Web Result"),
-                        "url": url,
-                        "type": "web",
-                        "content_preview": content_preview,
-                    }
-                )
+                citation = {
+                    "title": result.get("title", "Web Result"),
+                    "url": url,
+                    "type": "web",
+                    "content_preview": content_preview,
+                }
+                # Include highlights separately for UI display
+                if highlights_list:
+                    citation["highlights"] = highlights_list
+
+                citations.append(citation)
 
         logger.info(
             f"Synthesis complete. Answer length: {len(answer)}, Citations: {len(citations)}"

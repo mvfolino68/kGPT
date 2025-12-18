@@ -56,10 +56,6 @@ reranking = [
     "cohere>=5.0.0",
     "sentence-transformers>=3.0.0",
 ]
-all = [
-    "cohere>=5.0.0",
-    "sentence-transformers>=3.0.0",
-]
 
 [project.scripts]
 kgpt = "kgpt.cli:main"
@@ -119,13 +115,3 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
-
-[dependency-groups]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=4.0.0",
-    "ruff>=0.8.0",
-    "mypy>=1.0.0",
-    "pre-commit>=3.0.0",
-]

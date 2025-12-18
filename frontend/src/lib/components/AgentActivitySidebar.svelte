@@ -307,20 +307,24 @@
 						</button>
 
 						{#if expandedSections['web_search']}
-							<div class="bg-surface-800/60 rounded-lg border border-blue-500/20 p-3 space-y-2 max-h-64 overflow-y-auto">
+							<div class="bg-surface-800/60 rounded-lg border border-blue-500/20 p-3 space-y-3 max-h-96 overflow-y-auto">
 								{#each trace.webSearchResults.results as result}
 									<a
 										href={result.url}
 										target="_blank"
 										rel="noopener noreferrer"
-										class="block p-2 rounded bg-surface-900/60 hover:bg-surface-800/60 transition-colors border border-white/5 hover:border-blue-500/30"
+										class="block p-3 rounded bg-surface-900/60 hover:bg-surface-800/60 transition-colors border border-white/5 hover:border-blue-500/30"
 									>
-										<div class="text-xs font-mono text-blue-300 truncate mb-1">{result.title}</div>
-										<div class="text-[10px] font-mono text-surface-500 truncate">{result.url}</div>
+										<div class="text-xs font-mono text-blue-300 truncate mb-1.5 font-semibold">{result.title}</div>
+										<div class="text-[10px] font-mono text-surface-500 truncate mb-2">{result.url}</div>
 										{#if result.highlights && result.highlights.length > 0}
-											<div class="mt-1.5 text-xs text-surface-400 line-clamp-2">
-												{#each result.highlights.slice(0, 1) as highlight}
-													<span>{highlight}</span>
+											<div class="space-y-2">
+												{#each result.highlights.slice(0, 3) as highlight}
+													<div class="highlight-excerpt bg-amber-500/10 border border-amber-500/20 rounded p-2">
+														<p class="text-xs text-surface-300 leading-relaxed line-clamp-3">
+															{highlight}
+														</p>
+													</div>
 												{/each}
 											</div>
 										{/if}
@@ -382,6 +386,24 @@
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	.line-clamp-3 {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	:global(.highlight-excerpt) {
+		position: relative;
+		transition: all 0.2s ease;
+	}
+
+	:global(.highlight-excerpt:hover) {
+		background: rgba(251, 191, 36, 0.15);
+		border-color: rgba(251, 191, 36, 0.4);
+		box-shadow: 0 0 8px rgba(251, 191, 36, 0.1);
 	}
 </style>
 

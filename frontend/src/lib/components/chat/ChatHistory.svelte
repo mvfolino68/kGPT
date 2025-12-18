@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { RetroButton } from '$lib/components';
 	import SessionListItem from './SessionListItem.svelte';
 
@@ -43,9 +44,58 @@
 		onConfirmDelete,
 		onCancelDelete
 	}: Props = $props();
+
+	const STORAGE_KEY = 'chat-sidebar-width';
+	const MIN_WIDTH = 200;
+	const MAX_WIDTH = 600;
+	const DEFAULT_WIDTH = 256;
+
+	let sidebarWidth = $state(DEFAULT_WIDTH);
+	let isResizing = $state(false);
+	let resizeHandle: HTMLDivElement;
+
+	onMount(() => {
+		const savedWidth = localStorage.getItem(STORAGE_KEY);
+		if (savedWidth) {
+			const width = parseInt(savedWidth, 10);
+			if (width >= MIN_WIDTH && width <= MAX_WIDTH) {
+				sidebarWidth = width;
+			}
+		}
+	});
+
+	function handleMouseDown(e: MouseEvent) {
+		e.preventDefault();
+		isResizing = true;
+		document.body.style.cursor = 'col-resize';
+		document.body.style.userSelect = 'none';
+
+		function handleMouseMove(e: MouseEvent) {
+			if (!isResizing) return;
+			const newWidth = e.clientX;
+			if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+				sidebarWidth = newWidth;
+				localStorage.setItem(STORAGE_KEY, newWidth.toString());
+			}
+		}
+
+		function handleMouseUp() {
+			isResizing = false;
+			document.body.style.cursor = '';
+			document.body.style.userSelect = '';
+			document.removeEventListener('mousemove', handleMouseMove);
+			document.removeEventListener('mouseup', handleMouseUp);
+		}
+
+		document.addEventListener('mousemove', handleMouseMove);
+		document.addEventListener('mouseup', handleMouseUp);
+	}
 </script>
 
-<aside class="w-64 bg-surface-900/70 border-r retro-border flex flex-col backdrop-blur-sm">
+<aside
+	class="bg-surface-900/70 border-r retro-border flex flex-col backdrop-blur-sm relative"
+	style="width: {sidebarWidth}px; min-width: {MIN_WIDTH}px; max-width: {MAX_WIDTH}px;"
+>
 	<div class="p-4 border-b retro-border flex items-center justify-between">
 		<span class="text-xs font-bold font-mono text-surface-400 uppercase tracking-wider">Sessions</span>
 		<RetroButton size="sm" variant="primary" onclick={onNewChat}>
@@ -79,5 +129,17 @@
 				/>
 			{/each}
 		{/if}
+	</div>
+
+	<!-- Resize Handle -->
+	<div
+		bind:this={resizeHandle}
+		onmousedown={handleMouseDown}
+		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors group"
+		role="separator"
+		aria-label="Resize sidebar"
+		aria-orientation="vertical"
+	>
+		<div class="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 w-1 h-8 bg-surface-600 group-hover:bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
 	</div>
 </aside>

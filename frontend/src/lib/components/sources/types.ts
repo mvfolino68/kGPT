@@ -34,6 +34,8 @@ export interface Source {
 	content_preview?: string;
 	/** Full content if available */
 	content?: string;
+	/** Highlighted excerpts from search results (for web sources) */
+	highlights?: string[];
 	/** Relevance score (0-1) */
 	relevance_score?: number;
 	/** Additional metadata */
@@ -142,6 +144,7 @@ export function normalizeCitation(citation: unknown): Source {
 		type: (c.type as Source['type']) || 'doc',
 		content_preview: c.content_preview as string | undefined,
 		content: c.content as string | undefined,
+		highlights: c.highlights as string[] | undefined,
 		relevance_score,
 		metadata
 	};

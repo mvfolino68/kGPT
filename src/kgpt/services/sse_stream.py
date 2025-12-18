@@ -45,9 +45,50 @@ async def generate_sse_stream(
     }
 
     # Save user message to session if provided
+    # Also generate smart name if this is the first message
     if session_id:
         db = get_db()
-        db.add_chat_message(session_id, "user", message)
+        session = db.get_chat_session(session_id)
+        if session:
+            # Check if this is the first message and title is still default
+            existing_messages = db.get_chat_messages(session_id)
+            is_first_message = len(existing_messages) == 0
+            has_default_title = session.get("title") == "New Chat"
+
+            # Save the user message first
+            db.add_chat_message(session_id, "user", message)
+
+            # Generate smart name if this is the first message with default title
+            # Do this asynchronously without blocking the stream
+            if is_first_message and has_default_title:
+                try:
+                    import asyncio
+
+                    from kgpt.ingestion.smart_naming import generate_chat_smart_name
+
+                    async def update_session_title():
+                        try:
+                            smart_name = await generate_chat_smart_name(message)
+                            db.update_chat_session(session_id, title=smart_name)
+                            logger.debug(
+                                f"Updated chat session {session_id} with smart name: {smart_name}"
+                            )
+                        except Exception as e:
+                            logger.warning(f"Failed to generate smart name for chat: {e}")
+
+                    # Create background task - this won't block the stream
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(update_session_title())
+                    except RuntimeError:
+                        # If no running loop, we're likely in a sync context (shouldn't happen)
+                        # but handle gracefully
+                        logger.debug("Could not create background task for smart naming, skipping")
+                except Exception as e:
+                    logger.warning(f"Failed to schedule smart name generation: {e}")
+        else:
+            # Session doesn't exist, just add message (shouldn't happen but handle gracefully)
+            db.add_chat_message(session_id, "user", message)
 
     try:
         # Send initial thinking stage

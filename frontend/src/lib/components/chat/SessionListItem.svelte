@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { RetroButton } from '$lib/components';
 
 	interface Props {
 		session: { id: string; title: string; updated_at: string };
@@ -66,22 +65,31 @@
 			</span>
 			{#if isConfirmingDelete}
 				<div class="flex gap-1">
-					<RetroButton size="sm" variant="danger" onclick={onConfirmDelete}>
-						DEL
-					</RetroButton>
-					<RetroButton size="sm" onclick={onCancelDelete}>
-						X
-					</RetroButton>
+					<button
+						onclick={onConfirmDelete}
+						class="px-2 py-0.5 text-xs bg-red-600 text-white hover:bg-red-500 rounded flex items-center gap-1"
+					>
+						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+						</svg>
+						delete
+					</button>
+					<button
+						onclick={onCancelDelete}
+						class="px-2 py-0.5 text-xs bg-surface-600 text-surface-200 hover:bg-surface-500 rounded"
+					>
+						cancel
+					</button>
 				</div>
 			{:else}
 				<div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-					<button onclick={onEdit} class="p-1 text-surface-500 hover:text-blue-400 rounded">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+					<button onclick={onEdit} class="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-600/20 rounded transition-colors">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
 						</svg>
 					</button>
-					<button onclick={onDelete} class="p-1 text-surface-500 hover:text-red-400 rounded">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+					<button onclick={onDelete} class="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded transition-colors">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 						</svg>
 					</button>

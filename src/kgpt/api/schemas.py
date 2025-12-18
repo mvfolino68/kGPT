@@ -121,6 +121,7 @@ class SourceType(str, Enum):
     URL = "url"  # Single page or internal wiki page
     GITHUB = "github"  # GitHub repo (public or private with token)
     FILE = "file"  # Uploaded file (PDF, markdown, text)
+    TEXT = "text"  # Raw text content
     SITEMAP = "sitemap"  # Legacy - kept for backwards compatibility
     # Future integrations (stubs):
     # CONFLUENCE = "confluence"
@@ -157,7 +158,13 @@ class IngestRequest(BaseModel):
 class NameSuggestionRequest(BaseModel):
     """Request for smart name suggestions."""
 
-    url: str = Field(..., description="URL to generate name for")
+    url: str | None = Field(
+        default=None, description="URL to generate name for (required for non-text sources)"
+    )
+    content: str | None = Field(
+        default=None,
+        description="Raw text content to generate name for (required for text sources)",
+    )
     source_type: SourceType = Field(default=SourceType.URL, description="Type of source")
 
 

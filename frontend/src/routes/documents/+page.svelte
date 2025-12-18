@@ -54,9 +54,10 @@
 	let cleanupLoading = $state(false);
 
 	// Form state
-	let sourceType = $state<SourceType>('url');
+	let sourceType = $state<SourceType>('github');
 	let sourceName = $state('');
 	let sourceUrl = $state('');
+	let rawTextContent = $state('');
 	let useSmartNaming = $state(true);
 	let nameSuggestions = $state<string[]>([]);
 	let smartName = $state<string | null>(null);
@@ -143,25 +144,39 @@
 
 	// Source type options for internal docs
 	const sourceTypeOptions: { value: SourceType; label: string; description: string }[] = [
-		{ value: 'url', label: 'URL', description: 'Single page (wiki, docs, article)' },
 		{ value: 'github', label: 'GitHub', description: 'Repository docs (public or private)' },
-		{ value: 'file', label: 'File', description: 'Upload PDF, markdown, or text' }
+		{ value: 'file', label: 'File', description: 'Upload PDF, markdown, or text' },
+		{ value: 'text', label: 'Raw Text', description: 'Paste raw text content' }
 	];
 
 	// =========================================================================
 	// Smart Naming Functions
 	// =========================================================================
 
-	async function fetchNameSuggestions(url: string) {
-		if (!url || !url.startsWith('http')) {
-			nameSuggestions = [];
-			smartName = null;
-			return;
-		}
-
+	async function fetchNameSuggestions(url: string | null, content: string | null) {
 		fetchingName = true;
 		try {
-			const response = await suggestName({ url, source_type: sourceType });
+			const request: { url?: string; content?: string; source_type: SourceType } = {
+				source_type: sourceType
+			};
+
+			if (sourceType === 'text') {
+				if (!content || content.trim().length === 0) {
+					nameSuggestions = [];
+					smartName = null;
+					return;
+				}
+				request.content = content;
+			} else {
+				if (!url || !url.startsWith('http')) {
+					nameSuggestions = [];
+					smartName = null;
+					return;
+				}
+				request.url = url;
+			}
+
+			const response = await suggestName(request);
 			nameSuggestions = response.suggestions;
 			smartName = response.smart_name;
 
@@ -186,7 +201,25 @@
 
 		if (url && url.startsWith('http')) {
 			urlDebounceTimer = setTimeout(() => {
-				fetchNameSuggestions(url);
+				fetchNameSuggestions(url, null);
+			}, 500);
+		} else {
+			nameSuggestions = [];
+			smartName = null;
+		}
+	}
+
+	function handleTextContentInput(content: string) {
+		rawTextContent = content;
+
+		// Debounce the name suggestion fetch
+		if (urlDebounceTimer) {
+			clearTimeout(urlDebounceTimer);
+		}
+
+		if (content && content.trim().length > 0) {
+			urlDebounceTimer = setTimeout(() => {
+				fetchNameSuggestions(null, content);
 			}, 500);
 		} else {
 			nameSuggestions = [];
@@ -391,14 +424,15 @@
 	}
 
 	async function handleIngest() {
-		if (!sourceUrl.trim()) return;
+		if (sourceType === 'text' && !rawTextContent.trim()) return;
+		if (sourceType !== 'text' && !sourceUrl.trim()) return;
 		ingesting = true;
 		error = null;
 		try {
 			const result = await ingestDocument({
 				source_type: sourceType,
 				name: sourceName || undefined, // Let backend auto-generate if empty
-				url: sourceUrl,
+				url: sourceType === 'text' ? rawTextContent : sourceUrl,
 				auto_name: useSmartNaming && !sourceName
 			});
 			activeIngestions.set(result.source_id, {
@@ -414,6 +448,7 @@
 			// Reset form
 			sourceName = '';
 			sourceUrl = '';
+			rawTextContent = '';
 			nameSuggestions = [];
 			smartName = null;
 			await loadDocuments();
@@ -722,7 +757,6 @@
 						<span class="text-confluent-accent font-mono text-xs">+</span>
 						<span class="font-mono text-sm text-surface-300">add internal docs</span>
 					</div>
-					<span class="text-xs text-surface-500 font-mono">use Exa web search for public docs</span>
 				</div>
 
 				<div class="p-4 space-y-4">
@@ -731,7 +765,13 @@
 						{#each sourceTypeOptions as option}
 							<button
 								type="button"
-								onclick={() => (sourceType = option.value)}
+								onclick={() => {
+									sourceType = option.value;
+									// Clear name suggestions when switching source types
+									nameSuggestions = [];
+									smartName = null;
+									sourceName = '';
+								}}
 								class="flex-1 p-3 rounded-lg border transition-all text-left {sourceType === option.value
 									? 'border-confluent-primary bg-confluent-primary/10'
 									: 'border-surface-700 bg-surface-800/50 hover:border-surface-600'}"
@@ -751,31 +791,57 @@
 						}}
 						class="space-y-4"
 					>
-						<!-- URL input with smart suggestions -->
-						<div>
-							<label class="block text-xs font-mono text-surface-500 mb-1.5">
-								{sourceType === 'github' ? 'Repository URL' : 'Page URL'}
-							</label>
-							<div class="relative">
-								<input
-									type="url"
-									value={sourceUrl}
-									oninput={(e) => handleUrlInput(e.currentTarget.value)}
-									placeholder={sourceType === 'github'
-										? 'https://github.com/org/repo'
-										: 'https://internal.wiki.com/page'}
-									class="w-full retro-input rounded pr-10"
-								/>
-								{#if fetchingName}
-									<div class="absolute right-3 top-1/2 -translate-y-1/2">
-										<svg class="w-4 h-4 animate-spin text-surface-500" fill="none" viewBox="0 0 24 24">
-											<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-											<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-										</svg>
-									</div>
-								{/if}
+						{#if sourceType === 'text'}
+							<!-- Raw text textarea -->
+							<div>
+								<label class="block text-xs font-mono text-surface-500 mb-1.5">
+									Raw Text Content
+								</label>
+								<div class="relative">
+									<textarea
+										bind:value={rawTextContent}
+										oninput={(e) => handleTextContentInput(e.currentTarget.value)}
+										placeholder="Paste your raw text content here..."
+										rows="10"
+										class="w-full retro-input rounded font-mono text-sm"
+									></textarea>
+									{#if fetchingName}
+										<div class="absolute right-3 top-3">
+											<svg class="w-4 h-4 animate-spin text-surface-500" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+											</svg>
+										</div>
+									{/if}
+								</div>
 							</div>
-						</div>
+						{:else}
+							<!-- URL input with smart suggestions -->
+							<div>
+								<label class="block text-xs font-mono text-surface-500 mb-1.5">
+									{sourceType === 'github' ? 'Repository URL' : 'File Path'}
+								</label>
+								<div class="relative">
+									<input
+										type="text"
+										value={sourceUrl}
+										oninput={(e) => handleUrlInput(e.currentTarget.value)}
+										placeholder={sourceType === 'github'
+											? 'https://github.com/org/repo'
+											: '/path/to/file.pdf or file name'}
+										class="w-full retro-input rounded pr-10"
+									/>
+									{#if fetchingName}
+										<div class="absolute right-3 top-1/2 -translate-y-1/2">
+											<svg class="w-4 h-4 animate-spin text-surface-500" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+											</svg>
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/if}
 
 						<!-- Name input with suggestions -->
 						<div>
@@ -793,7 +859,7 @@
 							<input
 								type="text"
 								bind:value={sourceName}
-								placeholder={smartName || 'auto-generated from URL'}
+								placeholder={smartName || 'auto-generated'}
 								class="w-full retro-input rounded"
 							/>
 
@@ -827,7 +893,7 @@
 							<RetroButton
 								type="submit"
 								variant="primary"
-								disabled={ingesting || !sourceUrl.trim()}
+								disabled={ingesting || (sourceType === 'text' ? !rawTextContent.trim() : !sourceUrl.trim())}
 							>
 								{ingesting ? 'indexing...' : 'add to knowledge base'}
 							</RetroButton>
