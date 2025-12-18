@@ -8,6 +8,7 @@ from collections.abc import AsyncGenerator
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
+from pydantic import BaseModel
 
 from kgpt.api.schemas import (
     AdminOperationRequest,
@@ -546,3 +547,186 @@ async def execute_admin_operation(request: AdminOperationRequest) -> AdminOperat
             operation=request.operation,
             error=str(e),
         )
+
+
+# ============================================================================
+# Agent Graph Structure (Educational)
+# ============================================================================
+
+
+class AgentGraphNode(BaseModel):
+    """Represents a node in the agent graph."""
+
+    name: str
+    label: str
+    description: str
+    icon: str
+    color: str
+
+
+class AgentGraphEdge(BaseModel):
+    """Represents an edge in the agent graph."""
+
+    from_node: str
+    to_node: str
+    condition: str | None = None
+
+
+class AgentGraphInfo(BaseModel):
+    """Complete agent graph structure information."""
+
+    nodes: list[AgentGraphNode]
+    edges: list[AgentGraphEdge]
+    entry_point: str
+    description: str
+
+
+@router.get("/graph", response_model=AgentGraphInfo)
+async def get_agent_graph() -> AgentGraphInfo:
+    """
+    Get the structure of the multi-agent graph.
+
+    This endpoint provides educational information about how the agent system
+    works, showing all agents, their roles, and how they are connected.
+    """
+    from kgpt.agents.kafka_agent import get_cluster_context
+
+    # Check if cluster is connected
+    cluster_connected = get_cluster_context() is not None
+
+    # Define all agent nodes based on actual graph.py structure
+    nodes = [
+        AgentGraphNode(
+            name="router",
+            label="Router",
+            description="Analyzes query intent and determines which agents to invoke",
+            icon="M13 10V3L4 14h7v7l9-11h-7z",
+            color="text-violet-400",
+        ),
+        AgentGraphNode(
+            name="kafka",
+            label="Kafka Context",
+            description="Retrieves live cluster metadata (topics, configs, consumer groups)",
+            icon="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10",
+            color="text-emerald-400",
+        ),
+        AgentGraphNode(
+            name="retrieval",
+            label="Retrieval",
+            description="Searches documentation using query expansion, hybrid search, and reranking",
+            icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
+            color="text-blue-400",
+        ),
+        AgentGraphNode(
+            name="admin",
+            label="Admin",
+            description="Analyzes and prepares admin operations (create/delete topics, alter configs)",
+            icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
+            color="text-amber-400",
+        ),
+        AgentGraphNode(
+            name="validation",
+            label="Validation",
+            description="Filters and validates retrieved documents for relevance and quality",
+            icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+            color="text-cyan-400",
+        ),
+        AgentGraphNode(
+            name="synthesis",
+            label="Synthesis",
+            description="Generates the final answer using LLM with retrieved context",
+            icon="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z",
+            color="text-emerald-400",
+        ),
+    ]
+
+    # Define edges based on actual graph.py structure
+    edges = [
+        # Entry point
+        AgentGraphEdge(
+            from_node="START",
+            to_node="router",
+            condition=None,
+        ),
+        # Router conditional edges
+        AgentGraphEdge(
+            from_node="router",
+            to_node="retrieval",
+            condition="route == 'retrieval' (docs only)",
+        ),
+        AgentGraphEdge(
+            from_node="router",
+            to_node="kafka",
+            condition="route == 'kafka' or 'both' (cluster info needed)",
+        ),
+        AgentGraphEdge(
+            from_node="router",
+            to_node="admin",
+            condition="route == 'admin' (admin operation)",
+        ),
+        AgentGraphEdge(
+            from_node="router",
+            to_node="synthesis",
+            condition="route == 'direct' or 'help' (simple response)",
+        ),
+        # Kafka conditional edges
+        AgentGraphEdge(
+            from_node="kafka",
+            to_node="retrieval",
+            condition="needs_retrieval == True",
+        ),
+        AgentGraphEdge(
+            from_node="kafka",
+            to_node="synthesis",
+            condition="needs_retrieval == False (kafka-only)",
+        ),
+        # Retrieval to validation
+        AgentGraphEdge(
+            from_node="retrieval",
+            to_node="validation",
+            condition=None,
+        ),
+        # Admin to synthesis
+        AgentGraphEdge(
+            from_node="admin",
+            to_node="synthesis",
+            condition=None,
+        ),
+        # Validation to synthesis
+        AgentGraphEdge(
+            from_node="validation",
+            to_node="synthesis",
+            condition=None,
+        ),
+        # Synthesis to end
+        AgentGraphEdge(
+            from_node="synthesis",
+            to_node="END",
+            condition=None,
+        ),
+    ]
+
+    description = f"""Multi-agent orchestration using LangGraph.
+
+The system uses a state graph to coordinate specialized agents:
+- Router analyzes intent and determines the execution path
+- Kafka agent fetches live cluster metadata ({("connected" if cluster_connected else "not connected")})
+- Retrieval agent searches documentation using RAG pipeline
+- Admin agent prepares cluster operations for user confirmation
+- Validation agent filters irrelevant documents
+- Synthesis agent generates the final answer
+
+The graph supports multiple execution paths:
+1. **Documentation-only**: router → retrieval → validation → synthesis
+2. **Cluster-only**: router → kafka → synthesis
+3. **Combined**: router → kafka → retrieval → validation → synthesis
+4. **Admin**: router → admin → synthesis
+5. **Direct**: router → synthesis (for greetings/help)
+"""
+
+    return AgentGraphInfo(
+        nodes=nodes,
+        edges=edges,
+        entry_point="router",
+        description=description,
+    )

@@ -25,7 +25,7 @@
 		type ChatMessage
 	} from '$lib/stores/chat';
 	import type { AgentEvent, RoutingDecision, RetrievalResults, ValidationResults } from '$lib/api';
-	import { AgentActivitySidebar } from '$lib/components';
+	import { AgentActivitySidebar, RetroButton, StatusIndicator, RetroHeader, RetroCard } from '$lib/components';
 
 	// State
 	let inputValue = $state('');
@@ -363,28 +363,27 @@
 <div class="flex h-full bg-surface-950">
 	<!-- History Sidebar -->
 	{#if showHistory}
-		<aside class="w-64 bg-surface-900/60 border-r border-white/5 flex flex-col">
-			<div class="p-4 border-b border-white/5 flex items-center justify-between">
-				<span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">History</span>
-				<button onclick={handleNewChat} class="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors">
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+		<aside class="w-64 bg-surface-900/70 border-r retro-border flex flex-col backdrop-blur-sm">
+			<div class="p-4 border-b retro-border flex items-center justify-between">
+				<span class="text-xs font-bold font-mono text-surface-400 uppercase tracking-wider">Sessions</span>
+				<RetroButton size="sm" variant="primary" onclick={handleNewChat}>
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 					</svg>
-				</button>
+				</RetroButton>
 			</div>
 
-			<div class="flex-1 overflow-y-auto py-2">
+			<div class="flex-1 overflow-y-auto py-2 px-2">
 				{#if $sessionsLoading}
-					<div class="px-4 py-2 text-surface-500 text-xs">Loading...</div>
+					<div class="px-3 py-2 text-surface-500 text-xs font-mono">Loading...</div>
 				{:else if $sessions.length === 0}
-					<div class="px-4 py-2 text-surface-600 text-xs">No conversations yet</div>
+					<div class="px-3 py-2 text-surface-600 text-xs font-mono">No sessions yet</div>
 				{:else}
 					{#each $sessions as session (session.id)}
 						<button
 							onclick={() => handleSelectSession(session.id)}
-							class="w-full group mx-2 px-3 py-2 text-left rounded-lg transition-colors
-								{session.id === $currentSessionId ? 'bg-emerald-500/10 border border-emerald-500/20' : 'hover:bg-white/5 border border-transparent'}"
-							style="width: calc(100% - 1rem)"
+							class="w-full group px-3 py-2.5 text-left rounded transition-all mb-1 font-mono
+								{session.id === $currentSessionId ? 'retro-card-glow-green text-emerald-300' : 'retro-card hover:bg-surface-800/60 text-surface-300'}"
 						>
 							{#if editingSessionId === session.id}
 								<input
@@ -392,25 +391,25 @@
 									bind:value={editingTitle}
 									onblur={handleSaveEdit}
 									onkeydown={handleEditKeydown}
-									class="w-full bg-surface-800 border border-surface-600 rounded px-2 py-1 text-sm text-surface-100 focus:outline-none focus:border-emerald-500"
+									class="w-full retro-input text-xs px-2 py-1"
 								/>
 							{:else}
 								<div class="flex items-center justify-between">
-									<span class="text-sm truncate {session.id === $currentSessionId ? 'text-emerald-300' : 'text-surface-300'}">
-										{session.title}
+									<span class="text-xs truncate flex-1">
+										{session.id === $currentSessionId ? '> ' : ''}{session.title}
 									</span>
 									{#if confirmingDeleteId === session.id}
 										<div class="flex gap-1">
-											<button onclick={(e) => handleConfirmDelete(session.id, e)} class="px-1.5 py-0.5 text-xs bg-red-500/20 text-red-400 rounded">
-												Delete
-											</button>
-											<button onclick={handleCancelDelete} class="px-1.5 py-0.5 text-xs bg-surface-700 text-surface-300 rounded">
-												Cancel
-											</button>
+											<RetroButton size="sm" variant="danger" onclick={(e) => handleConfirmDelete(session.id, e)}>
+												DEL
+											</RetroButton>
+											<RetroButton size="sm" onclick={handleCancelDelete}>
+												X
+											</RetroButton>
 										</div>
 									{:else}
 										<div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-											<button onclick={(e) => handleStartEdit(session.id, session.title, e)} class="p-1 text-surface-500 hover:text-surface-300 rounded">
+											<button onclick={(e) => handleStartEdit(session.id, session.title, e)} class="p-1 text-surface-500 hover:text-emerald-400 rounded">
 												<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
 												</svg>
@@ -423,7 +422,7 @@
 										</div>
 									{/if}
 								</div>
-								<span class="text-xs text-surface-600">{formatDate(session.updated_at)}</span>
+								<span class="text-[10px] text-surface-600 font-mono">{formatDate(session.updated_at)}</span>
 							{/if}
 						</button>
 					{/each}
@@ -435,114 +434,125 @@
 	<!-- Main Chat Area -->
 	<div class="flex-1 flex flex-col min-w-0">
 		<!-- Header -->
-		<header class="px-4 py-3 border-b border-white/5 bg-surface-900/40 flex items-center gap-3">
-			<button onclick={() => showHistory = !showHistory} class="p-2 text-surface-500 hover:text-surface-300 hover:bg-white/5 rounded-lg transition-colors">
-				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-				</svg>
-			</button>
-			<span class="text-lg font-semibold text-surface-100">kGPT</span>
-			{#if $currentSession}
-				<span class="text-surface-600">-</span>
-				<span class="text-sm text-surface-400 truncate">{$currentSession.title}</span>
-			{/if}
-			<div class="ml-auto flex items-center gap-2">
+		<RetroHeader path="kgpt/chat" flag={$currentSession ? `--session="${$currentSession.title}"` : ''}>
+			{#snippet rightContent()}
+				<RetroButton size="sm" onclick={() => showHistory = !showHistory}>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+					</svg>
+				</RetroButton>
 				{#if $chatMessages.length > 0}
-					<button onclick={handleNewChat} class="px-3 py-1.5 text-xs text-surface-400 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors">
+					<RetroButton size="sm" onclick={handleNewChat}>
 						+ New
-					</button>
+					</RetroButton>
 				{/if}
-				<button onclick={toggleAgentActivity} class="p-2 text-surface-400 hover:text-violet-400 rounded-lg transition-colors {$showAgentActivity ? 'bg-violet-500/10 text-violet-400' : ''}">
+				<RetroButton size="sm" variant={$showAgentActivity ? 'primary' : 'default'} onclick={toggleAgentActivity}>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
 					</svg>
-				</button>
-			</div>
-		</header>
+				</RetroButton>
+			{/snippet}
+		</RetroHeader>
 
 		<!-- Messages -->
-		<div bind:this={messagesContainer} class="flex-1 overflow-y-auto">
-			<div class="max-w-3xl mx-auto px-4 py-6">
+		<div bind:this={messagesContainer} class="flex-1 overflow-y-auto p-6">
+			<div class="max-w-4xl mx-auto space-y-6">
 				{#if $chatMessages.length === 0}
 					<!-- Empty State -->
-					<div class="flex flex-col items-center justify-center min-h-[50vh] text-center">
-						<div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
-							<svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+					<RetroCard variant="glow-green" class="text-center py-12">
+						<div class="w-20 h-20 rounded-xl retro-card-glow-green flex items-center justify-center mb-6 animate-glow-pulse mx-auto">
+							<svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 							</svg>
 						</div>
-						<h2 class="text-2xl font-bold text-surface-100 mb-2">Ask me anything</h2>
-						<p class="text-surface-400 mb-8 max-w-md">Query your Kafka cluster, search documentation, or perform admin operations.</p>
+						<h2 class="text-2xl font-bold font-mono text-surface-100 mb-2 text-glow-green">READY_</h2>
+						<p class="text-surface-400 mb-8 max-w-md font-mono text-sm mx-auto">Query Kafka cluster, search docs, perform admin ops</p>
 
 						<div class="flex flex-wrap justify-center gap-2">
 							{#each quickActions as action}
-								<button onclick={() => sendMessage(action.value)} class="px-4 py-2 text-sm bg-surface-800/60 hover:bg-surface-700/60 border border-white/5 hover:border-white/10 rounded-full text-surface-300 hover:text-surface-100 transition-colors">
+								<RetroButton size="sm" onclick={() => sendMessage(action.value)}>
 									{action.label}
-								</button>
+								</RetroButton>
 							{/each}
 						</div>
-					</div>
+					</RetroCard>
 				{:else}
 					<!-- Messages -->
-					<div class="space-y-6">
+					<div class="space-y-4">
 						{#each $chatMessages as message (message.id)}
 							{#if message.role === 'user'}
-								<!-- User Message -->
-								<div class="flex justify-end">
-									<div class="max-w-[80%] bg-emerald-600/20 border border-emerald-500/30 rounded-2xl rounded-br-sm px-4 py-3">
-										<p class="text-surface-100 text-[15px] leading-relaxed">{message.content}</p>
-									</div>
+								<!-- User Message Card -->
+								<div class="flex justify-end animate-slide-in-right">
+									<RetroCard variant="glow-cyan" class="max-w-[75%] !p-0">
+										<div class="px-4 py-3">
+											<div class="flex items-center gap-2 mb-2">
+												<span class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">User</span>
+												<span class="text-[9px] font-mono text-surface-600">></span>
+											</div>
+											<p class="text-surface-100 text-sm leading-relaxed font-mono">{message.content}</p>
+										</div>
+									</RetroCard>
 								</div>
 							{:else}
-								<!-- Assistant Message -->
-								<div class="flex justify-start">
-									<div class="max-w-[85%] space-y-3">
+								<!-- Assistant Message Card -->
+								<div class="flex justify-start animate-slide-in-left">
+									<div class="max-w-[80%] space-y-3">
 										{#if message.isThinking && !message.content}
-											<div class="flex items-center gap-2 text-surface-400 px-4 py-3">
-												<div class="flex gap-1">
-													<span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-													<span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-													<span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+											<RetroCard class="!p-0">
+												<div class="px-4 py-3 flex items-center gap-3">
+													<div class="flex gap-1">
+														<StatusIndicator status="active" pulse size="sm" />
+														<StatusIndicator status="active" pulse size="sm" />
+														<StatusIndicator status="active" pulse size="sm" />
+													</div>
+													<span class="text-sm font-mono text-surface-400">{message.thinkingStage || 'Processing...'}</span>
 												</div>
-												<span class="text-sm">{message.thinkingStage || 'Thinking...'}</span>
-											</div>
+											</RetroCard>
 										{/if}
 
 										{#if message.content}
-											<div class="bg-surface-800/50 border border-white/5 rounded-2xl rounded-bl-sm px-4 py-3">
-												<div class="prose prose-sm prose-invert max-w-none text-[15px] leading-relaxed">
-													{@html renderMarkdown(message.content)}
+											<RetroCard variant="glow-green" class="!p-0">
+												<div class="px-4 py-3">
+													<div class="flex items-center gap-2 mb-2">
+														<span class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">kGPT</span>
+														<StatusIndicator status="active" size="sm" />
+													</div>
+													<div class="prose prose-sm prose-invert max-w-none text-sm leading-relaxed">
+														{@html renderMarkdown(message.content)}
+													</div>
 												</div>
-											</div>
+											</RetroCard>
 										{/if}
 
 										<!-- Sources -->
 										{#if message.citations && message.citations.length > 0 && !message.isStreaming}
 											{@const uniqueDomains = [...new Set(message.citations.map(c => extractDomain(c)))]}
-											<div class="flex items-center gap-2 px-1">
-												<div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-800/60 border border-white/5 rounded-full">
-													<svg class="w-3.5 h-3.5 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-														<path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-														<path stroke-linecap="round" stroke-linejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-													</svg>
-													<span class="text-xs text-surface-300">Sources:</span>
-													{#each uniqueDomains.slice(0, 3) as domain}
-														<span class="text-xs text-blue-400">{domain}</span>
-													{/each}
-													{#if uniqueDomains.length > 3}
-														<span class="text-xs text-surface-500">+{uniqueDomains.length - 3}</span>
-													{/if}
-												</div>
+											<div class="flex items-center gap-2 px-2">
+												<RetroCard class="!p-0 inline-flex">
+													<div class="flex items-center gap-2 px-3 py-1.5">
+														<svg class="w-3 h-3 text-surface-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+															<path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+															<path stroke-linecap="round" stroke-linejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+														</svg>
+														<span class="text-xs text-surface-400 font-mono">src:</span>
+														{#each uniqueDomains.slice(0, 3) as domain}
+															<span class="text-xs text-cyan-400 font-mono">{domain}</span>
+														{/each}
+														{#if uniqueDomains.length > 3}
+															<span class="text-xs text-surface-500 font-mono">+{uniqueDomains.length - 3}</span>
+														{/if}
+													</div>
+												</RetroCard>
 											</div>
 										{/if}
 
 										<!-- Actions -->
 										{#if message.actions && message.actions.length > 0 && !message.isStreaming}
-											<div class="flex flex-wrap gap-2 px-1">
+											<div class="flex flex-wrap gap-2 px-2">
 												{#each message.actions as action}
-													<button onclick={() => sendMessage(action.value)} class="px-3 py-1.5 text-xs bg-surface-800/60 hover:bg-surface-700/60 border border-white/5 rounded-full text-surface-300 hover:text-surface-100 transition-colors">
+													<RetroButton size="sm" onclick={() => sendMessage(action.value)}>
 														{action.label}
-													</button>
+													</RetroButton>
 												{/each}
 											</div>
 										{/if}
@@ -556,38 +566,42 @@
 		</div>
 
 		<!-- Input -->
-		<div class="border-t border-white/5 bg-surface-900/60 p-4">
-			<div class="max-w-3xl mx-auto">
-				<div class="flex items-end gap-3 bg-surface-800/80 border border-white/10 rounded-xl p-3 focus-within:border-emerald-500/40 transition-colors">
-					<textarea
-						bind:this={inputRef}
-						bind:value={inputValue}
-						onkeydown={handleKeydown}
-						placeholder="Ask about your cluster or documentation..."
-						disabled={$isProcessing}
-						rows="1"
-						class="flex-1 bg-transparent text-surface-100 placeholder-surface-500 resize-none focus:outline-none disabled:opacity-50 text-[15px]"
-						style="field-sizing: content; max-height: 150px;"
-					></textarea>
-					<button
-						onclick={() => sendMessage(inputValue)}
-						disabled={$isProcessing || !inputValue.trim()}
-						class="p-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-700 disabled:text-surface-500 text-white rounded-lg transition-colors"
-					>
-						{#if $isProcessing}
-							<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-							</svg>
-						{:else}
-							<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-							</svg>
-						{/if}
-					</button>
-				</div>
-				<p class="text-center text-xs text-surface-600 mt-2">
-					Press Enter to send | Shift+Enter for new line
+		<div class="border-t retro-border bg-surface-900/60 backdrop-blur-sm p-6">
+			<div class="max-w-4xl mx-auto space-y-2">
+				<RetroCard variant="elevated" class="!p-0">
+					<div class="flex items-end gap-3 p-3 focus-within:border-glow-green">
+						<span class="text-emerald-400 font-mono text-lg pb-1">></span>
+						<textarea
+							bind:this={inputRef}
+							bind:value={inputValue}
+							onkeydown={handleKeydown}
+							placeholder="Enter command..."
+							disabled={$isProcessing}
+							rows="1"
+							class="flex-1 bg-transparent text-surface-100 placeholder-surface-600 resize-none focus:outline-none disabled:opacity-50 text-sm font-mono"
+							style="field-sizing: content; max-height: 150px;"
+						></textarea>
+						<RetroButton
+							variant="primary"
+							size="sm"
+							onclick={() => sendMessage(inputValue)}
+							disabled={$isProcessing || !inputValue.trim()}
+						>
+							{#if $isProcessing}
+								<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+									<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+								</svg>
+							{:else}
+								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+								</svg>
+							{/if}
+						</RetroButton>
+					</div>
+				</RetroCard>
+				<p class="text-center text-xs text-surface-600 font-mono">
+					[ENTER] send | [SHIFT+ENTER] newline
 				</p>
 			</div>
 		</div>
@@ -600,6 +614,7 @@
 <style>
 	.prose :global(p) {
 		margin: 0.5rem 0;
+		color: rgb(var(--color-surface-200));
 	}
 	.prose :global(p:first-child) {
 		margin-top: 0;
@@ -615,14 +630,16 @@
 		margin: 0.25rem 0;
 	}
 	.prose :global(code) {
-		background: rgb(30 41 59 / 0.8);
+		background: rgba(var(--color-surface-800), 0.8);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-size: 0.875em;
+		color: rgb(var(--retro-green));
+		border: 1px solid rgba(var(--retro-green), 0.2);
 	}
 	.prose :global(pre) {
-		background: rgb(15 23 42);
-		border: 1px solid rgb(255 255 255 / 0.05);
+		background: rgb(var(--color-surface-900));
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		overflow-x: auto;
@@ -631,20 +648,22 @@
 	.prose :global(pre code) {
 		background: transparent;
 		padding: 0;
+		border: none;
 	}
 	.prose :global(h1), .prose :global(h2), .prose :global(h3) {
 		margin-top: 1rem;
 		margin-bottom: 0.5rem;
 		font-weight: 600;
+		color: rgb(var(--retro-green));
 	}
 	.prose :global(a) {
-		color: rgb(96 165 250);
+		color: rgb(var(--retro-cyan));
 		text-decoration: underline;
 	}
 	.prose :global(blockquote) {
-		border-left: 3px solid rgb(52 211 153 / 0.3);
+		border-left: 3px solid rgba(var(--retro-green), 0.3);
 		padding-left: 1rem;
 		margin: 0.75rem 0;
-		color: rgb(148 163 184);
+		color: rgb(var(--color-surface-400));
 	}
 </style>

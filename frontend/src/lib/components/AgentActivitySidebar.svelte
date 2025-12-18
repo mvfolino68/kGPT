@@ -51,19 +51,19 @@
 </script>
 
 {#if isVisible}
-	<aside class="w-80 bg-surface-900/60 backdrop-blur-xl border-l border-white/5 flex flex-col overflow-hidden">
+	<aside class="w-80 bg-surface-900/70 backdrop-blur-xl border-l retro-border flex flex-col overflow-hidden">
 		<!-- Header -->
-		<div class="p-4 border-b border-white/5 flex items-center justify-between">
+		<div class="p-4 border-b retro-border flex items-center justify-between">
 			<div class="flex items-center gap-2">
 				<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
 				</svg>
-				<span class="text-[11px] font-semibold text-surface-400 uppercase tracking-[0.15em]">Agent Pipeline</span>
+				<span class="text-[11px] font-bold font-mono text-surface-400 uppercase tracking-[0.15em]">Agent Pipeline</span>
 			</div>
 			<button
 				type="button"
 				onclick={toggleAgentActivity}
-				class="p-1.5 text-surface-500 hover:text-surface-300 hover:bg-white/5 rounded-md transition-all"
+				class="retro-button px-1.5 py-1 text-surface-500 hover:text-surface-300"
 				aria-label="Close agent activity"
 			>
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -79,8 +79,8 @@
 					<svg class="w-10 h-10 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
 					</svg>
-					<p>No agent activity yet</p>
-					<p class="text-xs text-surface-600 mt-1">Send a message to see the pipeline</p>
+					<p class="font-mono">No agent activity yet</p>
+					<p class="text-xs text-surface-600 mt-1 font-mono">Send a message to see the pipeline</p>
 				</div>
 			{:else}
 				<!-- Agent Timeline -->
@@ -88,15 +88,15 @@
 					{#each trace.agentTimeline as activity}
 						{@const config = agentConfig[activity.agent] || agentConfig.error}
 						{@const statusIndicator = getStatusIndicator(activity.status)}
-						<div class="bg-surface-800/60 rounded-lg border border-white/5 overflow-hidden">
+						<div class="retro-card rounded-lg overflow-hidden hover:bg-surface-800/60 transition-colors">
 							<button
 								type="button"
 								onclick={() => toggleSection(activity.agent)}
-								class="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-white/5 transition-colors"
+								class="w-full px-3 py-2.5 flex items-center gap-3"
 							>
-								<!-- Status indicator -->
+								<!-- Status indicator with LED -->
 								<div class="relative">
-									<div class="w-2 h-2 rounded-full {statusIndicator.bg} {statusIndicator.animate ? 'animate-pulse' : ''}"></div>
+									<div class="w-2 h-2 rounded-full {statusIndicator.bg} {statusIndicator.animate ? 'animate-glow-pulse' : ''}"></div>
 								</div>
 
 								<!-- Agent icon and name -->
@@ -104,12 +104,12 @@
 									<svg class="w-4 h-4 {config.color} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 										<path stroke-linecap="round" stroke-linejoin="round" d={config.icon} />
 									</svg>
-									<span class="text-sm font-medium text-surface-200 truncate">{config.label}</span>
+									<span class="text-sm font-mono text-surface-200 truncate">{config.label}</span>
 								</div>
 
 								<!-- Duration -->
 								{#if activity.duration_ms}
-									<span class="text-xs font-mono text-surface-500">{formatDuration(activity.duration_ms)}</span>
+									<span class="text-xs font-mono text-surface-500 tabular-nums">{formatDuration(activity.duration_ms)}</span>
 								{/if}
 
 								<!-- Expand/collapse icon -->
@@ -125,7 +125,7 @@
 
 							<!-- Expanded details -->
 							{#if expandedSections[activity.agent] && activity.result}
-								<div class="px-3 pb-3 border-t border-white/5 mt-1 pt-2">
+								<div class="px-3 pb-3 border-t retro-border mt-1 pt-2 bg-surface-900/50">
 									<pre class="text-xs font-mono text-surface-400 overflow-x-auto whitespace-pre-wrap break-all">{JSON.stringify(activity.result, null, 2)}</pre>
 								</div>
 							{/if}
@@ -278,8 +278,8 @@
 		</div>
 
 		<!-- Footer info -->
-		<div class="p-3 border-t border-white/5 bg-surface-800/30">
-			<p class="text-[10px] text-surface-600 text-center">
+		<div class="p-3 border-t retro-border bg-surface-900/50">
+			<p class="text-[10px] text-surface-600 text-center font-mono">
 				Agent pipeline shows the AI reasoning process
 			</p>
 		</div>

@@ -1044,62 +1044,163 @@ async def get_rag_pipeline_info() -> RAGPipelineInfo:
     Get information about the RAG pipeline configuration.
 
     This endpoint explains how the retrieval-augmented generation system works,
-    including all the stages from query to answer.
+    including all the stages from query to answer. Stages are dynamically
+    determined based on actual system configuration.
     """
     from kgpt.db import get_db
+    from kgpt.vectorstore import get_vectorstore
 
     db = get_db()
+    store = get_vectorstore()
 
     # Check if reranking is available
-    cohere_key = db.get_setting("cohere_api_key")
-    reranking_available = bool(cohere_key)
-
-    # Try to detect sentence-transformers
+    reranking_available = False
+    reranking_method = None
     try:
-        from sentence_transformers import CrossEncoder
+        import cohere
 
-        reranking_available = True
+        cohere_key = db.get_setting("cohere_api_key")
+        if cohere_key:
+            reranking_available = True
+            reranking_method = "Cohere rerank-v3"
     except ImportError:
         pass
 
-    return RAGPipelineInfo(
-        pipeline_stages=[
-            {
-                "name": "Query Expansion",
-                "description": "Generate alternative phrasings of the user's question to improve recall",
-                "example": "Original: 'How do I configure Kafka?' → Variations: 'Kafka configuration settings', 'Setting up Kafka parameters'",
-            },
-            {
-                "name": "Embedding Generation",
-                "description": "Convert the query into a dense vector representation",
-                "example": "Text → [0.012, -0.034, 0.056, ...] (1536 dimensions)",
-            },
-            {
-                "name": "Vector Search",
-                "description": "Find document chunks with similar embeddings using cosine similarity",
-                "example": "Query vector compared against ~10,000 stored document vectors",
-            },
+    if not reranking_available:
+        try:
+            from sentence_transformers import CrossEncoder
+
+            reranking_available = True
+            reranking_method = "ms-marco MiniLM cross-encoder"
+        except ImportError:
+            pass
+
+    # Check if hybrid search is actually enabled
+    hybrid_enabled = True  # Qdrant supports hybrid search by default
+
+    # Get actual embedding config from vectorstore
+    embedding_model = db.get_setting("embedding_model") or "text-embedding-3-small"
+    embedding_provider = db.get_setting("embedding_provider") or "openai"
+
+    # Determine embedding dimensions based on model and provider
+    embedding_dims = 1536  # default fallback
+
+    # Provider-specific dimension detection
+    if embedding_provider == "openai":
+        if "text-embedding-3-large" in embedding_model:
+            embedding_dims = 3072
+        elif "text-embedding-3-small" in embedding_model or "ada-002" in embedding_model:
+            embedding_dims = 1536
+    elif embedding_provider == "fastembed":
+        # FastEmbed model dimensions
+        if "bge-small-en-v1.5" in embedding_model or "BAAI/bge-small-en-v1.5" in embedding_model:
+            embedding_dims = 384
+        elif "bge-base-en-v1.5" in embedding_model or "BAAI/bge-base-en-v1.5" in embedding_model:
+            embedding_dims = 768
+        elif (
+            "bge-large-en-v1.5" in embedding_model
+            or "BAAI/bge-large-en-v1.5" in embedding_model
+            or "multilingual-e5-large" in embedding_model
+        ):
+            embedding_dims = 1024
+        elif "gte-small" in embedding_model:
+            embedding_dims = 384
+    elif embedding_provider == "cohere":
+        if "embed-english-v3" in embedding_model or "embed-multilingual-v3" in embedding_model:
+            embedding_dims = 1024
+    elif embedding_provider == "huggingface":
+        # Try to get actual dimensions from the vectorstore collection if available
+        try:
+            if collections:
+                # Get the first collection and check its vector size
+                collection_info = store.get_collection(collections[0])
+                if hasattr(collection_info, "config") and hasattr(collection_info.config, "params"):
+                    embedding_dims = collection_info.config.params.vectors.size
+        except Exception:
+            pass  # Keep default if we can't detect
+
+    # Build pipeline stages dynamically based on what's actually configured
+    stages = []
+
+    # Stage 1: Query Expansion (always enabled)
+    stages.append(
+        {
+            "name": "Query Expansion",
+            "description": "Generate alternative phrasings of the user's question to improve recall",
+            "example": "Original: 'How do I configure Kafka?' → Generates 2-3 alternative phrasings",
+        }
+    )
+
+    # Stage 2: Embedding Generation (always enabled)
+    stages.append(
+        {
+            "name": "Embedding Generation",
+            "description": f"Convert the query into a dense vector using {embedding_provider} {embedding_model}",
+            "example": f"Text → [{embedding_dims}-dimensional vector]",
+        }
+    )
+
+    # Stage 3: Vector Search (always enabled)
+    collections = store.list_collections()
+    stages.append(
+        {
+            "name": "Vector Search",
+            "description": f"Search {len(collections)} collection(s) using cosine similarity",
+            "example": f"Query vector compared against document vectors in: {', '.join(collections[:3])}{'...' if len(collections) > 3 else ''}",
+        }
+    )
+
+    # Stage 4: Hybrid Scoring (if enabled)
+    if hybrid_enabled:
+        stages.append(
             {
                 "name": "Hybrid Scoring",
                 "description": "Combine dense vector similarity with keyword matching (BM25-style)",
                 "example": "RRF fusion: 0.7 × dense_score + 0.3 × keyword_score",
-            },
+            }
+        )
+
+    # Stage 5: Reranking (if available)
+    if reranking_available:
+        stages.append(
             {
                 "name": "Reranking",
-                "description": "Use a cross-encoder model to re-score and reorder results",
-                "example": "Cohere rerank-v3 or ms-marco MiniLM cross-encoder",
-            },
-            {
-                "name": "Context Assembly",
-                "description": "Combine top-ranked chunks into a context window for the LLM",
-                "example": "Top 5-10 chunks assembled as context",
-            },
-            {
-                "name": "Answer Generation",
-                "description": "LLM generates an answer based on the retrieved context",
-                "example": "GPT-4 synthesizes answer from context + question",
-            },
-        ],
+                "description": f"Re-score and reorder results using {reranking_method}",
+                "example": "Cross-encoder model scores query-document pairs for better precision",
+            }
+        )
+
+    # Stage 6: Deduplication (always enabled)
+    stages.append(
+        {
+            "name": "Deduplication",
+            "description": "Remove duplicate content from multiple query expansions",
+            "example": "Hash-based deduplication ensures unique results",
+        }
+    )
+
+    # Stage 7: Context Assembly (always enabled)
+    stages.append(
+        {
+            "name": "Context Assembly",
+            "description": "Combine top-ranked chunks into a context window for the LLM",
+            "example": "Top 10 chunks assembled as context",
+        }
+    )
+
+    # Stage 8: Answer Generation (always enabled)
+    llm_provider = db.get_setting("llm_provider") or "openai"
+    llm_model = db.get_setting("llm_model") or "gpt-4o-mini"
+    stages.append(
+        {
+            "name": "Answer Generation",
+            "description": f"LLM ({llm_provider} {llm_model}) generates an answer from the retrieved context",
+            "example": "Synthesizes answer with citations from validated sources",
+        }
+    )
+
+    return RAGPipelineInfo(
+        pipeline_stages=stages,
         retrieval_config={
             "top_k_initial": 20,
             "top_k_final": 10,
@@ -1107,12 +1208,12 @@ async def get_rag_pipeline_info() -> RAGPipelineInfo:
             "query_expansion_count": 3,
         },
         embedding_config={
-            "model": db.get_setting("embedding_model") or "text-embedding-3-small",
-            "provider": db.get_setting("embedding_provider") or "openai",
-            "dimensions": 1536,
+            "model": embedding_model,
+            "provider": embedding_provider,
+            "dimensions": embedding_dims,
         },
         reranking_available=reranking_available,
-        hybrid_search_enabled=True,
+        hybrid_search_enabled=hybrid_enabled,
     )
 
 

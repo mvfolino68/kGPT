@@ -3,9 +3,12 @@
 @import 'tailwindcss/preflight' layer(base);
 @import 'tailwindcss/utilities' layer(utilities);
 
-/* Design System - Dark Theme */
+/* ============================================================================
+   RETRO DESIGN SYSTEM - Terminal/CRT Inspired
+   ============================================================================ */
+
 @theme {
-  /* Surface colors - refined dark palette */
+  /* Surface colors - deeper blacks for retro feel */
   --color-surface-50: 248 250 252;
   --color-surface-100: 241 245 249;
   --color-surface-200: 226 232 240;
@@ -17,24 +20,10 @@
   --color-surface-800: 30 41 59;
   --color-surface-900: 15 23 42;
   --color-surface-950: 8 12 24;
-
-  /* Primary accent */
-  --color-primary-400: 96 165 250;
-  --color-primary-500: 59 130 246;
-  --color-primary-600: 37 99 235;
-
-  /* Success */
-  --color-success-400: 74 222 128;
-  --color-success-500: 34 197 94;
-
-  /* Error */
-  --color-error-200: 254 202 202;
-  --color-error-400: 248 113 113;
-  --color-error-500: 239 68 68;
 }
 
 :root {
-  /* Surface colors - refined dark palette (for CSS variable usage) */
+  /* Surface colors */
   --color-surface-50: 248 250 252;
   --color-surface-100: 241 245 249;
   --color-surface-200: 226 232 240;
@@ -47,27 +36,31 @@
   --color-surface-900: 15 23 42;
   --color-surface-950: 8 12 24;
 
-  /* Primary accent */
-  --color-primary-400: 96 165 250;
-  --color-primary-500: 59 130 246;
-  --color-primary-600: 37 99 235;
-
-  /* Success */
-  --color-success-400: 74 222 128;
-  --color-success-500: 34 197 94;
-
-  /* Error */
-  --color-error-200: 254 202 202;
-  --color-error-400: 248 113 113;
-  --color-error-500: 239 68 68;
+  /* Retro accent colors - CRT inspired */
+  --retro-green: 52 211 153;        /* emerald-400 - primary accent */
+  --retro-green-bright: 110 231 183; /* emerald-300 - highlights */
+  --retro-cyan: 34 211 238;          /* cyan-400 - secondary */
+  --retro-amber: 251 191 36;         /* amber-400 - warnings */
+  --retro-orange: 251 146 60;        /* orange-400 - alerts */
+  --retro-red: 248 113 113;          /* red-400 - errors */
+  --retro-purple: 192 132 252;       /* purple-400 - special */
+  --retro-blue: 96 165 250;          /* blue-400 - info */
 
   /* Animation timing */
-  --transition-fast: 150ms;
+  --transition-fast: 120ms;
   --transition-normal: 200ms;
-  --transition-slow: 300ms;
+  --transition-slow: 350ms;
+
+  /* Retro effects */
+  --glow-intensity: 0.4;
+  --scanline-opacity: 0.03;
+  --border-width: 1px;
 }
 
-/* Base styles */
+/* ============================================================================
+   TYPOGRAPHY - Retro Tech
+   ============================================================================ */
+
 html {
   background-color: rgb(var(--color-surface-950));
   color: rgb(var(--color-surface-100));
@@ -76,22 +69,565 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  position: relative;
 }
 
-/* Smooth transitions for all interactive elements */
-button, a, input, textarea {
+/* Monospace font stack for terminal elements */
+.font-mono,
+.retro-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+  font-variant-ligatures: none;
+}
+
+/* ============================================================================
+   RETRO EFFECTS - Scanlines & CRT
+   ============================================================================ */
+
+/* Subtle scanline effect overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 1px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 1px,
+    rgba(0, 0, 0, var(--scanline-opacity)) 2px
+  );
+  animation: scanline 8s linear infinite;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(2px); }
+}
+
+/* Subtle CRT flicker on body */
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.98; }
+}
+
+/* ============================================================================
+   RETRO GLOW EFFECTS
+   ============================================================================ */
+
+/* LED glow utility classes */
+.led-glow-green {
+  box-shadow:
+    0 0 8px rgba(var(--retro-green), 0.6),
+    0 0 16px rgba(var(--retro-green), 0.3),
+    inset 0 0 8px rgba(var(--retro-green), 0.2);
+}
+
+.led-glow-cyan {
+  box-shadow:
+    0 0 8px rgba(var(--retro-cyan), 0.6),
+    0 0 16px rgba(var(--retro-cyan), 0.3),
+    inset 0 0 8px rgba(var(--retro-cyan), 0.2);
+}
+
+.led-glow-amber {
+  box-shadow:
+    0 0 8px rgba(var(--retro-amber), 0.6),
+    0 0 16px rgba(var(--retro-amber), 0.3),
+    inset 0 0 8px rgba(var(--retro-amber), 0.2);
+}
+
+.led-glow-red {
+  box-shadow:
+    0 0 8px rgba(var(--retro-red), 0.6),
+    0 0 16px rgba(var(--retro-red), 0.3),
+    inset 0 0 8px rgba(var(--retro-red), 0.2);
+}
+
+/* Text glow for headings/important text */
+.text-glow-green {
+  text-shadow:
+    0 0 10px rgba(var(--retro-green), 0.8),
+    0 0 20px rgba(var(--retro-green), 0.4),
+    0 0 30px rgba(var(--retro-green), 0.2);
+}
+
+.text-glow-cyan {
+  text-shadow:
+    0 0 10px rgba(var(--retro-cyan), 0.8),
+    0 0 20px rgba(var(--retro-cyan), 0.4);
+}
+
+.text-glow-amber {
+  text-shadow:
+    0 0 10px rgba(var(--retro-amber), 0.8),
+    0 0 20px rgba(var(--retro-amber), 0.4);
+}
+
+/* Border glow effects */
+.border-glow-green {
+  box-shadow:
+    0 0 12px rgba(var(--retro-green), 0.3),
+    inset 0 0 12px rgba(var(--retro-green), 0.1);
+}
+
+.border-glow-cyan {
+  box-shadow:
+    0 0 12px rgba(var(--retro-cyan), 0.3),
+    inset 0 0 12px rgba(var(--retro-cyan), 0.1);
+}
+
+.border-glow-amber {
+  box-shadow:
+    0 0 12px rgba(var(--retro-amber), 0.3),
+    inset 0 0 12px rgba(var(--retro-amber), 0.1);
+}
+
+/* Hover glow effects */
+.hover-glow-green:hover {
+  box-shadow:
+    0 0 16px rgba(var(--retro-green), 0.4),
+    inset 0 0 16px rgba(var(--retro-green), 0.1);
+  transition: box-shadow var(--transition-normal) ease;
+}
+
+.hover-glow-cyan:hover {
+  box-shadow:
+    0 0 16px rgba(var(--retro-cyan), 0.4),
+    inset 0 0 16px rgba(var(--retro-cyan), 0.1);
+  transition: box-shadow var(--transition-normal) ease;
+}
+
+/* ============================================================================
+   RETRO BORDERS & BOXES
+   ============================================================================ */
+
+/* Terminal-style box borders */
+.retro-border {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.retro-border-green {
+  border: 1px solid rgba(var(--retro-green), 0.3);
+}
+
+.retro-border-cyan {
+  border: 1px solid rgba(var(--retro-cyan), 0.3);
+}
+
+.retro-border-amber {
+  border: 1px solid rgba(var(--retro-amber), 0.3);
+}
+
+.retro-border-red {
+  border: 1px solid rgba(var(--retro-red), 0.3);
+}
+
+/* Double border effect */
+.retro-border-double {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: 1px solid rgba(255, 255, 255, 0.05);
+  outline-offset: -3px;
+}
+
+/* Corner brackets (retro terminal style) */
+.retro-corners::before,
+.retro-corners::after,
+.retro-corners > *::before,
+.retro-corners > *::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(var(--retro-green), 0.5);
+}
+
+.retro-corners::before {
+  top: -1px;
+  left: -1px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.retro-corners::after {
+  top: -1px;
+  right: -1px;
+  border-left: none;
+  border-bottom: none;
+}
+
+/* ============================================================================
+   RETRO BUTTONS
+   ============================================================================ */
+
+.retro-button {
+  padding: 0.5rem 1rem;
+  background: rgba(var(--color-surface-800), 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgb(var(--color-surface-200));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  transition: all var(--transition-normal) ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.retro-button:hover:not(:disabled) {
+  background: rgba(var(--color-surface-700), 0.9);
+  border-color: rgba(var(--retro-green), 0.5);
+  color: rgb(var(--retro-green));
+  box-shadow: 0 0 12px rgba(var(--retro-green), 0.2);
+}
+
+.retro-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.retro-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.retro-button-primary {
+  background: rgba(var(--retro-green), 0.15);
+  border-color: rgba(var(--retro-green), 0.4);
+  color: rgb(var(--retro-green));
+}
+
+.retro-button-primary:hover:not(:disabled) {
+  background: rgba(var(--retro-green), 0.25);
+  box-shadow: 0 0 16px rgba(var(--retro-green), 0.3);
+}
+
+.retro-button-danger {
+  background: rgba(var(--retro-red), 0.15);
+  border-color: rgba(var(--retro-red), 0.4);
+  color: rgb(var(--retro-red));
+}
+
+.retro-button-danger:hover:not(:disabled) {
+  background: rgba(var(--retro-red), 0.25);
+  box-shadow: 0 0 16px rgba(var(--retro-red), 0.3);
+}
+
+/* ============================================================================
+   RETRO INPUTS
+   ============================================================================ */
+
+.retro-input {
+  background: rgba(var(--color-surface-900), 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgb(var(--color-surface-100));
+  padding: 0.5rem 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
   transition: all var(--transition-normal) ease;
 }
 
-/* Focus styles */
+.retro-input:focus {
+  outline: none;
+  border-color: rgba(var(--retro-green), 0.5);
+  box-shadow: 0 0 12px rgba(var(--retro-green), 0.2);
+}
+
+.retro-input::placeholder {
+  color: rgb(var(--color-surface-600));
+}
+
+/* Bracket-style input wrapper */
+.retro-input-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.retro-input-wrapper::before {
+  content: '[';
+  color: rgba(var(--retro-green), 0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.retro-input-wrapper::after {
+  content: ']';
+  color: rgba(var(--retro-green), 0.5);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem;
+  margin-left: 0.5rem;
+}
+
+/* ============================================================================
+   RETRO ANIMATIONS
+   ============================================================================ */
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes flicker-subtle {
+  0%, 100% { opacity: 1; }
+  45%, 55% { opacity: 0.97; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(var(--retro-green), 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(var(--retro-green), 0.6);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation utility classes */
+.animate-blink {
+  animation: blink 1s step-start infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-flicker {
+  animation: flicker-subtle 0.15s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right var(--transition-slow) ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left var(--transition-slow) ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in var(--transition-slow) ease-out;
+}
+
+/* ============================================================================
+   RETRO CARDS
+   ============================================================================ */
+
+.retro-card {
+  background: rgba(var(--color-surface-900), 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.retro-card-elevated {
+  background: rgba(var(--color-surface-800), 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.retro-card-glow-green {
+  border-color: rgba(var(--retro-green), 0.3);
+  box-shadow: 0 0 20px rgba(var(--retro-green), 0.1);
+}
+
+.retro-card-glow-cyan {
+  border-color: rgba(var(--retro-cyan), 0.3);
+  box-shadow: 0 0 20px rgba(var(--retro-cyan), 0.1);
+}
+
+/* ============================================================================
+   RETRO PROGRESS BARS
+   ============================================================================ */
+
+.retro-progress {
+  background: rgba(var(--color-surface-900), 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-progress-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--retro-green), 0.8),
+    rgba(var(--retro-green), 0.5)
+  );
+  height: 100%;
+  transition: width var(--transition-slow) ease;
+  position: relative;
+  box-shadow: 0 0 12px rgba(var(--retro-green), 0.6);
+}
+
+/* Segmented progress bar effect */
+.retro-progress-segmented .retro-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 4px,
+    rgba(0, 0, 0, 0.2) 4px,
+    rgba(0, 0, 0, 0.2) 8px
+  );
+}
+
+/* ============================================================================
+   LED STATUS INDICATORS
+   ============================================================================ */
+
+.led-indicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  position: relative;
+  display: inline-block;
+}
+
+.led-green {
+  background: rgb(var(--retro-green));
+  box-shadow:
+    0 0 8px rgba(var(--retro-green), 0.8),
+    0 0 16px rgba(var(--retro-green), 0.4),
+    inset 0 0 6px rgba(var(--retro-green), 0.3);
+}
+
+.led-cyan {
+  background: rgb(var(--retro-cyan));
+  box-shadow:
+    0 0 8px rgba(var(--retro-cyan), 0.8),
+    0 0 16px rgba(var(--retro-cyan), 0.4);
+}
+
+.led-amber {
+  background: rgb(var(--retro-amber));
+  box-shadow:
+    0 0 8px rgba(var(--retro-amber), 0.8),
+    0 0 16px rgba(var(--retro-amber), 0.4);
+}
+
+.led-red {
+  background: rgb(var(--retro-red));
+  box-shadow:
+    0 0 8px rgba(var(--retro-red), 0.8),
+    0 0 16px rgba(var(--retro-red), 0.4);
+}
+
+.led-off {
+  background: rgb(var(--color-surface-700));
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Large LED for important status */
+.led-large {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ============================================================================
+   UTILITY OVERRIDES
+   ============================================================================ */
+
+/* Smooth transitions */
+button, a, input, textarea, select {
+  transition: all var(--transition-normal) ease;
+}
+
+/* Focus styles with retro green */
 *:focus-visible {
-  outline: 2px solid rgb(52 211 153 / 0.5);
+  outline: 2px solid rgba(var(--retro-green), 0.6);
   outline-offset: 2px;
 }
 
-/* Utility classes for surface colors */
+/* Selection with retro green */
+::selection {
+  background: rgba(var(--retro-green), 0.3);
+  color: rgb(var(--color-surface-100));
+}
+
+/* ============================================================================
+   SCROLLBAR - Retro Style
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(var(--color-surface-900), 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--retro-green), 0.3);
+  border: 1px solid rgba(var(--retro-green), 0.5);
+  transition: background var(--transition-normal) ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--retro-green), 0.5);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--retro-green), 0.3) rgba(var(--color-surface-900), 0.5);
+}
+
+/* ============================================================================
+   TAILWIND COLOR UTILITIES
+   ============================================================================ */
+
 .bg-surface-50 { background-color: rgb(var(--color-surface-50)); }
 .bg-surface-100 { background-color: rgb(var(--color-surface-100)); }
 .bg-surface-200 { background-color: rgb(var(--color-surface-200)); }
@@ -117,85 +653,3 @@ button, a, input, textarea {
 
 .border-surface-600 { border-color: rgb(var(--color-surface-600)); }
 .border-surface-700 { border-color: rgb(var(--color-surface-700)); }
-
-.bg-primary-500 { background-color: rgb(var(--color-primary-500)); }
-.bg-primary-600 { background-color: rgb(var(--color-primary-600)); }
-.text-primary-400 { color: rgb(59 130 246); }
-.bg-primary-500\/20 { background-color: rgb(59 130 246 / 0.2); }
-.bg-primary-500\/30 { background-color: rgb(59 130 246 / 0.3); }
-
-.bg-success-500 { background-color: rgb(var(--color-success-500)); }
-.text-success-400 { color: rgb(var(--color-success-400)); }
-.bg-success-500\/20 { background-color: rgb(34 197 94 / 0.2); }
-.border-success-500 { border-color: rgb(var(--color-success-500)); }
-.text-success-200 { color: rgb(187 247 208); }
-
-.bg-error-500 { background-color: rgb(var(--color-error-500)); }
-.text-error-400 { color: rgb(var(--color-error-400)); }
-.text-error-200 { color: rgb(var(--color-error-200)); }
-.bg-error-500\/20 { background-color: rgb(239 68 68 / 0.2); }
-.bg-error-500\/30 { background-color: rgb(239 68 68 / 0.3); }
-.border-error-500 { border-color: rgb(var(--color-error-500)); }
-
-.placeholder-surface-500::placeholder { color: rgb(var(--color-surface-500)); }
-
-.ring-primary-500 { --tw-ring-color: rgb(var(--color-primary-500)); }
-.focus\:ring-primary-500:focus { --tw-ring-color: rgb(var(--color-primary-500)); }
-
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-surface-600) / 0.5);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--color-surface-500) / 0.7);
-}
-
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(71 85 105 / 0.5) transparent;
-}
-
-/* Selection */
-::selection {
-  background: rgb(52 211 153 / 0.3);
-  color: rgb(var(--color-surface-100));
-}
-
-/* Animations */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgb(52 211 153 / 0.1); }
-  50% { box-shadow: 0 0 30px rgb(52 211 153 / 0.2); }
-}
-
-.animate-fade-in {
-  animation: fade-in var(--transition-slow) ease-out;
-}
-
-/* Glass morphism effect */
-.glass {
-  background: rgb(var(--color-surface-900) / 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgb(255 255 255 / 0.05);
-}
-
-/* Subtle glow on hover */
-.glow-hover:hover {
-  box-shadow: 0 0 24px rgb(52 211 153 / 0.15);
-}

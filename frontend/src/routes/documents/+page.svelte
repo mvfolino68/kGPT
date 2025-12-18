@@ -18,6 +18,7 @@
 		cleanupStaleEntries,
 		purgeAllData,
 		getChunkAnalytics,
+		getAgentGraph,
 		type DocumentSource,
 		type CollectionsResponse,
 		type VectorSearchResponse,
@@ -26,15 +27,17 @@
 		type RAGDemoResponse,
 		type ChunkResult,
 		type SyncStatusResponse,
-		type ChunkAnalytics
+		type ChunkAnalytics,
+		type AgentGraphInfo
 	} from '$lib/api';
+	import { RetroHeader, RetroButton, StatusIndicator, RetroCard } from '$lib/components';
 
 	// =========================================================================
 	// State
 	// =========================================================================
 
 	// Tab navigation
-	type Tab = 'sources' | 'search' | 'browse' | 'pipeline';
+	type Tab = 'sources' | 'search' | 'browse' | 'pipeline' | 'agents';
 	let activeTab = $state<Tab>('sources');
 
 	// Sources tab state
@@ -112,6 +115,10 @@
 	let demoQuery = $state('');
 	let demoResult = $state<RAGDemoResponse | null>(null);
 	let demoLoading = $state(false);
+
+	// Agent Graph tab state
+	let agentGraph = $state<AgentGraphInfo | null>(null);
+	let agentGraphLoading = $state(false);
 
 	// Embedding demo state
 	let embedText1 = $state('');
@@ -417,14 +424,15 @@
 	}
 
 	function getStatusColor(status: string): string {
-		const colors: Record<string, string> = {
-			indexed: 'text-emerald-400',
-			indexing: 'text-amber-400',
-			error: 'text-red-400',
-			cancelled: 'text-gray-400',
-			pending: 'text-gray-500'
+		// Returns the LED status type for StatusIndicator component
+		const statusMap: Record<string, 'active' | 'warning' | 'error' | 'inactive'> = {
+			indexed: 'active',
+			indexing: 'warning',
+			error: 'error',
+			cancelled: 'inactive',
+			pending: 'inactive'
 		};
-		return colors[status] || 'text-gray-500';
+		return statusMap[status] || 'inactive';
 	}
 
 	function formatBytes(bytes: number): string {
@@ -525,6 +533,23 @@
 		}
 	}
 
+	// =========================================================================
+	// Agent Graph Tab Functions
+	// =========================================================================
+
+	async function loadAgentGraph() {
+		agentGraphLoading = true;
+		try {
+			agentGraph = await getAgentGraph();
+			console.log('Agent graph loaded:', agentGraph);
+		} catch (e) {
+			console.error('Failed to load agent graph:', e);
+			error = e instanceof Error ? e.message : 'Failed to load agent graph';
+		} finally {
+			agentGraphLoading = false;
+		}
+	}
+
 	async function handleEmbedCompare() {
 		if (!embedText1.trim() || !embedText2.trim()) return;
 		embedLoading = true;
@@ -569,68 +594,68 @@
 			loadPipelineInfo();
 			loadAnalytics();
 		}
+		if (activeTab === 'agents' && !agentGraph) {
+			loadAgentGraph();
+		}
 	});
 </script>
 
-<div class="flex flex-col h-full bg-surface-900">
-	<!-- Header with stats -->
-	<header class="px-6 py-4 border-b border-surface-700 bg-surface-800/50">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-3">
-				<span class="text-emerald-400 font-mono text-sm">$</span>
-				<h1 class="font-mono text-lg text-surface-100">kgpt/documents</h1>
-				<span class="text-surface-500 font-mono text-sm">--vector-store</span>
-			</div>
-
-			<!-- Quick stats -->
+<div class="flex flex-col h-full bg-surface-950">
+	<!-- Retro Header with stats -->
+	<RetroHeader path="kgpt/documents" flag="--vector-store">
+		{#snippet rightContent()}
+			<!-- Quick stats with LED indicators -->
 			<div class="flex items-center gap-6 text-xs font-mono">
 				{#if syncStatus}
 					<div class="flex items-center gap-2">
+						<StatusIndicator
+							status={syncStatus.synced ? 'active' : 'warning'}
+							size="sm"
+							pulse={!syncStatus.synced}
+						/>
 						<span class="text-surface-500">sync:</span>
-						{#if syncStatus.synced}
-							<span class="text-emerald-400">✓ synced</span>
-						{:else}
-							<span class="text-amber-400">⚠ out of sync</span>
-						{/if}
+						<span class="{syncStatus.synced ? 'text-emerald-400' : 'text-amber-400'}">
+							{syncStatus.synced ? 'OK' : 'WARN'}
+						</span>
 					</div>
 				{/if}
 				{#if collections}
-					<div class="flex items-center gap-2">
-						<span class="text-surface-500">collections:</span>
+					<div class="flex items-center gap-2 px-2 py-1 retro-card rounded">
+						<span class="text-surface-500">col:</span>
 						<span class="text-emerald-400">{collections.total_collections}</span>
 					</div>
-					<div class="flex items-center gap-2">
-						<span class="text-surface-500">vectors:</span>
-						<span class="text-blue-400">{collections.total_vectors.toLocaleString()}</span>
+					<div class="flex items-center gap-2 px-2 py-1 retro-card rounded">
+						<span class="text-surface-500">vec:</span>
+						<span class="text-cyan-400">{collections.total_vectors.toLocaleString()}</span>
 					</div>
 				{/if}
-				<div class="flex items-center gap-2">
-					<span class="text-surface-500">sources:</span>
+				<div class="flex items-center gap-2 px-2 py-1 retro-card rounded">
+					<span class="text-surface-500">src:</span>
 					<span class="text-purple-400">{documents.length}</span>
 				</div>
 			</div>
-		</div>
+		{/snippet}
+	</RetroHeader>
 
-		<!-- Tab navigation -->
-		<nav class="flex gap-1 mt-4">
-			{#each [
-				{ id: 'sources' as Tab, label: 'Sources', icon: '📁' },
-				{ id: 'search' as Tab, label: 'Vector Search', icon: '🔍' },
-				{ id: 'browse' as Tab, label: 'Browse Vectors', icon: '📊' },
-				{ id: 'pipeline' as Tab, label: 'RAG Pipeline', icon: '⚡' }
-			] as tab}
-				<button
-					onclick={() => (activeTab = tab.id)}
-					class="px-4 py-2 font-mono text-sm rounded-t transition-colors {activeTab === tab.id
-						? 'bg-surface-700 text-surface-100 border-t border-x border-surface-600'
-						: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800'}"
-				>
-					<span class="mr-2">{tab.icon}</span>
-					{tab.label}
-				</button>
-			{/each}
-		</nav>
-	</header>
+	<!-- Tab navigation with retro style -->
+	<nav class="px-6 border-b retro-border bg-surface-900/30 backdrop-blur-sm flex gap-1">
+		{#each [
+			{ id: 'sources' as Tab, label: 'Sources' },
+			{ id: 'search' as Tab, label: 'Search' },
+			{ id: 'browse' as Tab, label: 'Browse' },
+			{ id: 'pipeline' as Tab, label: 'RAG Pipeline' },
+			{ id: 'agents' as Tab, label: 'Agent Graph' }
+		] as tab}
+			<button
+				onclick={() => (activeTab = tab.id)}
+				class="px-4 py-2.5 font-mono text-sm transition-all {activeTab === tab.id
+					? 'text-emerald-400 border-b-2 border-emerald-400 bg-surface-900/50'
+					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/30 border-b-2 border-transparent'}"
+			>
+				{activeTab === tab.id ? '> ' : ''}{tab.label}
+			</button>
+		{/each}
+	</nav>
 
 	<div class="flex-1 overflow-y-auto p-6">
 		<div class="max-w-6xl mx-auto space-y-6">
@@ -652,8 +677,8 @@
 			<!-- ================================================================= -->
 			{#if activeTab === 'sources'}
 				<!-- Ingest form -->
-				<section class="bg-surface-800 border border-surface-700 rounded">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
 						<span class="text-emerald-400 font-mono text-xs">+</span>
 						<span class="font-mono text-sm text-surface-300">ingest --source</span>
 					</div>
@@ -663,13 +688,12 @@
 						<div class="flex items-center gap-2 flex-wrap">
 							<span class="text-surface-500 font-mono text-xs">presets:</span>
 							{#each presetSources as preset}
-								<button
-									type="button"
+								<RetroButton
+									size="sm"
 									onclick={() => selectPreset(preset)}
-									class="px-2 py-1 font-mono text-xs bg-surface-700 hover:bg-surface-600 text-surface-300 rounded border border-surface-600 hover:border-surface-500 transition-colors"
 								>
 									{preset.name}<span class="text-surface-500 ml-1">({preset.size})</span>
-								</button>
+								</RetroButton>
 							{/each}
 						</div>
 
@@ -685,7 +709,7 @@
 									<label class="block text-xs font-mono text-surface-500 mb-1">--type</label>
 									<select
 										bind:value={sourceType}
-										class="w-full px-2 py-1.5 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500"
+										class="w-full retro-input rounded"
 									>
 										<option value="sitemap">sitemap</option>
 										<option value="github">github</option>
@@ -698,7 +722,7 @@
 										type="text"
 										bind:value={sourceName}
 										placeholder="source-name"
-										class="w-full px-2 py-1.5 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 placeholder-surface-600 focus:outline-none focus:border-emerald-500"
+										class="w-full retro-input rounded"
 									/>
 								</div>
 								<div class="col-span-5">
@@ -707,49 +731,52 @@
 										type="url"
 										bind:value={sourceUrl}
 										placeholder="https://..."
-										class="w-full px-2 py-1.5 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 placeholder-surface-600 focus:outline-none focus:border-emerald-500"
+										class="w-full retro-input rounded"
 									/>
 								</div>
 								<div class="col-span-2 flex items-end">
-									<button
+									<RetroButton
 										type="submit"
+										variant="primary"
+										class="w-full"
 										disabled={ingesting || !sourceName.trim() || !sourceUrl.trim()}
-										class="w-full px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-700 disabled:text-surface-500 text-white font-mono text-sm rounded transition-colors"
 									>
 										{ingesting ? 'running...' : 'run'}
-									</button>
+									</RetroButton>
 								</div>
 							</div>
 						</form>
 					</div>
-				</section>
+				</RetroCard>
 
 			<!-- Success message for destructive operations -->
 			{#if lastDestructiveResult}
-				<div class="bg-emerald-900/20 border border-emerald-700 rounded p-3 font-mono text-sm text-emerald-400 flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="text-emerald-500">✓</span>
-						{lastDestructiveResult.message}
+				<RetroCard variant="glow-green" class="!p-0">
+					<div class="p-3 font-mono text-sm text-emerald-400 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<StatusIndicator status="active" size="sm" />
+							{lastDestructiveResult.message}
+						</div>
+						<RetroButton size="sm" onclick={() => (lastDestructiveResult = null)}>×</RetroButton>
 					</div>
-					<button onclick={() => (lastDestructiveResult = null)} class="text-emerald-500 hover:text-emerald-400">×</button>
-				</div>
+				</RetroCard>
 			{/if}
 
 			<!-- Sync Status Panel (shown when out of sync) -->
 			{#if syncStatus && (!syncStatus.synced || syncStatus.orphaned_sources.length > 0 || syncStatus.missing_sources.length > 0)}
-				<section class="bg-amber-900/20 border border-amber-700 rounded">
-					<div class="px-4 py-2 border-b border-amber-700/50 flex items-center justify-between">
+				<RetroCard variant="glow-amber" noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
 						<div class="flex items-center gap-2">
 							<span class="text-amber-400 font-mono text-xs">⚠</span>
 							<span class="font-mono text-sm text-amber-300">sync status: database ↔ qdrant</span>
 						</div>
-						<button
+						<RetroButton
+							size="sm"
 							onclick={loadSyncStatus}
 							disabled={syncLoading}
-							class="text-amber-400 hover:text-amber-300 font-mono text-xs"
 						>
 							{syncLoading ? 'checking...' : '↻ refresh'}
-						</button>
+						</RetroButton>
 					</div>
 
 					<div class="p-4 space-y-4">
@@ -1001,19 +1028,19 @@
 							{/if}
 						</div>
 					</div>
-				</section>
+				</RetroCard>
 			{/if}
 
 				<!-- Collection Overview -->
 				{#if collections && collections.collections.length > 0}
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
+					<RetroCard noPadding>
+						<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
 							<span class="text-blue-400 font-mono text-xs">🗄️</span>
 							<span class="font-mono text-sm text-surface-300">qdrant collections</span>
 						</div>
 						<div class="p-4">
 							{#each collections.collections as col}
-								<div class="bg-surface-900 rounded-lg p-4 border border-surface-700">
+								<RetroCard class="mb-4 last:mb-0">
 									<!-- Header -->
 									<div class="flex items-center justify-between mb-4">
 										<div class="flex items-center gap-3">
@@ -1107,30 +1134,30 @@
 										{:else}
 											<div class="flex items-center gap-2">
 												<span class="w-2 h-2 rounded-full bg-surface-500"></span>
-												<span class="text-surface-500">no quantization</span>
-											</div>
-										{/if}
-									</div>
+											<span class="text-surface-500">no quantization</span>
+										</div>
+									{/if}
 								</div>
+								</RetroCard>
 							{/each}
 						</div>
-					</section>
+					</RetroCard>
 				{/if}
 
 				<!-- Documents table -->
-				<section class="bg-surface-800 border border-surface-700 rounded overflow-hidden">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center justify-between">
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
 						<div class="flex items-center gap-2">
 							<span class="text-blue-400 font-mono text-xs">&gt;</span>
 							<span class="font-mono text-sm text-surface-300">document sources</span>
 							<span class="text-surface-500 font-mono text-xs">({documents.length})</span>
 						</div>
-						<button
+						<RetroButton
+							size="sm"
 							onclick={loadAll}
-							class="text-surface-500 hover:text-surface-300 font-mono text-xs"
 						>
 							↻ refresh
-						</button>
+						</RetroButton>
 					</div>
 
 					{#if loading}
@@ -1179,15 +1206,22 @@
 									class="grid grid-cols-12 gap-2 px-4 py-2 text-sm font-mono items-center hover:bg-surface-700/30"
 								>
 									<div class="col-span-1 text-surface-500">#{doc.id}</div>
-									<div class="col-span-2 text-surface-100 truncate" title={doc.name}>
+									<div class="col-span-2 text-surface-100 truncate font-mono" title={doc.name}>
 										{doc.name}
 									</div>
-									<div class="col-span-1 text-surface-400">{doc.source_type}</div>
-									<div class="col-span-1 {getStatusColor(doc.status)}">{doc.status}</div>
-									<div class="col-span-1 text-right text-surface-300">
+									<div class="col-span-1 text-surface-400 font-mono">{doc.source_type}</div>
+									<div class="col-span-1 flex items-center gap-2">
+										<StatusIndicator
+											status={getStatusColor(doc.status)}
+											size="sm"
+											pulse={doc.status === 'indexing'}
+										/>
+										<span class="text-surface-300 font-mono text-xs">{doc.status}</span>
+									</div>
+									<div class="col-span-1 text-right text-surface-300 font-mono">
 										{doc.document_count > 0 ? doc.document_count.toLocaleString() : '—'}
 									</div>
-									<div class="col-span-4 text-surface-500 truncate text-xs" title={doc.url}>
+									<div class="col-span-4 text-surface-500 truncate text-xs font-mono" title={doc.url}>
 										{doc.url || '—'}
 									</div>
 							<div class="col-span-2 text-right flex items-center justify-end gap-2">
@@ -1282,80 +1316,80 @@
 											{#if progress.pages} from {progress.pages} pages{/if}
 											{#if progress.elapsed_seconds} in {progress.elapsed_seconds}s{/if}
 										</span>
-									</div>
-								{/if}
-								{#if doc.status === 'cancelled' || progress?.status === 'cancelled'}
-									<div class="px-4 py-2 bg-gray-900/10 border-t border-gray-800/30">
-										<span class="font-mono text-xs text-gray-400">— cancelled</span>
-									</div>
-								{/if}
-							</div>
-						{/each}
-					{/if}
-				</section>
-
-				<!-- ================================================================= -->
-				<!-- SEARCH TAB -->
-				<!-- ================================================================= -->
-			{:else if activeTab === 'search'}
-				<!-- Search interface -->
-				<section class="bg-surface-800 border border-surface-700 rounded">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-						<span class="text-blue-400 font-mono text-xs">🔍</span>
-						<span class="font-mono text-sm text-surface-300">semantic vector search</span>
-					</div>
-
-					<div class="p-4 space-y-4">
-						<div class="bg-surface-900/50 rounded-lg p-3 text-xs text-surface-400 font-mono">
-							<p>
-								<span class="text-emerald-400">How it works:</span> Your query is converted to an embedding
-								vector, then compared against all stored document chunks using cosine similarity.
-							</p>
+								</div>
+							{/if}
+							{#if doc.status === 'cancelled' || progress?.status === 'cancelled'}
+								<div class="px-4 py-2 bg-gray-900/10 border-t border-gray-800/30">
+									<span class="font-mono text-xs text-gray-400">— cancelled</span>
+								</div>
+							{/if}
 						</div>
+					{/each}
+				{/if}
+			</RetroCard>
 
-						<form
-							onsubmit={(e) => {
-								e.preventDefault();
-								handleSearch();
-							}}
-							class="flex gap-3"
+			<!-- ================================================================= -->
+			<!-- SEARCH TAB -->
+			<!-- ================================================================= -->
+		{:else if activeTab === 'search'}
+			<!-- Search interface -->
+			<RetroCard noPadding>
+				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+					<span class="text-blue-400 font-mono text-xs">🔍</span>
+					<span class="font-mono text-sm text-surface-300">semantic vector search</span>
+				</div>
+
+				<div class="p-4 space-y-4">
+					<RetroCard variant="elevated" class="!p-3 text-xs text-surface-400 font-mono">
+						<p>
+							<span class="text-emerald-400">How it works:</span> Your query is converted to an embedding
+							vector, then compared against all stored document chunks using cosine similarity.
+						</p>
+					</RetroCard>
+
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							handleSearch();
+						}}
+						class="flex gap-3"
+					>
+						<input
+							type="text"
+							bind:value={searchQuery}
+							placeholder="Search for anything..."
+							class="flex-1 retro-input rounded"
+						/>
+						<select
+							bind:value={searchK}
+							class="retro-input rounded"
 						>
-							<input
-								type="text"
-								bind:value={searchQuery}
-								placeholder="Search for anything..."
-								class="flex-1 px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 placeholder-surface-600 focus:outline-none focus:border-blue-500"
-							/>
-							<select
-								bind:value={searchK}
-								class="px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100"
-							>
-								<option value={5}>Top 5</option>
-								<option value={10}>Top 10</option>
-								<option value={20}>Top 20</option>
-							</select>
-							<button
-								type="submit"
-								disabled={searchLoading || !searchQuery.trim()}
-								class="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-surface-700 disabled:text-surface-500 text-white font-mono text-sm rounded transition-colors"
-							>
-								{searchLoading ? 'searching...' : 'search'}
-							</button>
-						</form>
-					</div>
-				</section>
+							<option value={5}>Top 5</option>
+							<option value={10}>Top 10</option>
+							<option value={20}>Top 20</option>
+						</select>
+						<RetroButton
+							type="submit"
+							variant="primary"
+							disabled={searchLoading || !searchQuery.trim()}
+						>
+							{searchLoading ? 'searching...' : 'search'}
+						</RetroButton>
+					</form>
+				</div>
+			</RetroCard>
 
-				<!-- Search results -->
-				{#if searchResults}
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center justify-between">
-							<div class="flex items-center gap-2">
-								<span class="text-emerald-400 font-mono text-xs">✓</span>
-								<span class="font-mono text-sm text-surface-300"
-									>{searchResults.total} results for "{searchResults.query}"</span
-								>
-							</div>
+			<!-- Search results -->
+			{#if searchResults}
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<StatusIndicator status="active" size="sm" />
+							<span class="font-mono text-sm text-surface-300"
+								>{searchResults.total} results for "{searchResults.query}"</span
+							>
 						</div>
+					</div>
 
 						<div class="divide-y divide-surface-700/50">
 							{#each searchResults.chunks as chunk, i}
@@ -1412,7 +1446,7 @@
 								</div>
 							{/each}
 						</div>
-					</section>
+					</RetroCard>
 				{/if}
 
 				<!-- ================================================================= -->
@@ -1420,8 +1454,8 @@
 				<!-- ================================================================= -->
 			{:else if activeTab === 'browse'}
 				<!-- Browse controls -->
-				<section class="bg-surface-800 border border-surface-700 rounded">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center justify-between">
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
 						<div class="flex items-center gap-2">
 							<span class="text-purple-400 font-mono text-xs">📊</span>
 							<span class="font-mono text-sm text-surface-300">vector browser</span>
@@ -1448,41 +1482,41 @@
 					<div class="p-3 bg-surface-900/50 text-xs text-surface-400 font-mono">
 						<p>
 							<span class="text-purple-400">Browse:</span> Explore the raw vectors stored in Qdrant.
-							Each point represents a document chunk with its embedding.
-						</p>
-					</div>
-				</section>
+						Each point represents a document chunk with its embedding.
+					</p>
+				</div>
+			</RetroCard>
 
-				<!-- Vector list -->
-				{#if browseLoading}
-					<div class="p-8 text-center font-mono text-surface-500">
-						<span class="animate-pulse">loading vectors...</span>
-					</div>
-				{:else if browseResults}
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center justify-between">
-							<span class="font-mono text-sm text-surface-300"
-								>{browseResults.total_count} vectors in {browseResults.collection}</span
-							>
-							<div class="flex gap-2">
-								{#if browseHistory.length > 0}
-									<button
-										onclick={goBack}
-										class="px-3 py-1 text-xs font-mono bg-surface-700 hover:bg-surface-600 text-surface-300 rounded"
-									>
-										← back
-									</button>
-								{/if}
-								{#if browseResults.next_offset}
-									<button
-										onclick={() => loadVectors(browseResults?.next_offset ?? undefined)}
-										class="px-3 py-1 text-xs font-mono bg-surface-700 hover:bg-surface-600 text-surface-300 rounded"
-									>
-										next →
-									</button>
-								{/if}
-							</div>
+			<!-- Vector list -->
+			{#if browseLoading}
+				<RetroCard class="text-center py-8">
+					<span class="font-mono text-surface-500 animate-pulse">loading vectors...</span>
+				</RetroCard>
+			{:else if browseResults}
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
+						<span class="font-mono text-sm text-surface-300"
+							>{browseResults.total_count} vectors in {browseResults.collection}</span
+						>
+						<div class="flex gap-2">
+							{#if browseHistory.length > 0}
+								<RetroButton
+									size="sm"
+									onclick={goBack}
+								>
+									← back
+								</RetroButton>
+							{/if}
+							{#if browseResults.next_offset}
+								<RetroButton
+									size="sm"
+									onclick={() => loadVectors(browseResults?.next_offset ?? undefined)}
+								>
+									next →
+								</RetroButton>
+							{/if}
 						</div>
+					</div>
 
 						<div class="divide-y divide-surface-700/50">
 							{#each browseResults.points as point}
@@ -1528,7 +1562,7 @@
 								</div>
 							{/each}
 						</div>
-					</section>
+					</RetroCard>
 				{/if}
 
 				<!-- ================================================================= -->
@@ -1537,13 +1571,13 @@
 			{:else if activeTab === 'pipeline'}
 				<!-- Pipeline info -->
 				{#if pipelineLoading}
-					<div class="p-8 text-center font-mono text-surface-500">
-						<span class="animate-pulse">loading pipeline info...</span>
-					</div>
+					<RetroCard class="text-center py-8">
+						<span class="font-mono text-surface-500 animate-pulse">loading pipeline info...</span>
+					</RetroCard>
 				{:else if pipelineInfo}
 					<!-- RAG Overview -->
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
+					<RetroCard noPadding>
+						<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
 							<span class="text-amber-400 font-mono text-xs">⚡</span>
 							<span class="font-mono text-sm text-surface-300"
 								>RAG Pipeline: How Retrieval-Augmented Generation Works</span
@@ -1552,7 +1586,7 @@
 
 						<div class="p-4">
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-								<div class="bg-surface-900 rounded-lg p-4 border border-surface-700">
+								<RetroCard variant="elevated">
 									<h3 class="font-mono text-sm text-emerald-400 mb-2">🔧 Current Configuration</h3>
 									<div class="space-y-2 text-xs font-mono">
 										<div class="flex justify-between">
@@ -1577,87 +1611,94 @@
 												{pipelineInfo.hybrid_search_enabled ? 'enabled' : 'disabled'}
 											</span>
 										</div>
-										<div class="flex justify-between">
-											<span class="text-surface-500">Reranking:</span>
-											<span
-												class={pipelineInfo.reranking_available
-													? 'text-emerald-400'
-													: 'text-amber-400'}
-											>
-												{pipelineInfo.reranking_available ? 'available' : 'not configured'}
-											</span>
-										</div>
-									</div>
-								</div>
-
-								<div class="bg-surface-900 rounded-lg p-4 border border-surface-700">
-									<h3 class="font-mono text-sm text-blue-400 mb-2">📊 Retrieval Settings</h3>
-									<div class="space-y-2 text-xs font-mono">
-										<div class="flex justify-between">
-											<span class="text-surface-500">Initial Candidates:</span>
-											<span class="text-surface-300"
-												>{pipelineInfo.retrieval_config.top_k_initial}</span
-											>
-										</div>
-										<div class="flex justify-between">
-											<span class="text-surface-500">Final Results:</span>
-											<span class="text-surface-300"
-												>{pipelineInfo.retrieval_config.top_k_final}</span
-											>
-										</div>
-										<div class="flex justify-between">
-											<span class="text-surface-500">Hybrid Alpha:</span>
-											<span class="text-amber-400">{pipelineInfo.retrieval_config.hybrid_alpha}</span
-											>
-										</div>
-										<div class="flex justify-between">
-											<span class="text-surface-500">Query Expansions:</span>
-											<span class="text-surface-300"
-												>{pipelineInfo.retrieval_config.query_expansion_count}</span
-											>
-										</div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Pipeline stages -->
-							<h3 class="font-mono text-sm text-surface-300 mb-3">Pipeline Stages</h3>
-							<div class="space-y-3">
-								{#each pipelineInfo.pipeline_stages as stage, i}
-									<div class="flex gap-4 items-start">
-										<div
-											class="w-8 h-8 rounded-full bg-surface-700 flex items-center justify-center text-sm font-mono text-surface-300 flex-shrink-0"
+									<div class="flex justify-between">
+										<span class="text-surface-500">Reranking:</span>
+										<span
+											class={pipelineInfo.reranking_available
+												? 'text-emerald-400'
+												: 'text-amber-400'}
 										>
-											{i + 1}
-										</div>
-										<div class="flex-1 bg-surface-900 rounded-lg p-3 border border-surface-700">
-											<h4 class="font-mono text-sm text-emerald-400 mb-1">{stage.name}</h4>
-											<p class="text-xs text-surface-400 mb-2">{stage.description}</p>
-											{#if stage.example}
-												<p class="text-xs text-surface-500 font-mono bg-surface-800 rounded p-2">
-													{stage.example}
-												</p>
-											{/if}
-										</div>
+											{pipelineInfo.reranking_available ? 'available' : 'not configured'}
+										</span>
 									</div>
-								{/each}
-							</div>
-						</div>
-					</section>
+								</div>
+							</RetroCard>
 
-					<!-- Interactive Demo -->
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-							<span class="text-emerald-400 font-mono text-xs">🧪</span>
-							<span class="font-mono text-sm text-surface-300">Interactive RAG Demo</span>
+							<RetroCard variant="elevated">
+								<h3 class="font-mono text-sm text-blue-400 mb-2">📊 Retrieval Settings</h3>
+								<div class="space-y-2 text-xs font-mono">
+									<div class="flex justify-between">
+										<span class="text-surface-500">Initial Candidates:</span>
+										<span class="text-surface-300"
+											>{pipelineInfo.retrieval_config.top_k_initial}</span
+										>
+									</div>
+									<div class="flex justify-between">
+										<span class="text-surface-500">Final Results:</span>
+										<span class="text-surface-300"
+											>{pipelineInfo.retrieval_config.top_k_final}</span
+										>
+									</div>
+									<div class="flex justify-between">
+										<span class="text-surface-500">Hybrid Alpha:</span>
+										<span class="text-amber-400">{pipelineInfo.retrieval_config.hybrid_alpha}</span
+										>
+									</div>
+									<div class="flex justify-between">
+										<span class="text-surface-500">Query Expansions:</span>
+										<span class="text-surface-300"
+											>{pipelineInfo.retrieval_config.query_expansion_count}</span
+										>
+									</div>
+								</div>
+							</RetroCard>
 						</div>
+					</div>
+				</RetroCard>
 
-						<div class="p-4 space-y-4">
-							<form
-								onsubmit={(e) => {
-									e.preventDefault();
-									runDemo();
-								}}
+				<!-- Pipeline stages -->
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+						<span class="text-cyan-400 font-mono text-xs">🔄</span>
+						<span class="font-mono text-sm text-surface-300">Pipeline Stages</span>
+					</div>
+					<div class="p-4">
+						<div class="space-y-3">
+							{#each pipelineInfo.pipeline_stages as stage, i}
+								<div class="flex gap-4 items-start">
+									<div
+										class="w-8 h-8 rounded-full bg-surface-700 flex items-center justify-center text-sm font-mono text-surface-300 flex-shrink-0"
+									>
+										{i + 1}
+									</div>
+									<RetroCard variant="elevated" class="flex-1">
+										<h4 class="font-mono text-sm text-emerald-400 mb-1">{stage.name}</h4>
+										<p class="text-xs text-surface-400 mb-2">{stage.description}</p>
+										{#if stage.example}
+											<p class="text-xs text-surface-500 font-mono bg-surface-800 rounded p-2">
+												{stage.example}
+											</p>
+										{/if}
+									</RetroCard>
+								</div>
+							{/each}
+						</div>
+					</div>
+				</RetroCard>
+
+				<!-- Interactive Demo -->
+				<RetroCard noPadding>
+					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+						<span class="text-emerald-400 font-mono text-xs">🧪</span>
+						<span class="font-mono text-sm text-surface-300">Interactive RAG Demo</span>
+					</div>
+
+					<div class="p-4 space-y-4">
+						<form
+							onsubmit={(e) => {
+								e.preventDefault();
+								runDemo();
+							}}
 								class="flex gap-3"
 							>
 								<input
@@ -1666,13 +1707,13 @@
 									placeholder="Enter a query to see the RAG pipeline in action..."
 									class="flex-1 px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 placeholder-surface-600 focus:outline-none focus:border-emerald-500"
 								/>
-								<button
+								<RetroButton
 									type="submit"
+									variant="primary"
 									disabled={demoLoading || !demoQuery.trim()}
-									class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-700 disabled:text-surface-500 text-white font-mono text-sm rounded transition-colors"
 								>
 									{demoLoading ? 'running...' : 'run demo'}
-								</button>
+								</RetroButton>
 							</form>
 
 							{#if demoResult}
@@ -1697,31 +1738,31 @@
 											{#if step.error}
 												<p class="text-xs text-red-400">Error: {step.error}</p>
 											{/if}
-										</div>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					</section>
-
-					<!-- Chunk Analytics -->
-					{#if chunkAnalytics}
-						<section class="bg-surface-800 border border-surface-700 rounded">
-							<div class="px-4 py-2 border-b border-surface-700 flex items-center justify-between">
-								<div class="flex items-center gap-2">
-									<span class="text-cyan-400 font-mono text-xs">📈</span>
-									<span class="font-mono text-sm text-surface-300">Chunk Analytics</span>
-								</div>
-								<button
-									onclick={loadAnalytics}
-									disabled={analyticsLoading}
-									class="text-surface-500 hover:text-surface-300 font-mono text-xs"
-								>
-									{analyticsLoading ? 'loading...' : '↻ refresh'}
-								</button>
+									</div>
+								{/each}
 							</div>
+						{/if}
+					</div>
+				</RetroCard>
 
-							<div class="p-4">
+				<!-- Chunk Analytics -->
+				{#if chunkAnalytics}
+					<RetroCard noPadding>
+						<div class="px-4 py-2 border-b retro-border flex items-center justify-between">
+							<div class="flex items-center gap-2">
+								<span class="text-cyan-400 font-mono text-xs">📈</span>
+								<span class="font-mono text-sm text-surface-300">Chunk Analytics</span>
+							</div>
+							<RetroButton
+								size="sm"
+								onclick={loadAnalytics}
+								disabled={analyticsLoading}
+							>
+								{analyticsLoading ? 'loading...' : '↻ refresh'}
+							</RetroButton>
+						</div>
+
+						<div class="p-4">
 								<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 									<div class="bg-surface-900 rounded-lg p-3 border border-surface-700">
 										<div class="text-xs text-surface-500 font-mono mb-1">Total Vectors</div>
@@ -1790,26 +1831,26 @@
 													{count} ({percentage.toFixed(0)}%)
 												</div>
 											</div>
-										{/each}
-									</div>
-								</div>
+								{/each}
 							</div>
-						</section>
-					{:else if analyticsLoading}
-						<div class="p-8 text-center font-mono text-surface-500">
-							<span class="animate-pulse">loading analytics...</span>
 						</div>
-					{/if}
+					</div>
+				</RetroCard>
+			{:else if analyticsLoading}
+				<RetroCard class="text-center py-8">
+					<span class="font-mono text-surface-500 animate-pulse">loading analytics...</span>
+				</RetroCard>
+			{/if}
 
-					<!-- Embedding Comparison Tool -->
-					<section class="bg-surface-800 border border-surface-700 rounded">
-						<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-							<span class="text-purple-400 font-mono text-xs">🔬</span>
-							<span class="font-mono text-sm text-surface-300">Embedding Similarity Comparison</span>
-						</div>
+			<!-- Embedding Comparison Tool -->
+			<RetroCard noPadding>
+				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+					<span class="text-purple-400 font-mono text-xs">🔬</span>
+					<span class="font-mono text-sm text-surface-300">Embedding Similarity Comparison</span>
+				</div>
 
-						<div class="p-4 space-y-4">
-							<p class="text-xs text-surface-400 font-mono">
+				<div class="p-4 space-y-4">
+					<p class="text-xs text-surface-400 font-mono">
 								See how similar two texts are by comparing their embedding vectors.
 							</p>
 
@@ -1867,15 +1908,130 @@
 									<div class="text-right">
 										<div class="font-mono text-sm text-surface-300">
 											{embedCompareResult.interpretation}
-										</div>
-										<div class="text-xs text-surface-500">
-											cosine: {embedCompareResult.cosine_similarity.toFixed(4)}
-										</div>
+									</div>
+									<div class="text-xs text-surface-500">
+										cosine: {embedCompareResult.cosine_similarity.toFixed(4)}
 									</div>
 								</div>
-							{/if}
+							</div>
+						{/if}
+					</div>
+				</RetroCard>
+			{/if}
+
+			<!-- ================================================================= -->
+			<!-- AGENT GRAPH TAB -->
+			<!-- ================================================================= -->
+			{:else if activeTab === 'agents'}
+				{#if agentGraphLoading}
+					<div class="p-8 text-center font-mono text-surface-500">
+						<span class="animate-pulse">loading agent graph...</span>
+					</div>
+				{:else if agentGraph}
+					<RetroCard noPadding>
+						<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+							<span class="text-emerald-400 font-mono text-xs">🤖</span>
+							<span class="font-mono text-sm text-surface-300">Multi-Agent System Architecture</span>
 						</div>
-					</section>
+
+						<div class="p-4 space-y-6">
+							<!-- Description -->
+							<div class="bg-surface-900 rounded-lg border border-surface-700 p-4">
+								<pre class="text-xs text-surface-300 font-mono whitespace-pre-wrap">{agentGraph.description}</pre>
+							</div>
+
+							<!-- Agent Nodes -->
+							<section>
+								<h3 class="font-mono text-sm text-surface-300 mb-3">Available Agents</h3>
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+									{#each agentGraph.nodes as node}
+										<div class="retro-card rounded-lg p-3 flex items-start gap-3">
+											<!-- Agent icon -->
+											<div class="flex-shrink-0">
+												<svg class="w-5 h-5 {node.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d={node.icon} />
+												</svg>
+											</div>
+
+											<!-- Agent info -->
+											<div class="flex-1 min-w-0">
+												<h4 class="font-mono text-sm {node.color} font-bold">{node.label}</h4>
+												<p class="text-xs text-surface-400 mt-1">{node.description}</p>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</section>
+
+							<!-- Execution Paths -->
+							<section>
+								<h3 class="font-mono text-sm text-surface-300 mb-3">Execution Flow</h3>
+								<div class="bg-surface-900 rounded-lg border border-surface-700 p-4 space-y-3">
+									<p class="text-xs text-surface-400 font-mono mb-4">
+										The router analyzes each query and determines the optimal execution path through the agent graph:
+									</p>
+
+									{#each agentGraph.edges as edge, i}
+										{#if edge.from_node === 'START'}
+											<div class="flex items-center gap-3 text-xs font-mono">
+												<span class="text-violet-400">[START]</span>
+												<svg class="w-4 h-4 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+												</svg>
+												<span class="text-violet-400">{edge.to_node}</span>
+											</div>
+										{:else if edge.to_node === 'END'}
+											<div class="flex items-center gap-3 text-xs font-mono">
+												<span class="text-emerald-400">{edge.from_node}</span>
+												<svg class="w-4 h-4 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+												</svg>
+												<span class="text-surface-500">[END]</span>
+											</div>
+										{:else}
+											<div class="flex items-start gap-3 text-xs font-mono">
+												<span class="{agentGraph.nodes.find(n => n.name === edge.from_node)?.color || 'text-surface-400'}">{edge.from_node}</span>
+												<svg class="w-4 h-4 text-surface-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+												</svg>
+												<div class="flex-1">
+													<span class="{agentGraph.nodes.find(n => n.name === edge.to_node)?.color || 'text-surface-400'}">{edge.to_node}</span>
+													{#if edge.condition}
+														<div class="text-surface-500 mt-0.5">
+															<span class="text-surface-600">if</span> {edge.condition}
+														</div>
+													{/if}
+												</div>
+											</div>
+										{/if}
+									{/each}
+								</div>
+							</section>
+
+							<!-- Real-time Observation -->
+							<section class="bg-amber-900/20 border border-amber-800/30 rounded-lg p-4">
+								<div class="flex items-start gap-3">
+									<svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+										<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+									</svg>
+									<div>
+										<h4 class="font-mono text-sm text-amber-400 font-bold mb-1">See It In Action</h4>
+										<p class="text-xs text-surface-300 font-mono">
+											Watch the agent pipeline in real-time by opening the <span class="text-emerald-400">Agent Activity</span> sidebar
+											in the Chat page. You'll see each agent activate, the routing decisions, and the data flowing through the system.
+										</p>
+									</div>
+								</div>
+							</section>
+						</div>
+					</RetroCard>
+				{:else}
+					<div class="p-8 text-center font-mono text-surface-500">
+						<p>Failed to load agent graph</p>
+						<RetroButton size="sm" onclick={loadAgentGraph} class="mt-4">
+							retry
+						</RetroButton>
+					</div>
 				{/if}
 			{/if}
 		</div>

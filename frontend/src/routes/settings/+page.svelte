@@ -7,6 +7,7 @@
 		type Settings,
 		type KeyStatus
 	} from '$lib/api';
+	import { RetroHeader, RetroButton, RetroCard, StatusIndicator } from '$lib/components';
 
 	let settings = $state<Settings | null>(null);
 	let loading = $state(true);
@@ -286,104 +287,116 @@
 	onMount(() => { loadSettings(); });
 </script>
 
-<div class="flex flex-col h-full bg-surface-900">
-	<!-- Header -->
-	<header class="px-6 py-4 border-b border-surface-700 bg-surface-800/50">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-3">
-				<span class="text-emerald-400 font-mono text-sm">$</span>
-				<h1 class="font-mono text-lg text-surface-100">kgpt/settings</h1>
-				<span class="text-surface-500 font-mono text-sm">--configure</span>
-			</div>
+<div class="flex flex-col h-full bg-surface-950">
+	<!-- Retro Header -->
+	<RetroHeader path="kgpt/settings" flag="--configure">
+		{#snippet rightContent()}
 			{#if activeProvider && activeModel && !isOnboarding}
-				<div class="px-3 py-1 bg-surface-800 border border-surface-700 rounded font-mono text-sm">
+				<div class="px-3 py-1.5 retro-card-glow-green rounded font-mono text-xs flex items-center gap-2">
+					<StatusIndicator status="active" size="sm" pulse />
 					<span class="text-surface-500">active:</span>
-					<span class="text-emerald-400 ml-1">{activeProvider}/{activeModel}</span>
+					<span class="text-emerald-400">{activeProvider}/{activeModel}</span>
 				</div>
 			{/if}
-		</div>
-	</header>
+		{/snippet}
+	</RetroHeader>
 
 	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-3xl mx-auto space-y-6">
+		<div class="max-w-4xl mx-auto space-y-6">
 			<!-- Messages -->
 			{#if error}
-				<div class="bg-red-900/20 border border-red-800 rounded p-3 font-mono text-sm text-red-400">
+				<div class="retro-card-glow-amber rounded p-3 font-mono text-sm text-red-400 flex items-center gap-2">
+					<StatusIndicator status="error" size="sm" />
 					<span class="text-red-500">error:</span> {error}
 				</div>
 			{/if}
 			{#if success}
-				<div class="bg-emerald-900/20 border border-emerald-800 rounded p-3 font-mono text-sm text-emerald-400">
+				<div class="retro-card-glow-green rounded p-3 font-mono text-sm text-emerald-400 flex items-center gap-2">
+					<StatusIndicator status="active" size="sm" />
 					<span class="text-emerald-500">✓</span> {success}
 				</div>
 			{/if}
 
 			{#if loading}
-				<div class="bg-surface-800 border border-surface-700 rounded p-8 text-center font-mono text-surface-500 animate-pulse">
-					loading...
-				</div>
+				<RetroCard>
+					<div class="p-8 text-center font-mono text-surface-500 animate-pulse-slow flex items-center justify-center gap-2">
+						<StatusIndicator status="warning" pulse />
+						loading...
+					</div>
+				</RetroCard>
 
 			{:else if isOnboarding && !hasAnyProvider}
 				<!-- ONBOARDING -->
 				<div class="space-y-6">
-					<div class="text-center py-6">
-						<h2 class="text-xl font-mono text-surface-100 mb-2">Welcome to kGPT</h2>
-						<p class="text-surface-500 font-mono text-sm">Configure an LLM provider to get started</p>
-					</div>
+					<RetroCard variant="glow-green" class="text-center py-6">
+						<h2 class="text-2xl font-bold font-mono text-emerald-400 mb-2 text-glow-green">WELCOME TO kGPT</h2>
+						<p class="text-surface-400 font-mono text-sm">Configure an LLM provider to get started</p>
+					</RetroCard>
 
 					{#if !showAddKey}
 						<div class="space-y-2">
 							{#each Object.entries(PROVIDERS) as [key, provider]}
-								<button
+								<RetroButton
 									onclick={() => { showAddKey = key; onboardingStep = 2; }}
-									class="w-full flex items-center gap-4 p-4 bg-surface-800 hover:bg-surface-700 border border-surface-700 hover:border-surface-600 rounded transition-all text-left font-mono"
+									class="w-full flex items-center gap-4 p-4 text-left font-mono justify-between"
 								>
 									<div class="flex-1">
-										<div class="text-surface-100">{provider.name}</div>
+										<div class="text-surface-100 font-bold">{provider.name}</div>
 										<div class="text-xs text-surface-500">
 											{key === 'ollama' ? 'Local models, no API key' : 'Requires API key'}
 										</div>
 									</div>
-									<span class="text-surface-600">→</span>
-								</button>
+									<span class="text-emerald-400">→</span>
+								</RetroButton>
 							{/each}
 						</div>
 					{:else}
 						{@const provider = PROVIDERS[showAddKey]}
-						<div class="bg-surface-800 border border-surface-700 rounded">
-							<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-								<button onclick={cancelAddKey} class="text-surface-500 hover:text-surface-300 font-mono text-sm">← back</button>
-								<span class="text-surface-600">|</span>
-								<span class="font-mono text-surface-100">{provider.name}</span>
+						<RetroCard variant="glow-cyan">
+							<div class="flex items-center gap-3 border-b retro-border pb-3 mb-4">
+								<RetroButton size="sm" onclick={cancelAddKey}>← back</RetroButton>
+								<span class="text-surface-600 font-mono">|</span>
+								<span class="font-mono text-surface-100 uppercase tracking-wider">{provider.name}</span>
 							</div>
 
-							<div class="p-4 space-y-4">
+							<div class="space-y-4">
 								{#if showAddKey === 'ollama'}
 									<div>
-										<label for="ollama-host" class="block text-xs font-mono text-surface-500 mb-1">--host</label>
+										<label for="ollama-host" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Host</label>
 										<input id="ollama-host" type="text" bind:value={ollamaHost} placeholder="http://localhost:11434"
-											class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500" />
+											class="w-full retro-input rounded" />
 									</div>
-									<button onclick={() => validateProvider('ollama')} disabled={providerConfigs.ollama.validating}
-										class="w-full py-2 bg-surface-700 hover:bg-surface-600 text-surface-100 rounded font-mono text-sm transition-colors disabled:opacity-50">
+									<RetroButton
+										onclick={() => validateProvider('ollama')}
+										disabled={providerConfigs.ollama.validating}
+										variant="primary"
+										class="w-full"
+									>
 										{providerConfigs.ollama.validating ? 'testing...' : 'test connection'}
-									</button>
+									</RetroButton>
 									{#if providerConfigs.ollama.valid && providerConfigs.ollama.models.length > 0}
 										<div class="space-y-2">
-											<label for="ollama-model" class="block text-xs font-mono text-surface-500">--model</label>
+											<label for="ollama-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
 											<select id="ollama-model" bind:value={providerConfigs.ollama.selectedModel}
-												class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100">
+												class="w-full retro-input rounded">
 												{#each providerConfigs.ollama.models as model}
 													<option value={model}>{model}</option>
 												{/each}
 											</select>
-											<button onclick={() => { switchToProvider('ollama'); isOnboarding = false; }} disabled={saving}
-												class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
+											<RetroButton
+												onclick={() => { switchToProvider('ollama'); isOnboarding = false; }}
+												disabled={saving}
+												variant="primary"
+												class="w-full"
+											>
 												{saving ? 'saving...' : 'use ollama →'}
-											</button>
+											</RetroButton>
 										</div>
 									{:else if providerConfigs.ollama.error}
-										<p class="text-sm font-mono text-red-400">{providerConfigs.ollama.error}</p>
+										<div class="retro-card-glow-amber rounded p-3 flex items-center gap-2">
+											<StatusIndicator status="error" size="sm" />
+											<p class="text-sm font-mono text-red-400">{providerConfigs.ollama.error}</p>
+										</div>
 									{/if}
 								{:else}
 									<div>
@@ -410,70 +423,72 @@
 												{#each newKeyModels as model}
 													<option value={model}>{model}</option>
 												{/each}
-											</select>
-											<button onclick={saveNewKey} disabled={saving}
-												class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
-												{saving ? 'saving...' : `use ${provider.name.toLowerCase()} →`}
-											</button>
+										</select>
+										<RetroButton
+											variant="primary"
+											class="w-full"
+											onclick={saveNewKey}
+											disabled={saving}
+										>
+											{saving ? 'saving...' : `use ${provider.name.toLowerCase()} →`}
+										</RetroButton>
 										</div>
 									{/if}
 								{/if}
 							</div>
-						</div>
+						</RetroCard>
 					{/if}
 				</div>
 
 			{:else}
 				<!-- MAIN SETTINGS -->
 
-				<!-- Active Provider -->
-				{#if activeProvider && providerConfigs[activeProvider]?.valid}
-					{@const config = providerConfigs[activeProvider]}
-					<section class="bg-surface-800 border border-emerald-700/50 rounded">
-						<div class="px-4 py-2 border-b border-emerald-700/30 bg-emerald-900/10 flex items-center justify-between">
-							<div class="flex items-center gap-2">
-								<span class="font-mono text-surface-100">{PROVIDERS[activeProvider].name}</span>
-								<span class="text-xs px-1.5 py-0.5 bg-emerald-600 text-white rounded font-mono">active</span>
-								{#if config.source}
-									<span class="text-xs px-1.5 py-0.5 rounded font-mono {config.source === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
-										{config.source === 'env' ? 'env' : 'saved'}
-									</span>
-								{/if}
-							</div>
-							{#if activeProvider !== 'ollama'}
-								<button onclick={() => startUpdateKey(activeProvider)}
-									class="px-2 py-1 text-xs font-mono text-surface-400 hover:text-surface-200 hover:bg-surface-700 rounded transition-colors">
-									update key
-								</button>
+			<!-- Active Provider -->
+			{#if activeProvider && providerConfigs[activeProvider]?.valid}
+				{@const config = providerConfigs[activeProvider]}
+				<RetroCard variant="glow-green" noPadding>
+					<div class="px-4 py-2 border-b retro-border bg-emerald-900/10 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<span class="font-mono text-surface-100">{PROVIDERS[activeProvider].name}</span>
+							<span class="text-xs px-1.5 py-0.5 bg-emerald-600 text-white rounded font-mono">active</span>
+							{#if config.source}
+								<span class="text-xs px-1.5 py-0.5 rounded font-mono {config.source === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
+									{config.source === 'env' ? 'env' : 'saved'}
+								</span>
 							{/if}
 						</div>
-						<div class="p-4">
-							<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
-							<div class="flex gap-2">
-								<select id="active-model" value={config.selectedModel} onchange={(e) => selectModel(activeProvider, e.currentTarget.value)}
-									class="flex-1 px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500">
-									{#each config.models as model}
-										<option value={model}>{model}</option>
-									{/each}
-								</select>
-								{#if config.selectedModel !== activeModel}
-									<button onclick={updateModel} disabled={saving}
-										class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
-										{saving ? '...' : 'update'}
-									</button>
-								{/if}
-							</div>
-						</div>
-					</section>
-				{/if}
-
-				<!-- Other Providers -->
-				<section class="bg-surface-800 border border-surface-700 rounded">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-						<span class="text-blue-400 font-mono text-xs">></span>
-						<span class="font-mono text-sm text-surface-300">switch --provider</span>
+						{#if activeProvider !== 'ollama'}
+							<RetroButton size="sm" onclick={() => startUpdateKey(activeProvider)}>
+								update key
+							</RetroButton>
+						{/if}
 					</div>
-					<div class="divide-y divide-surface-700">
+					<div class="p-4">
+						<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
+						<div class="flex gap-2">
+							<select id="active-model" value={config.selectedModel} onchange={(e) => selectModel(activeProvider, e.currentTarget.value)}
+								class="flex-1 retro-input rounded">
+								{#each config.models as model}
+									<option value={model}>{model}</option>
+								{/each}
+							</select>
+							{#if config.selectedModel !== activeModel}
+								<RetroButton variant="primary" onclick={updateModel} disabled={saving}>
+									{saving ? '...' : 'update'}
+								</RetroButton>
+							{/if}
+						</div>
+					</div>
+				</RetroCard>
+			{/if}
+
+			<!-- Other Providers -->
+			<RetroCard noPadding>
+				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+					<span class="text-blue-400 font-mono text-xs">></span>
+					<span class="font-mono text-sm text-surface-300">switch --provider</span>
+				</div>
+				<div class="divide-y divide-surface-700">
 						{#each Object.entries(PROVIDERS) as [key, provider]}
 							{#if key !== activeProvider}
 								{@const config = providerConfigs[key]}
@@ -529,26 +544,26 @@
 									</div>
 								</div>
 							{/if}
-						{/each}
-					</div>
-				</section>
+					{/each}
+				</div>
+			</RetroCard>
 
-				<!-- Embeddings -->
-				<section class="bg-surface-800 border border-surface-700 rounded">
-					<div class="px-4 py-2 border-b border-surface-700 flex items-center gap-2">
-						<span class="text-purple-400 font-mono text-xs">⚡</span>
-						<span class="font-mono text-sm text-surface-300">embeddings</span>
-					</div>
-					<div class="p-4 space-y-4">
-						<div class="grid grid-cols-2 gap-4">
-							<div>
-								<label for="embed-provider" class="block text-xs font-mono text-surface-500 mb-1">--provider</label>
-								<select id="embed-provider" bind:value={embeddingProvider}
-									class="w-full px-3 py-2 bg-surface-900 border border-surface-600 rounded font-mono text-sm text-surface-100 focus:outline-none focus:border-emerald-500">
-									{#each EMBEDDING_PROVIDERS as ep}
-										<option value={ep.value}>{ep.label}</option>
-									{/each}
-								</select>
+			<!-- Embeddings -->
+			<RetroCard noPadding>
+				<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
+					<span class="text-purple-400 font-mono text-xs">⚡</span>
+					<span class="font-mono text-sm text-surface-300">embeddings</span>
+				</div>
+				<div class="p-4 space-y-4">
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="embed-provider" class="block text-xs font-mono text-surface-500 mb-1">--provider</label>
+							<select id="embed-provider" bind:value={embeddingProvider}
+								class="w-full retro-input rounded">
+								{#each EMBEDDING_PROVIDERS as ep}
+									<option value={ep.value}>{ep.label}</option>
+								{/each}
+							</select>
 							</div>
 							<div>
 								<label for="embed-model" class="block text-xs font-mono text-surface-500 mb-1">--model</label>
@@ -576,36 +591,35 @@
 							</div>
 						{/if}
 
-						<div class="flex justify-end">
-							<button onclick={saveEmbeddingSettings} disabled={saving}
-								class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-surface-700 disabled:text-surface-500 text-white font-mono text-sm rounded transition-colors">
-								{saving ? 'saving...' : 'save embeddings'}
-							</button>
-						</div>
+					<div class="flex justify-end">
+						<RetroButton variant="primary" onclick={saveEmbeddingSettings} disabled={saving}>
+							{saving ? 'saving...' : 'save embeddings'}
+						</RetroButton>
 					</div>
-				</section>
+				</div>
+			</RetroCard>
 
-				<!-- Tips -->
-				<section class="text-xs font-mono text-surface-600 space-y-1">
-					<p># keys can be set via env vars (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)</p>
-					<p># for ollama in docker, use host: http://ollama:11434</p>
-				</section>
-			{/if}
-		</div>
+			<!-- Tips -->
+			<div class="text-xs font-mono text-surface-600 space-y-1">
+				<p># keys can be set via env vars (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)</p>
+				<p># for ollama in docker, use host: http://ollama:11434</p>
+			</div>
+		{/if}
 	</div>
+</div>
 
-	<!-- Add/Update Key Modal -->
-	{#if showAddKey && !isOnboarding}
-		{@const provider = PROVIDERS[showAddKey]}
-		<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-			<div class="bg-surface-800 border border-surface-700 rounded w-full max-w-md">
-				<div class="px-4 py-3 border-b border-surface-700 flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="font-mono text-surface-100">
-							{showAddKey === 'ollama' ? 'Configure Ollama' : isUpdatingKey ? `Update ${provider.name} Key` : `Add ${provider.name} Key`}
-						</span>
-					</div>
-					<button onclick={cancelAddKey} class="text-surface-500 hover:text-surface-300 text-xl leading-none">&times;</button>
+<!-- Add/Update Key Modal -->
+{#if showAddKey && !isOnboarding}
+	{@const provider = PROVIDERS[showAddKey]}
+	<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+		<RetroCard noPadding class="w-full max-w-md">
+			<div class="px-4 py-3 border-b retro-border flex items-center justify-between">
+				<div class="flex items-center gap-2">
+					<span class="font-mono text-surface-100">
+						{showAddKey === 'ollama' ? 'Configure Ollama' : isUpdatingKey ? `Update ${provider.name} Key` : `Add ${provider.name} Key`}
+					</span>
+				</div>
+				<RetroButton size="sm" onclick={cancelAddKey}>&times;</RetroButton>
 				</div>
 
 				<div class="p-4 space-y-4">
@@ -625,11 +639,14 @@
 								{#each providerConfigs.ollama.models as model}
 									<option value={model}>{model}</option>
 								{/each}
-							</select>
-							<button onclick={() => { switchToProvider('ollama'); cancelAddKey(); }}
-								class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
-								switch to ollama
-							</button>
+						</select>
+						<RetroButton
+							variant="primary"
+							class="w-full"
+							onclick={() => { switchToProvider('ollama'); cancelAddKey(); }}
+						>
+							switch to ollama
+						</RetroButton>
 						{:else if providerConfigs.ollama.error}
 							<p class="text-sm font-mono text-red-400">{providerConfigs.ollama.error}</p>
 						{/if}
@@ -659,16 +676,20 @@
 									{#each newKeyModels as model}
 										<option value={model}>{model}</option>
 									{/each}
-								</select>
-								<button onclick={saveNewKey} disabled={saving}
-									class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-mono text-sm">
-									{saving ? 'saving...' : isUpdatingKey ? 'update & switch' : 'save & switch'}
-								</button>
+							</select>
+							<RetroButton
+								variant="primary"
+								class="w-full"
+								onclick={saveNewKey}
+								disabled={saving}
+							>
+								{saving ? 'saving...' : isUpdatingKey ? 'update & switch' : 'save & switch'}
+							</RetroButton>
 							</div>
 						{/if}
 					{/if}
-				</div>
 			</div>
-		</div>
-	{/if}
+		</RetroCard>
+	</div>
+{/if}
 </div>

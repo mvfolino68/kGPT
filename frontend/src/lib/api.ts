@@ -664,6 +664,34 @@ export async function runRAGDemo(query: string): Promise<RAGDemoResponse> {
 	return response.json();
 }
 
+// Agent Graph Info (Educational)
+export interface AgentGraphNode {
+	name: string;
+	label: string;
+	description: string;
+	icon: string;
+	color: string;
+}
+
+export interface AgentGraphEdge {
+	from_node: string;
+	to_node: string;
+	condition: string | null;
+}
+
+export interface AgentGraphInfo {
+	nodes: AgentGraphNode[];
+	edges: AgentGraphEdge[];
+	entry_point: string;
+	description: string;
+}
+
+export async function getAgentGraph(): Promise<AgentGraphInfo> {
+	const response = await fetch(`${API_BASE}/chat/graph`);
+	if (!response.ok) throw new Error(`Failed to get agent graph: ${response.statusText}`);
+	return response.json();
+}
+
 // ============================================================================
 // Sync and Cleanup APIs
 // ============================================================================
