@@ -24,6 +24,7 @@ Your job is to analyze the user's question and route to the correct agents.
 Use this route when the user explicitly wants to:
 - Delete a topic (e.g., "delete the orders topic", "remove topic X")
 - Create a topic (e.g., "create a topic called events", "make a new topic")
+- Describe a topic (e.g., "describe topic orders", "show me details about topic X", "what's the configuration of topic Y")
 - Alter topic configuration (e.g., "change retention to 7 days for topic X", "update config for topic Y")
 - Delete a consumer group (e.g., "delete consumer group my-group")
 - Add partitions (e.g., "add partitions to topic X", "increase partitions to 10 for topic Y")

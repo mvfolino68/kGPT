@@ -454,6 +454,62 @@ class KafkaClusterContext:
                 "error": str(e),
             }
 
+    def describe_topic(self, topic_name: str, timeout: float = 10.0) -> dict:
+        """Get comprehensive information about a topic including details and configuration."""
+        try:
+            # Get topic details (partitions, replicas, ISRs)
+            details = self.get_topic_details(topic_name, timeout=timeout)
+            if "error" in details:
+                return {
+                    "success": False,
+                    "operation": "describe_topic",
+                    "topic": topic_name,
+                    "error": details["error"],
+                }
+
+            # Get topic configuration
+            config_result = self.get_topic_config(topic_name, timeout=timeout)
+            configs = config_result.get("configs", {}) if "error" not in config_result else {}
+
+            # Format the response
+            partitions_info = []
+            for partition_id, partition_data in details.get("partitions", {}).items():
+                partitions_info.append(
+                    {
+                        "partition": partition_id,
+                        "leader": partition_data.get("leader"),
+                        "replicas": partition_data.get("replicas", []),
+                        "isrs": partition_data.get("isrs", []),
+                    }
+                )
+
+            # Extract important config values
+            important_configs = {}
+            for key, value_info in configs.items():
+                if not value_info.get("is_read_only", False):
+                    important_configs[key] = value_info.get("value")
+
+            logger.info(f"Successfully described topic: {topic_name}")
+            return {
+                "success": True,
+                "operation": "describe_topic",
+                "topic": topic_name,
+                "partition_count": details.get("partition_count", 0),
+                "partitions": partitions_info,
+                "configuration": important_configs,
+                "all_configs": configs,
+                "message": f"Topic '{topic_name}' has {details.get('partition_count', 0)} partition(s).",
+            }
+
+        except Exception as e:
+            logger.error(f"Error describing topic {topic_name}: {e}")
+            return {
+                "success": False,
+                "operation": "describe_topic",
+                "topic": topic_name,
+                "error": str(e),
+            }
+
 
 # Global cluster context (set via UI)
 _cluster_context: KafkaClusterContext | None = None

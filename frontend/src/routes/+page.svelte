@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { tick, onMount } from 'svelte';
-	import { marked } from 'marked';
 	import {
 		chatMessages,
 		currentSessionId,
@@ -22,6 +21,7 @@
 	} from '$lib/stores/chat';
 	import type { SuggestedAction, AdminOperationResult } from '$lib/api';
 	import { executeAdminOperation } from '$lib/api';
+	import { FormattedMessage, MessageCard, MetricCard } from '$lib/components';
 
 	let inputValue = $state('');
 	let messagesContainer: HTMLDivElement;
@@ -34,23 +34,6 @@
 
 	// Admin operation form state
 	let adminFormValues = $state<Record<string, string | number>>({});
-
-	// Configure marked for clean output
-	marked.setOptions({
-		breaks: true,
-		gfm: true
-	});
-
-	function renderMarkdown(content: string): string {
-		try {
-			let cleaned = content
-				.replace(/^(Analysis|Answer|Response):\s*/gim, '')
-				.replace(/\n{3,}/g, '\n\n');
-			return marked.parse(cleaned) as string;
-		} catch {
-			return content.replace(/\n/g, '<br>');
-		}
-	}
 
 	async function scrollToBottom() {
 		await tick();
@@ -302,6 +285,8 @@
 				hasAllRequiredFields = !!formData.topic_name;
 			} else if (operation === 'delete_topic') {
 				hasAllRequiredFields = !!formData.topic_name;
+			} else if (operation === 'describe_topic') {
+				hasAllRequiredFields = !!formData.topic_name;
 			} else if (operation === 'add_partitions') {
 				hasAllRequiredFields = !!formData.topic_name && !!formData.new_total_partitions;
 			} else if (operation === 'alter_topic_config') {
@@ -331,6 +316,8 @@
 			if (formData.replication_factor) message += ` and replication factor ${formData.replication_factor}`;
 		} else if (operation === 'delete_topic') {
 			message = `Delete the topic "${formData.topic_name}"`;
+		} else if (operation === 'describe_topic') {
+			message = `Describe the topic "${formData.topic_name}"`;
 		} else if (operation === 'add_partitions') {
 			message = `Add partitions to "${formData.topic_name}" to have ${formData.new_total_partitions} total`;
 		} else if (operation === 'alter_topic_config') {
@@ -708,46 +695,36 @@
 					</div>
 				{:else}
 					<!-- Messages -->
-					<div class="space-y-8">
+					<div class="space-y-10">
 						{#each $chatMessages as message (message.id)}
 							{#if message.role === 'user'}
 								<!-- User Message -->
 								<div class="flex justify-end">
-									<div class="max-w-[80%] bg-gradient-to-br from-emerald-600/20 to-emerald-600/10 border border-emerald-500/20 rounded-2xl rounded-br-lg px-5 py-3 shadow-lg shadow-emerald-500/5">
-										<p class="text-surface-100 leading-relaxed">{message.content}</p>
+									<div class="max-w-[80%] bg-gradient-to-br from-emerald-600/20 to-emerald-600/10 border border-emerald-500/20 rounded-2xl rounded-br-lg px-5 py-3.5 shadow-lg shadow-emerald-500/5">
+										<p class="text-surface-100 leading-relaxed text-[15px]">{message.content}</p>
 									</div>
 								</div>
 							{:else}
 								<!-- Assistant Message -->
-								<div class="space-y-4">
-									<!-- Thinking State -->
-									{#if message.isThinking && !message.content}
-										<div class="flex items-center gap-3 text-surface-400">
-											<div class="flex gap-1.5">
-												<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-												<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-												<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
-											</div>
-											<span class="text-sm font-medium">{message.thinkingStage || 'Thinking...'}</span>
+								<div class="space-y-5">
+								<!-- Thinking State -->
+								{#if message.isThinking && !message.content}
+									<div class="flex items-center gap-3 text-surface-400">
+										<div class="flex gap-1.5">
+											<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+											<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+											<span class="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
 										</div>
-									{/if}
+										<span class="text-sm font-medium">{message.thinkingStage || 'Thinking...'}</span>
+									</div>
+								{/if}
 
-									<!-- Response Content -->
-									{#if message.content}
-										<div class="prose prose-sm max-w-none
-											prose-invert
-											prose-headings:text-surface-100 prose-headings:font-semibold prose-headings:mb-3 prose-headings:mt-6 first:prose-headings:mt-0
-											prose-p:text-surface-200 prose-p:leading-relaxed prose-p:my-3
-											prose-strong:text-surface-100 prose-strong:font-semibold
-											prose-code:text-emerald-400 prose-code:bg-surface-800/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:before:content-none prose-code:after:content-none prose-code:font-mono
-											prose-pre:bg-surface-900 prose-pre:border prose-pre:border-white/5 prose-pre:rounded-xl prose-pre:shadow-xl
-											prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-											prose-li:text-surface-200 prose-li:my-1
-											prose-ul:my-3 prose-ol:my-3
-											prose-hr:border-white/5">
-											{@html renderMarkdown(message.content)}
-										</div>
-									{/if}
+								<!-- Response Content -->
+								{#if message.content}
+									<div class="assistant-message-wrapper">
+										<FormattedMessage content={message.content} />
+									</div>
+								{/if}
 
 								<!-- Admin Operation Cards -->
 								{#if message.adminResult}
@@ -756,6 +733,14 @@
 
 									<!-- NEEDS INFO: Show Input Form Card -->
 									{#if message.adminResult.needs_info && message.adminResult.input_fields?.length}
+										{@const inputFields = message.adminResult.input_fields}
+										{@const _initDefaults = (() => {
+											for (const field of inputFields) {
+												if (field.default !== null && field.default !== undefined && adminFormValues[field.name] === undefined) {
+													adminFormValues[field.name] = field.default;
+												}
+											}
+										})()}
 										<div class="mt-4 p-5 bg-surface-900/80 border border-blue-500/30 rounded-xl backdrop-blur-sm shadow-lg shadow-blue-500/5">
 											<div class="flex items-center gap-2.5 mb-4">
 												<div class="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center">
@@ -776,38 +761,50 @@
 											<!-- Input Fields -->
 											<div class="space-y-4 mb-4">
 												{#each message.adminResult.input_fields as field}
-													<div>
-														<label class="block text-xs font-medium text-surface-400 mb-1.5">
+													<div class="group">
+														<label class="block text-xs font-medium text-surface-300 mb-2 flex items-center gap-1.5">
 															{field.label}
-															{#if field.required}<span class="text-red-400">*</span>{/if}
+															{#if field.required}
+																<span class="text-red-400 text-[10px]">*</span>
+															{/if}
 														</label>
 														{#if field.field_type === 'select' && field.options?.length}
-															<select
-																bind:value={adminFormValues[field.name]}
-																class="w-full bg-surface-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
-															>
-																<option value="">{field.placeholder || 'Select...'}</option>
-																{#each field.options as option}
-																	<option value={option}>{option}</option>
-																{/each}
-															</select>
+															<div class="relative">
+																<select
+																	bind:value={adminFormValues[field.name]}
+																	class="w-full bg-surface-800/80 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 appearance-none cursor-pointer hover:border-white/20"
+																>
+																	<option value="" disabled>{field.placeholder || 'Select an option...'}</option>
+																	{#each field.options as option}
+																		{@const optionValue = typeof option === 'string' ? option : (option.value || option.label || option)}
+																		{@const optionLabel = typeof option === 'string' ? option : (option.label || option.value || option)}
+																		<option value={optionValue}>{optionLabel}</option>
+																	{/each}
+																</select>
+																<div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+																	<svg class="w-4 h-4 text-surface-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+																		<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+																	</svg>
+																</div>
+															</div>
 														{:else if field.field_type === 'number'}
 															<input
 																type="number"
 																bind:value={adminFormValues[field.name]}
 																placeholder={field.placeholder || String(field.default || '')}
-																class="w-full bg-surface-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-mono"
+																min="1"
+																class="w-full bg-surface-800/80 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 font-mono hover:border-white/20"
 															/>
 														{:else}
 															<input
 																type="text"
 																bind:value={adminFormValues[field.name]}
 																placeholder={field.placeholder || ''}
-																class="w-full bg-surface-800 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+																class="w-full bg-surface-800/80 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-surface-100 placeholder-surface-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-white/20"
 															/>
 														{/if}
 														{#if field.hint}
-															<p class="text-xs text-surface-500 mt-1">{field.hint}</p>
+															<p class="text-xs text-surface-500 mt-1.5 ml-0.5 leading-relaxed">{field.hint}</p>
 														{/if}
 													</div>
 												{/each}
@@ -817,7 +814,7 @@
 											<button
 												type="button"
 												onclick={() => handleAdminFormSubmit(message.id, message.adminResult?.operation || '', message.adminResult?.params || {})}
-												class="w-full px-4 py-2.5 rounded-lg font-medium text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 hover:border-blue-500/50 transition-all duration-200 flex items-center justify-center gap-2"
+												class="w-full px-4 py-2.5 rounded-lg font-medium text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 hover:border-blue-500/50 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20"
 											>
 												<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -1024,33 +1021,23 @@
 										{@const brokerCount = message.clusterContext.broker_count ?? (typeof message.clusterContext.brokers === 'number' ? message.clusterContext.brokers : Object.keys(message.clusterContext.brokers || {}).length)}
 										{@const topicCount = message.clusterContext.topic_count ?? message.clusterContext.topics?.length ?? 0}
 										{@const groupCount = message.clusterContext.consumer_groups?.length ?? 0}
-										<div class="mt-4 p-5 bg-surface-900/80 border border-white/5 rounded-xl backdrop-blur-sm">
-											<div class="flex items-center gap-2.5 mb-4">
-												<div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-													<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-														<path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />
-													</svg>
+										<MessageCard
+											title="Cluster Overview"
+											iconType="cluster"
+											iconColor="emerald"
+											variant="success"
+										>
+											{#if message.clusterContext.cluster_id}
+												<div class="flex items-center justify-end mb-3">
+													<span class="text-xs text-surface-500 font-mono">{message.clusterContext.cluster_id.slice(0, 12)}...</span>
 												</div>
-												<span class="text-sm font-semibold text-surface-200">Cluster Overview</span>
-												{#if message.clusterContext.cluster_id}
-													<span class="text-xs text-surface-500 font-mono ml-auto">{message.clusterContext.cluster_id.slice(0, 12)}...</span>
-												{/if}
-											</div>
+											{/if}
 											<div class="grid grid-cols-3 gap-6">
-												<div class="text-center">
-													<p class="text-3xl font-bold text-surface-100 font-mono">{brokerCount}</p>
-													<span class="text-xs text-surface-500 uppercase tracking-wider">Brokers</span>
-												</div>
-												<div class="text-center">
-													<p class="text-3xl font-bold text-surface-100 font-mono">{topicCount}</p>
-													<span class="text-xs text-surface-500 uppercase tracking-wider">Topics</span>
-												</div>
-												<div class="text-center">
-													<p class="text-3xl font-bold text-surface-100 font-mono">{groupCount}</p>
-													<span class="text-xs text-surface-500 uppercase tracking-wider">Groups</span>
-												</div>
+												<MetricCard value={brokerCount} label="Brokers" />
+												<MetricCard value={topicCount} label="Topics" />
+												<MetricCard value={groupCount} label="Groups" />
 											</div>
-										</div>
+										</MessageCard>
 									{/if}
 
 									<!-- Suggested Actions -->
@@ -1143,6 +1130,8 @@
 </div>
 
 <style>
+	@reference "../app.css";
+
 	.chat-page {
 		--action-glow: 0 4px 24px rgba(16, 185, 129, 0.15);
 	}
@@ -1191,5 +1180,31 @@
 
 	.chat-page ::-webkit-scrollbar-thumb:hover {
 		background: rgb(100 116 139 / 0.6);
+	}
+
+	/* Enhanced assistant message styling */
+	.assistant-message-wrapper {
+		@apply max-w-full;
+		line-height: 1.7;
+	}
+
+	.assistant-message-wrapper :global(.formatted-message) {
+		color: rgb(var(--color-surface-200));
+		font-size: 15px;
+	}
+
+	.assistant-message-wrapper :global(.formatted-message > *:first-child) {
+		@apply mt-0;
+	}
+
+	.assistant-message-wrapper :global(.formatted-message > *:last-child) {
+		@apply mb-0;
+	}
+
+	/* Better visual separation for structured content */
+	.assistant-message-wrapper :global(.formatted-message h1),
+	.assistant-message-wrapper :global(.formatted-message h2),
+	.assistant-message-wrapper :global(.formatted-message h3) {
+		@apply border-b border-white/5 pb-2 mb-4;
 	}
 </style>

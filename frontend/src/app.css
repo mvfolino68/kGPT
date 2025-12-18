@@ -1,8 +1,40 @@
 @import 'tailwindcss';
+@import 'tailwindcss/theme' layer(theme);
+@import 'tailwindcss/preflight' layer(base);
+@import 'tailwindcss/utilities' layer(utilities);
 
 /* Design System - Dark Theme */
-:root {
+@theme {
   /* Surface colors - refined dark palette */
+  --color-surface-50: 248 250 252;
+  --color-surface-100: 241 245 249;
+  --color-surface-200: 226 232 240;
+  --color-surface-300: 203 213 225;
+  --color-surface-400: 148 163 184;
+  --color-surface-500: 100 116 139;
+  --color-surface-600: 71 85 105;
+  --color-surface-700: 51 65 85;
+  --color-surface-800: 30 41 59;
+  --color-surface-900: 15 23 42;
+  --color-surface-950: 8 12 24;
+
+  /* Primary accent */
+  --color-primary-400: 96 165 250;
+  --color-primary-500: 59 130 246;
+  --color-primary-600: 37 99 235;
+
+  /* Success */
+  --color-success-400: 74 222 128;
+  --color-success-500: 34 197 94;
+
+  /* Error */
+  --color-error-200: 254 202 202;
+  --color-error-400: 248 113 113;
+  --color-error-500: 239 68 68;
+}
+
+:root {
+  /* Surface colors - refined dark palette (for CSS variable usage) */
   --color-surface-50: 248 250 252;
   --color-surface-100: 241 245 249;
   --color-surface-200: 226 232 240;

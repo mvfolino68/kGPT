@@ -225,8 +225,12 @@ def normalize_admin_analysis_result(data: dict) -> dict:
             normalized["operation"] = "add_partitions"
         elif "topic_name" in input_field_names and "config_key" in input_field_names:
             normalized["operation"] = "alter_topic_config"
+        elif "topic_name" in input_field_names and len(input_field_names) == 1:
+            # Only topic_name - could be describe_topic or delete_topic
+            # Default to describe_topic as it's safer (read-only)
+            normalized["operation"] = "describe_topic"
         elif "topic_name" in input_field_names:
-            # Could be delete_topic, but we can't be sure without more context
+            # Could be delete_topic or describe_topic, but we can't be sure without more context
             pass
         elif "group_id" in input_field_names:
             # Could be delete_consumer_group or describe_consumer_group
@@ -240,6 +244,7 @@ def normalize_admin_analysis_result(data: dict) -> dict:
             title_map = {
                 "create_topic": "Create New Topic",
                 "delete_topic": "Delete Topic",
+                "describe_topic": "Describe Topic",
                 "alter_topic_config": "Modify Topic Configuration",
                 "add_partitions": "Add Partitions",
                 "delete_consumer_group": "Delete Consumer Group",
@@ -298,8 +303,18 @@ def normalize_admin_analysis_result(data: dict) -> dict:
                 hint_parts.append(field["note"])
             normalized_field["hint"] = " ".join(hint_parts)
 
-            # Options for select fields
-            normalized_field["options"] = field.get("options") or field.get("choices") or []
+            # Options for select fields - normalize to list of strings
+            options_raw = field.get("options") or field.get("choices") or []
+            normalized_options = []
+            for opt in options_raw:
+                if isinstance(opt, str):
+                    normalized_options.append(opt)
+                elif isinstance(opt, dict):
+                    # Extract value from object format {value: 'x', label: 'y'}
+                    normalized_options.append(opt.get("value") or opt.get("label") or str(opt))
+                else:
+                    normalized_options.append(str(opt))
+            normalized_field["options"] = normalized_options
 
             # Add the normalized field
             normalized_fields.append(normalized_field)
@@ -639,6 +654,9 @@ def execute_admin_operation(context, operation: str, params: dict) -> dict:
             replication_factor=params.get("replication_factor", 1),
             config=params.get("config"),
         ),
+        "describe_topic": lambda: context.describe_topic(
+            topic_name=params.get("topic_name"),
+        ),
         "alter_topic_config": lambda: context.alter_topic_config(
             topic_name=params.get("topic_name"),
             config_updates={params.get("config_key"): params.get("config_value")}
@@ -668,6 +686,7 @@ def execute_admin_operation(context, operation: str, params: dict) -> dict:
     required_params = {
         "delete_topic": ["topic_name"],
         "create_topic": ["topic_name"],
+        "describe_topic": ["topic_name"],
         "alter_topic_config": ["topic_name", "config_key", "config_value"],
         "delete_consumer_group": ["group_id"],
         "add_partitions": ["topic_name", "new_total_partitions"],
