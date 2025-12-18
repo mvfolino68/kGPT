@@ -7,7 +7,9 @@
 		type Settings,
 		type KeyStatus
 	} from '$lib/api';
-	import { RetroHeader, RetroButton, RetroCard, StatusIndicator } from '$lib/components';
+	import { Header, Card, Button, Badge, StatusDot } from '$lib/components';
+	// Legacy components for backward compatibility during migration
+	import { RetroButton, RetroCard, StatusIndicator, RetroHeader } from '$lib/components';
 
 	let settings = $state<Settings | null>(null);
 	let loading = $state(true);
@@ -427,6 +429,9 @@
 									placeholder={hasHuggingFaceToken ? '(leave empty to keep current)' : 'hf_...'}
 									class="w-full retro-input rounded"
 								/>
+								<a href="https://huggingface.co/settings/tokens" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
+									# get token at huggingface.co/settings/tokens
+								</a>
 								<p class="text-xs font-mono text-surface-600 mt-1"># optional, for private models</p>
 							</div>
 						{/if}
@@ -562,7 +567,7 @@
 							class="w-full retro-input rounded"
 						/>
 						<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-							get key
+							# get key at platform.openai.com/api-keys
 						</a>
 						{#if isUpdatingKey && openaiSource === 'env'}
 							<p class="text-xs font-mono text-amber-400 mt-2"># will override the environment variable key</p>

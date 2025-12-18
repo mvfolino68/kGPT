@@ -1,3 +1,10 @@
+// UI Components (new design system)
+export * from './ui';
+
+// Layout Components
+export * from './layout';
+
+// Legacy components (for backward compatibility during migration)
 export { default as MessageCard } from './MessageCard.svelte';
 export { default as MetricCard } from './MetricCard.svelte';
 export { default as CodeBlock } from './CodeBlock.svelte';
@@ -17,3 +24,5 @@ export * from './chat';
 export { SourcesPanel, SourceItem, SourceDrawer } from './sources';
 export type { Source, SourceGroup, SourceMetadata } from './sources';
 
+// Cluster components
+export * from './cluster';

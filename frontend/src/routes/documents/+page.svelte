@@ -32,7 +32,9 @@
 		type ChunkAnalytics,
 		type SourceType
 	} from '$lib/api';
-	import { RetroHeader, RetroButton, StatusIndicator, RetroCard } from '$lib/components';
+	import { Header, Card, Button, Badge, StatusDot } from '$lib/components';
+	// Legacy components for backward compatibility during migration
+	import { RetroButton, StatusIndicator, RetroCard, RetroHeader } from '$lib/components';
 
 	// =========================================================================
 	// State
