@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Source } from './types';
-	import { RetroButton } from '$lib/components';
 
 	interface Props {
 		source: Source | null;
@@ -15,19 +14,17 @@
 				return {
 					label: 'Documentation',
 					description: 'Retrieved from indexed Kafka documentation using RAG (Retrieval-Augmented Generation)',
-					color: 'text-blue-400',
-					bg: 'bg-blue-500/10',
-					border: 'border-blue-500/30',
-					glow: 'shadow-blue-500/10'
+					color: 'text-primary-light',
+					bg: 'bg-primary/10',
+					border: 'border-primary/30'
 				};
 			case 'web':
 				return {
 					label: 'Web Search',
 					description: 'Found via real-time web search using Exa for current information',
-					color: 'text-blue-400',
-					bg: 'bg-blue-500/10',
-					border: 'border-blue-500/30',
-					glow: 'shadow-blue-500/10'
+					color: 'text-primary-light',
+					bg: 'bg-primary/10',
+					border: 'border-primary/30'
 				};
 			case 'cluster':
 				return {
@@ -35,8 +32,7 @@
 					description: 'Live data from your connected Kafka cluster',
 					color: 'text-amber-400',
 					bg: 'bg-amber-500/10',
-					border: 'border-amber-500/30',
-					glow: 'shadow-amber-500/10'
+					border: 'border-amber-500/30'
 				};
 			default:
 				return {
@@ -44,8 +40,7 @@
 					description: 'Reference source',
 					color: 'text-surface-400',
 					bg: 'bg-surface-500/10',
-					border: 'border-surface-500/30',
-					glow: ''
+					border: 'border-surface-500/30'
 				};
 		}
 	}
@@ -65,7 +60,6 @@
 	}
 
 	function handleBackdropClick(event: MouseEvent) {
-		// Close when clicking the backdrop (not the drawer content)
 		if (event.target === event.currentTarget) {
 			onClose();
 		}
@@ -83,26 +77,26 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if source && typeConfig}
-	<!-- Backdrop - clicking closes the drawer -->
+	<!-- Backdrop -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
 		onclick={handleBackdropClick}
 	>
-		<!-- Drawer - stop propagation so clicking inside doesn't close -->
+		<!-- Drawer -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<aside
 			class="absolute right-0 top-0 h-full w-full max-w-md
-				bg-surface-900 border-l border-surface-700 shadow-2xl
+				bg-surface-900 border-l border-surface-700/50 shadow-2xl
 				animate-slide-in overflow-hidden flex flex-col"
 			onclick={(e) => e.stopPropagation()}
 		>
 
 			<!-- Header -->
-			<header class="flex-shrink-0 p-4 border-b border-surface-700 {typeConfig.bg}">
+			<header class="flex-shrink-0 p-4 border-b border-surface-700/50 {typeConfig.bg}">
 				<div class="flex items-start justify-between gap-3">
 					<div class="flex-1 min-w-0">
 						<!-- Type badge -->
@@ -113,7 +107,7 @@
 								{typeConfig.label}
 							</span>
 							{#if source.relevance_score !== undefined}
-								<span class="text-xs font-mono text-surface-400">
+								<span class="text-xs text-surface-400">
 									{formatScore(source.relevance_score)} match
 								</span>
 							{/if}
@@ -130,8 +124,7 @@
 								href={source.url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="inline-flex items-center gap-1.5 mt-2 text-sm {typeConfig.color}
-									hover:underline font-mono"
+								class="inline-flex items-center gap-1.5 mt-2 text-sm {typeConfig.color} hover:underline"
 							>
 								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -158,7 +151,7 @@
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto">
 				<!-- How this source was found -->
-				<section class="p-4 border-b border-surface-800">
+				<section class="p-4 border-b border-surface-700/50">
 					<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-2">
 						How This Source Was Found
 					</h3>
@@ -167,16 +160,16 @@
 					</p>
 
 					{#if source.metadata?.search_query}
-						<div class="mt-3 p-2 rounded bg-surface-800/50 border border-surface-700">
+						<div class="mt-3 p-2 rounded-lg bg-surface-800/50 border border-surface-700/50">
 							<span class="text-[10px] text-surface-500 uppercase">Search Query</span>
-							<p class="text-sm text-surface-300 font-mono mt-1">"{source.metadata.search_query}"</p>
+							<p class="text-sm text-surface-300 mt-1">"{source.metadata.search_query}"</p>
 						</div>
 					{/if}
 				</section>
 
 				<!-- Highlights (for web sources) -->
 				{#if source.highlights && source.highlights.length > 0}
-					<section class="p-4 border-b border-surface-800">
+					<section class="p-4 border-b border-surface-700/50">
 						<div class="flex items-center gap-2 mb-3">
 							<svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -199,7 +192,7 @@
 
 				<!-- Content preview -->
 				{#if source.content_preview || source.content}
-					<section class="p-4 border-b border-surface-800">
+					<section class="p-4 border-b border-surface-700/50">
 						<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">
 							Content Preview
 						</h3>
@@ -221,19 +214,19 @@
 							{#if source.metadata.collection}
 								<div class="flex justify-between text-sm">
 									<dt class="text-surface-500">Collection</dt>
-									<dd class="text-surface-300 font-mono">{source.metadata.collection}</dd>
+									<dd class="text-surface-300">{source.metadata.collection}</dd>
 								</div>
 							{/if}
 							{#if source.metadata.similarity_score != null}
 								<div class="flex justify-between text-sm">
 									<dt class="text-surface-500">Similarity Score</dt>
-									<dd class="text-surface-300 font-mono">{formatScore(source.metadata.similarity_score)}</dd>
+									<dd class="text-surface-300">{formatScore(source.metadata.similarity_score)}</dd>
 								</div>
 							{/if}
 							{#if source.metadata.rerank_score != null}
 								<div class="flex justify-between text-sm">
 									<dt class="text-surface-500">Rerank Score</dt>
-									<dd class="text-surface-300 font-mono">{Number(source.metadata.rerank_score).toFixed(3)}</dd>
+									<dd class="text-surface-300">{Number(source.metadata.rerank_score).toFixed(3)}</dd>
 								</div>
 							{/if}
 							{#if source.metadata.published_date}
@@ -248,17 +241,17 @@
 			</div>
 
 			<!-- Footer -->
-			<footer class="flex-shrink-0 p-4 border-t border-surface-700 bg-surface-900/80">
+			<footer class="flex-shrink-0 p-4 border-t border-surface-700/50 bg-surface-900">
 				<div class="flex gap-3">
-					<RetroButton class="flex-1" onclick={onClose}>
+					<button type="button" class="btn btn-default flex-1" onclick={onClose}>
 						Close
-					</RetroButton>
+					</button>
 					{#if source.url}
 						<a
 							href={source.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="retro-button retro-button-primary flex-1 inline-flex items-center justify-center gap-2"
+							class="btn btn-primary flex-1 inline-flex items-center justify-center gap-2"
 						>
 							<span>Open Source</span>
 							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -296,7 +289,6 @@
 	:global(.highlight-excerpt:hover) {
 		background: rgba(251, 191, 36, 0.15);
 		border-color: rgba(251, 191, 36, 0.4);
-		box-shadow: 0 0 12px rgba(251, 191, 36, 0.15);
 		transform: translateY(-1px);
 	}
 </style>

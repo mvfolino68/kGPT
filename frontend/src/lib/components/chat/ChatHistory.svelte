@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { RetroButton } from '$lib/components';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {
@@ -93,23 +92,23 @@
 </script>
 
 <aside
-	class="bg-surface-900/70 border-r retro-border flex flex-col backdrop-blur-sm relative"
+	class="bg-surface-900 border-r border-surface-700/50 flex flex-col relative"
 	style="width: {sidebarWidth}px; min-width: {MIN_WIDTH}px; max-width: {MAX_WIDTH}px;"
 >
-	<div class="p-4 border-b retro-border flex items-center justify-between">
-		<span class="text-xs font-bold font-mono text-surface-400 uppercase tracking-wider">Sessions</span>
-		<RetroButton size="sm" variant="primary" onclick={onNewChat}>
+	<div class="p-4 border-b border-surface-700/50 flex items-center justify-between">
+		<span class="text-[10px] font-bold text-surface-500 uppercase tracking-wider">Sessions</span>
+		<button type="button" class="btn btn-primary btn-sm btn-icon" onclick={onNewChat}>
 			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 			</svg>
-		</RetroButton>
+		</button>
 	</div>
 
 	<div class="flex-1 overflow-y-auto py-2 px-2">
 		{#if sessionsLoading}
-			<div class="px-3 py-2 text-surface-500 text-xs font-mono">Loading...</div>
+			<div class="px-3 py-2 text-surface-500 text-xs">Loading...</div>
 		{:else if sessions.length === 0}
-			<div class="px-3 py-2 text-surface-600 text-xs font-mono">No sessions yet</div>
+			<div class="px-3 py-2 text-surface-600 text-xs">No sessions yet</div>
 		{:else}
 			{#each sessions as session (session.id)}
 				<SessionListItem
@@ -135,11 +134,11 @@
 	<div
 		bind:this={resizeHandle}
 		onmousedown={handleMouseDown}
-		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-blue-500/50 transition-colors group"
+		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/50 transition-colors group"
 		role="separator"
 		aria-label="Resize sidebar"
 		aria-orientation="vertical"
 	>
-		<div class="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 w-1 h-8 bg-surface-600 group-hover:bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+		<div class="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 w-1 h-8 bg-surface-600 group-hover:bg-primary-light rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
 	</div>
 </aside>

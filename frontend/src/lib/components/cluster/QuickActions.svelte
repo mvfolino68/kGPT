@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Button, Card } from '$lib/components/ui';
-
 	interface Props {
 		onAction: (action: string) => void;
 		disabled?: boolean;
@@ -16,13 +14,13 @@
 	];
 </script>
 
-<Card padding="sm">
+<div class="bg-surface-900 border border-surface-700/50 rounded-lg px-4 py-3">
 	<div class="flex items-center gap-2 flex-wrap">
-		<span class="text-xs text-surface-500 font-medium mr-2">Quick Actions:</span>
+		<span class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mr-2">Quick Actions</span>
 		{#each actions as action}
-			<Button
-				variant="ghost"
-				size="sm"
+			<button
+				type="button"
+				class="btn btn-ghost btn-sm"
 				{disabled}
 				onclick={() => onAction(action.id)}
 			>
@@ -44,7 +42,7 @@
 					</svg>
 				{/if}
 				{action.label}
-			</Button>
+			</button>
 		{/each}
 	</div>
-</Card>
+</div>

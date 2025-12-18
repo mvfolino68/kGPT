@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { RetroButton, RetroCard, StatusIndicator, AdminResultCard } from '$lib/components';
+	import { StatusIndicator } from '$lib/components';
+	import { AdminResultCard } from '$lib/components/admin';
 	import { SourceDrawer } from '$lib/components/sources';
 	import { normalizeCitation, type Source } from '$lib/components/sources/types';
 	import { renderMarkdown } from '$lib/utils/markdown';
 	import { selectedMessageId, selectMessageForTrace, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
+	import { ThinkingIndicator, MessageActions, SourcesList } from './message';
 
 	interface Props {
 		message: {
@@ -23,16 +25,9 @@
 
 	let { message, onActionClick }: Props = $props();
 
-	// State for source drawer
 	let selectedSource = $state<Source | null>(null);
 
-	// State for expanding sources list
-	let sourcesExpanded = $state(false);
-
-	// Check if this message is selected for trace viewing
 	let isSelected = $derived($selectedMessageId === message.id);
-
-	// Check if this message has trace data
 	let hasTrace = $derived(
 		message.agentTrace &&
 		(message.agentTrace.agentTimeline.length > 0 || message.agentTrace.routingDecision)
@@ -45,28 +40,17 @@
 		}
 	}
 
-	/**
-	 * Convert legacy citations to unified Source format.
-	 * This handles both old URL strings and new structured citations.
-	 */
 	function normalizeSources(citations: unknown[] | undefined): Source[] {
 		if (!citations || citations.length === 0) return [];
-
 		return citations.map((c, index) => {
 			const source = normalizeCitation(c);
-			// Add an ID if not present
-			if (!source.id) {
-				source.id = `source-${index + 1}`;
-			}
+			if (!source.id) source.id = `source-${index + 1}`;
 			return source;
 		});
 	}
 
 	const sources = $derived(normalizeSources(message.citations));
 
-	/**
-	 * Handle clicks on citation buttons in the rendered markdown.
-	 */
 	function handleContentClick(event: MouseEvent) {
 		const target = event.target as HTMLElement;
 		if (target.classList.contains('citation-ref')) {
@@ -84,52 +68,42 @@
 
 {#if message.role === 'user'}
 	<!-- User Message -->
-	<div class="flex justify-end animate-slide-in-right">
-		<RetroCard variant="glow-cyan" class="max-w-[75%] !p-0">
-			<div class="px-4 py-3">
-				<div class="flex items-center gap-2 mb-2">
-					<span class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">User</span>
-					<span class="text-[9px] font-mono text-surface-600">></span>
-				</div>
-				<p class="text-surface-100 text-sm leading-relaxed font-mono">{message.content}</p>
+	<div class="flex justify-end animate-fade-in">
+		<div class="max-w-[75%] bg-surface-800/60 border border-primary/20 rounded-lg px-4 py-3">
+			<div class="flex items-center gap-2 mb-2">
+				<span class="text-[10px] font-bold uppercase tracking-wider text-primary-light">User</span>
 			</div>
-		</RetroCard>
+			<p class="text-surface-100 text-sm leading-relaxed">{message.content}</p>
+		</div>
 	</div>
 {:else}
 	<!-- Assistant Message -->
-	<div class="flex justify-start animate-slide-in-left">
+	<div class="flex justify-start animate-fade-in">
 		<div class="max-w-[85%] space-y-3">
 			<!-- Thinking indicator -->
 			{#if message.isThinking && !message.content}
-				<RetroCard class="!p-0">
-					<div class="px-4 py-3 flex items-center gap-3">
-						<div class="flex gap-1">
-							<StatusIndicator status="active" pulse size="sm" />
-							<StatusIndicator status="active" pulse size="sm" />
-							<StatusIndicator status="active" pulse size="sm" />
-						</div>
-						<span class="text-sm font-mono text-surface-400">{message.thinkingStage || 'Processing...'}</span>
-					</div>
-				</RetroCard>
+				<ThinkingIndicator stage={message.thinkingStage} />
 			{/if}
 
 			<!-- Message content -->
 			{#if message.content}
-				<RetroCard variant="glow-blue" class="!p-0 {isSelected ? 'ring-1 ring-violet-500/50' : ''}">
+				<div class="bg-surface-900 border border-surface-700/50 rounded-lg {isSelected ? 'ring-1 ring-violet-500/50' : ''}">
 					<div class="px-4 py-3">
 						<!-- Header -->
 						<div class="flex items-center gap-2 mb-3">
-							<span class="text-[10px] font-mono text-confluent-primary uppercase tracking-wider">kGPT</span>
+							<span class="text-[10px] font-bold uppercase tracking-wider text-primary-light">kGPT</span>
 							<StatusIndicator status="active" size="sm" />
 							{#if message.isStreaming}
-								<span class="text-[9px] font-mono text-surface-500 animate-pulse">streaming...</span>
+								<span class="text-[9px] text-surface-500 animate-pulse">streaming...</span>
 							{/if}
-							<!-- Trace indicator button -->
 							{#if hasTrace && !message.isStreaming}
 								<button
 									type="button"
 									onclick={handleTraceClick}
-									class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono transition-colors {isSelected ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30' : 'text-surface-500 hover:text-violet-400 hover:bg-violet-500/10'}"
+									class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors
+										{isSelected
+											? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
+											: 'text-surface-500 hover:text-violet-400 hover:bg-violet-500/10'}"
 									title="View agent pipeline trace"
 								>
 									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -140,7 +114,7 @@
 							{/if}
 						</div>
 
-						<!-- Markdown content with inline citations (clickable) -->
+						<!-- Markdown content -->
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
@@ -151,106 +125,55 @@
 						</div>
 
 						<!-- Sources section -->
-						{#if sources.length > 0 && !message.isStreaming}
-							<div class="mt-3 pt-3 border-t border-surface-700/50">
-								<!-- Toggle button -->
-								<button
-									type="button"
-									class="flex items-center gap-2 text-xs text-surface-400 hover:text-cyan-400 transition-colors"
-									onclick={() => sourcesExpanded = !sourcesExpanded}
-								>
-									<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-									</svg>
-									<span>{sources.length} {sources.length === 1 ? 'Source' : 'Sources'}</span>
-									<svg
-										class="w-3 h-3 transition-transform duration-200 {sourcesExpanded ? 'rotate-180' : ''}"
-										fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
-									>
-										<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-									</svg>
-								</button>
-
-								<!-- Simple sources list -->
-								{#if sourcesExpanded}
-									<ul class="mt-2 space-y-1">
-										{#each sources as source, i}
-											<li>
-												<button
-													type="button"
-													class="w-full text-left px-2 py-1.5 rounded text-xs font-mono
-														text-surface-300 hover:text-cyan-400 hover:bg-surface-800/50
-														transition-colors flex items-center gap-2"
-													onclick={() => selectedSource = source}
-												>
-													<span class="text-cyan-500/70">[{i + 1}]</span>
-													<span class="truncate">{source.title}</span>
-												</button>
-											</li>
-										{/each}
-									</ul>
-								{/if}
-							</div>
+						{#if !message.isStreaming}
+							<SourcesList {sources} onSourceClick={(s) => selectedSource = s} />
 						{/if}
 					</div>
-				</RetroCard>
+				</div>
 			{/if}
 
-			<!-- Admin Operation Result (for pending confirmations or executed operations) -->
-			<!-- Show immediately for pending/needs_info ops, or after streaming for executed ops -->
+			<!-- Admin Operation Result -->
 			{#if message.adminResult && (!message.isStreaming || message.adminResult.pending || message.adminResult.needs_info || message.adminResult.unclear)}
 				<AdminResultCard result={message.adminResult} />
 			{/if}
 
 			<!-- Suggested Actions -->
-			{#if message.actions && message.actions.length > 0 && !message.isStreaming}
-				<div class="flex flex-wrap gap-2 pt-1">
-					{#each message.actions as action}
-						<RetroButton size="sm" onclick={() => onActionClick(action.value)}>
-							{action.label}
-						</RetroButton>
-					{/each}
-				</div>
+			{#if message.actions && !message.isStreaming}
+				<MessageActions actions={message.actions} {onActionClick} />
 			{/if}
 		</div>
 	</div>
 {/if}
 
-<!-- Source drawer for viewing citation details -->
 <SourceDrawer source={selectedSource} onClose={closeDrawer} />
 
 <style>
-	@reference "../../../app.css";
-
 	/* Prose styling for markdown content */
 	:global(.message-content p) {
 		margin: 0.5rem 0;
 		color: rgb(var(--color-surface-200));
 	}
-	:global(.message-content p:first-child) {
-		margin-top: 0;
-	}
-	:global(.message-content p:last-child) {
-		margin-bottom: 0;
-	}
+	:global(.message-content p:first-child) { margin-top: 0; }
+	:global(.message-content p:last-child) { margin-bottom: 0; }
+
 	:global(.message-content ul), :global(.message-content ol) {
 		margin: 0.5rem 0;
 		padding-left: 1.5rem;
 	}
-	:global(.message-content li) {
-		margin: 0.25rem 0;
-	}
+	:global(.message-content li) { margin: 0.25rem 0; }
+
 	:global(.message-content code) {
 		background: rgba(var(--color-surface-800), 0.8);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-size: 0.875em;
-		color: rgb(var(--confluent-accent));
-		border: 1px solid rgba(var(--confluent-accent), 0.2);
+		color: rgb(var(--color-accent));
+		border: 1px solid rgba(var(--color-accent), 0.2);
 	}
+
 	:global(.message-content pre) {
 		background: rgb(var(--color-surface-900));
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgb(var(--color-surface-700) / 0.5);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		overflow-x: auto;
@@ -261,26 +184,29 @@
 		padding: 0;
 		border: none;
 	}
+
 	:global(.message-content h1),
 	:global(.message-content h2),
 	:global(.message-content h3) {
 		margin-top: 1rem;
 		margin-bottom: 0.5rem;
 		font-weight: 600;
-		color: rgb(var(--confluent-primary));
+		color: rgb(var(--color-primary-light));
 	}
+
 	:global(.message-content a) {
-		color: rgb(var(--retro-cyan));
+		color: rgb(var(--color-accent));
 		text-decoration: underline;
 	}
+
 	:global(.message-content blockquote) {
-		border-left: 3px solid rgba(var(--confluent-primary), 0.3);
+		border-left: 3px solid rgba(var(--color-primary), 0.3);
 		padding-left: 1rem;
 		margin: 0.75rem 0;
 		color: rgb(var(--color-surface-400));
 	}
 
-	/* Citation references - clickable inline superscript buttons */
+	/* Citation references */
 	:global(.citation-ref) {
 		display: inline-flex;
 		align-items: center;
@@ -289,12 +215,11 @@
 		height: 1.25rem;
 		padding: 0 0.25rem;
 		margin: 0 0.125rem;
-		font-family: var(--font-mono);
 		font-size: 0.65em;
 		font-weight: 700;
-		color: rgb(var(--retro-cyan));
-		background: rgba(var(--retro-cyan), 0.1);
-		border: 1px solid rgba(var(--retro-cyan), 0.3);
+		color: rgb(var(--color-accent));
+		background: rgba(var(--color-accent), 0.1);
+		border: 1px solid rgba(var(--color-accent), 0.3);
 		border-radius: 0.25rem;
 		cursor: pointer;
 		vertical-align: super;
@@ -302,65 +227,37 @@
 		transition: all 0.15s ease;
 	}
 	:global(.citation-ref:hover) {
-		background: rgba(var(--retro-cyan), 0.25);
-		border-color: rgba(var(--retro-cyan), 0.6);
+		background: rgba(var(--color-accent), 0.25);
+		border-color: rgba(var(--color-accent), 0.6);
 		transform: scale(1.1);
-		box-shadow: 0 0 8px rgba(var(--retro-cyan), 0.3);
-	}
-	:global(.citation-ref:active) {
-		transform: scale(0.95);
 	}
 
-	/* Enhanced text selection visibility */
+	/* Text selection */
 	:global(.message-content) {
 		-webkit-user-select: text;
-		-moz-user-select: text;
-		-ms-user-select: text;
 		user-select: text;
 	}
-
 	:global(.message-content ::selection) {
-		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
-		color: inherit; /* Keep original text color */
-		text-shadow: none;
+		background: rgba(255, 235, 59, 0.65);
+		color: inherit;
 	}
 
-	:global(.message-content ::-moz-selection) {
-		background: rgba(255, 235, 59, 0.65); /* Yellow highlighter */
-		color: inherit; /* Keep original text color */
-		text-shadow: none;
-	}
-
-	/* Standardized image styling - matches FormattedMessage */
+	/* Image styling */
 	:global(.message-content .markdown-image-container) {
-		@apply relative my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30;
-		@apply transition-all duration-200;
+		position: relative;
+		margin: 1rem 0;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		border: 1px solid rgb(var(--color-surface-700) / 0.5);
+		background: rgb(var(--color-surface-900) / 0.3);
 	}
-
-	:global(.message-content .markdown-image-container:hover) {
-		@apply border-surface-600/50 shadow-lg;
-	}
-
 	:global(.message-content .markdown-image) {
-		@apply w-full h-auto max-w-full;
-		@apply transition-opacity duration-200;
-		@apply object-contain;
+		width: 100%;
+		height: auto;
 		display: block;
 	}
-
-	:global(.message-content .image-caption) {
-		@apply text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center;
-		@apply border-t border-surface-700/30 pt-2;
-	}
-
-	/* Ensure images don't break layout */
 	:global(.message-content img) {
 		max-width: 100%;
 		height: auto;
-	}
-
-	/* Handle broken images */
-	:global(.message-content img:not([src])) {
-		display: none;
 	}
 </style>

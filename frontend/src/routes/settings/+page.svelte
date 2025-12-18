@@ -7,9 +7,7 @@
 		type Settings,
 		type KeyStatus
 	} from '$lib/api';
-	import { Header, Card, Button, Badge, StatusDot } from '$lib/components';
-	// Legacy components for backward compatibility during migration
-	import { RetroButton, RetroCard, StatusIndicator, RetroHeader } from '$lib/components';
+	import { Header, StatusIndicator } from '$lib/components';
 
 	let settings = $state<Settings | null>(null);
 	let loading = $state(true);
@@ -66,7 +64,6 @@
 	async function loadSettings() {
 		loading = true;
 		error = null;
-
 		try {
 			settings = await getSettings();
 			openaiSelectedModel = settings.llm_model || '';
@@ -77,7 +74,6 @@
 			hasExaApiKey = settings.has_exa_key || false;
 			webSearchEnabled = settings.web_search_enabled ?? true;
 
-			// Check if OpenAI is configured
 			if (settings.openai_key?.configured) {
 				openaiConfigured = true;
 				openaiSource = settings.openai_key.source;
@@ -97,7 +93,6 @@
 	async function validateOpenAI() {
 		openaiValidating = true;
 		openaiError = null;
-
 		try {
 			const result = await validateApiKey('openai', '__USE_STORED__');
 			openaiValid = result.valid;
@@ -120,7 +115,6 @@
 		if (!newKeyInput.trim()) return;
 		newKeyValidating = true;
 		newKeyError = null;
-
 		try {
 			const result = await validateApiKey('openai', newKeyInput.trim());
 			if (result.valid) {
@@ -139,7 +133,6 @@
 	async function saveNewKey() {
 		if (!newKeyInput.trim() || !newKeySelectedModel) return;
 		saving = true;
-
 		try {
 			await updateSettings({
 				llm_provider: 'openai',
@@ -151,7 +144,7 @@
 			openaiValid = true;
 			openaiModels = newKeyModels;
 			openaiSelectedModel = newKeySelectedModel;
-			success = 'OpenAI API key saved!';
+			success = 'OpenAI API key saved';
 			cancelAddKey();
 			isOnboarding = false;
 			setTimeout(() => { success = null; }, 2000);
@@ -182,7 +175,6 @@
 
 	async function updateModel() {
 		if (!openaiSelectedModel) return;
-
 		saving = true;
 		try {
 			await updateSettings({ llm_model: openaiSelectedModel });
@@ -256,157 +248,155 @@
 	onMount(() => { loadSettings(); });
 </script>
 
-<div class="flex flex-col h-full bg-surface-950">
-	<RetroHeader path="kgpt/settings" flag="--configure">
-		{#snippet rightContent()}
+<svelte:head>
+	<title>Settings - kGPT</title>
+</svelte:head>
+
+<div class="flex flex-col h-full bg-surface-900">
+	<Header title="Settings" subtitle="Configure your kGPT instance">
+		{#snippet actions()}
 			{#if openaiValid && openaiSelectedModel && !isOnboarding}
-				<div class="px-3 py-1.5 retro-card-glow-blue rounded font-mono text-xs flex items-center gap-2">
+				<div class="px-3 py-1.5 bg-surface-800 rounded border border-surface-700/50 text-xs flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" pulse />
 					<span class="text-surface-500">active:</span>
-					<span class="text-confluent-primary">openai/{openaiSelectedModel}</span>
+					<span class="text-primary-light">openai/{openaiSelectedModel}</span>
 				</div>
 			{/if}
 		{/snippet}
-	</RetroHeader>
+	</Header>
 
 	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-4xl mx-auto space-y-6">
+		<div class="max-w-4xl mx-auto space-y-4">
 			<!-- Messages -->
 			{#if error}
-				<div class="retro-card-glow-amber rounded p-3 font-mono text-sm text-red-400 flex items-center gap-2">
+				<div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400 flex items-center gap-2">
 					<StatusIndicator status="error" size="sm" />
-					<span class="text-red-500">error:</span> {error}
+					<span>{error}</span>
 				</div>
 			{/if}
 			{#if success}
-				<div class="retro-card-glow-green rounded p-3 font-mono text-sm text-emerald-400 flex items-center gap-2">
+				<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-sm text-emerald-400 flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" />
-					<span class="text-emerald-500">ok</span> {success}
+					<span>{success}</span>
 				</div>
 			{/if}
 
 			{#if loading}
-				<RetroCard>
-					<div class="p-8 text-center font-mono text-surface-500 animate-pulse-slow flex items-center justify-center gap-2">
-						<StatusIndicator status="warning" pulse />
-						loading...
-					</div>
-				</RetroCard>
+				<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-8 text-center text-surface-500 flex items-center justify-center gap-2">
+					<StatusIndicator status="warning" pulse />
+					Loading...
+				</div>
 
 			{:else if isOnboarding && !openaiValid}
 				<!-- ONBOARDING -->
-				<div class="space-y-6">
-				<RetroCard variant="glow-blue" class="text-center py-6">
-					<h2 class="text-2xl font-bold font-mono text-confluent-primary mb-2 text-glow-blue">WELCOME TO kGPT</h2>
-					<p class="text-surface-400 font-mono text-sm">Configure your OpenAI API key to get started</p>
-				</RetroCard>
+				<div class="space-y-4">
+					<div class="bg-surface-900 border border-primary/30 rounded-lg text-center py-6">
+						<h2 class="text-2xl font-bold text-primary-light mb-2">Welcome to kGPT</h2>
+						<p class="text-surface-400 text-sm">Configure your OpenAI API key to get started</p>
+					</div>
 
-					<RetroCard variant="glow-cyan">
-						<div class="space-y-4">
-							<div>
-								<label for="api-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">OpenAI API Key</label>
-								<input
-									id="api-key"
-									type="password"
-									bind:value={newKeyInput}
-									placeholder="sk-..."
-									class="w-full retro-input rounded"
-								/>
-								<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-									# get key at platform.openai.com/api-keys
-								</a>
-							</div>
-							{#if newKeyError}
-								<p class="text-sm font-mono text-red-400">{newKeyError}</p>
-							{/if}
-							{#if newKeyModels.length === 0}
-								<RetroButton
-									onclick={validateNewKey}
-									disabled={newKeyValidating || !newKeyInput.trim()}
-									variant="primary"
-									class="w-full"
-								>
-									{newKeyValidating ? 'validating...' : 'validate key'}
-								</RetroButton>
-							{:else}
-								<div class="space-y-3 pt-2 border-t border-surface-700">
-									<label for="new-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
-									<select id="new-model" bind:value={newKeySelectedModel} class="w-full retro-input rounded">
-										{#each newKeyModels as model}
-											<option value={model}>{model}</option>
-										{/each}
-									</select>
-									<RetroButton
-										onclick={saveNewKey}
-										disabled={saving}
-										variant="primary"
-										class="w-full"
-									>
-										{saving ? 'saving...' : 'save & continue'}
-									</RetroButton>
-								</div>
-							{/if}
+					<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4 space-y-4">
+						<div>
+							<label for="api-key" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">OpenAI API Key</label>
+							<input
+								id="api-key"
+								type="password"
+								bind:value={newKeyInput}
+								placeholder="sk-..."
+								class="w-full input"
+							/>
+							<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs text-primary-light hover:underline mt-1 inline-block">
+								Get key at platform.openai.com/api-keys
+							</a>
 						</div>
-					</RetroCard>
+						{#if newKeyError}
+							<p class="text-sm text-red-400">{newKeyError}</p>
+						{/if}
+						{#if newKeyModels.length === 0}
+							<button
+								type="button"
+								onclick={validateNewKey}
+								disabled={newKeyValidating || !newKeyInput.trim()}
+								class="btn btn-primary w-full"
+							>
+								{newKeyValidating ? 'Validating...' : 'Validate Key'}
+							</button>
+						{:else}
+							<div class="space-y-3 pt-2 border-t border-surface-700/50">
+								<label for="new-model" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500">Model</label>
+								<select id="new-model" bind:value={newKeySelectedModel} class="w-full input">
+									{#each newKeyModels as model}
+										<option value={model}>{model}</option>
+									{/each}
+								</select>
+								<button
+									type="button"
+									onclick={saveNewKey}
+									disabled={saving}
+									class="btn btn-primary w-full"
+								>
+									{saving ? 'Saving...' : 'Save & Continue'}
+								</button>
+							</div>
+						{/if}
+					</div>
 				</div>
 
 			{:else}
 				<!-- MAIN SETTINGS -->
 
-			<!-- OpenAI Configuration -->
-			<RetroCard variant="glow-blue" noPadding>
-				<div class="px-4 py-2 border-b retro-border bg-blue-900/10 flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="font-mono text-surface-100">OpenAI</span>
-						<span class="text-xs px-1.5 py-0.5 bg-blue-600 text-white rounded font-mono">active</span>
+				<!-- OpenAI Configuration -->
+				<div class="bg-surface-900 border border-primary/30 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-surface-700/50 bg-primary/5 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<span class="font-medium text-surface-100">OpenAI</span>
+							<span class="text-xs px-1.5 py-0.5 bg-primary text-white rounded">active</span>
 							{#if openaiSource}
-								<span class="text-xs px-1.5 py-0.5 rounded font-mono {openaiSource === 'env' ? 'bg-amber-900/30 text-amber-400' : 'bg-surface-700 text-surface-400'}">
+								<span class="text-xs px-1.5 py-0.5 rounded {openaiSource === 'env' ? 'bg-amber-500/20 text-amber-400' : 'bg-surface-700 text-surface-400'}">
 									{openaiSource === 'env' ? 'env' : 'saved'}
 								</span>
 							{/if}
 						</div>
-						<RetroButton size="sm" onclick={startUpdateKey}>
-							update key
-						</RetroButton>
+						<button type="button" class="btn btn-ghost btn-sm" onclick={startUpdateKey}>
+							Update Key
+						</button>
 					</div>
 					<div class="p-4">
-						<label for="active-model" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Model</label>
+						<label for="active-model" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Model</label>
 						<div class="flex gap-2">
-							<select
-								id="active-model"
-								bind:value={openaiSelectedModel}
-								class="flex-1 retro-input rounded"
-							>
+							<select id="active-model" bind:value={openaiSelectedModel} class="flex-1 input">
 								{#each openaiModels as model}
 									<option value={model}>{model}</option>
 								{/each}
 							</select>
-							<RetroButton variant="primary" onclick={updateModel} disabled={saving}>
-								{saving ? '...' : 'update'}
-							</RetroButton>
+							<button type="button" class="btn btn-primary" onclick={updateModel} disabled={saving}>
+								{saving ? '...' : 'Update'}
+							</button>
 						</div>
 					</div>
-				</RetroCard>
+				</div>
 
 				<!-- Embeddings -->
-				<RetroCard noPadding>
-					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-						<span class="text-purple-400 font-mono text-xs">$</span>
-						<span class="font-mono text-sm text-surface-300">embeddings</span>
+				<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-surface-700/50 flex items-center gap-2">
+						<svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+						</svg>
+						<span class="text-sm text-surface-300">Embeddings</span>
 					</div>
 					<div class="p-4 space-y-4">
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<label for="embed-provider" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Provider</label>
-								<select id="embed-provider" bind:value={embeddingProvider} class="w-full retro-input rounded">
+								<label for="embed-provider" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Provider</label>
+								<select id="embed-provider" bind:value={embeddingProvider} class="w-full input">
 									{#each EMBEDDING_PROVIDERS as ep}
 										<option value={ep.value}>{ep.label}</option>
 									{/each}
 								</select>
 							</div>
 							<div>
-								<label for="embed-model" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">Model</label>
-								<select id="embed-model" bind:value={embeddingModel} class="w-full retro-input rounded">
+								<label for="embed-model" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Model</label>
+								<select id="embed-model" bind:value={embeddingModel} class="w-full input">
 									{#each EMBEDDING_MODELS[embeddingProvider] || [] as em}
 										<option value={em}>{em}</option>
 									{/each}
@@ -416,7 +406,7 @@
 
 						{#if embeddingProvider === 'fastembed'}
 							<div>
-								<label for="hf-token" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+								<label for="hf-token" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
 									HuggingFace Token
 									{#if hasHuggingFaceToken}
 										<span class="text-emerald-400 ml-1">[configured]</span>
@@ -427,30 +417,29 @@
 									type="password"
 									bind:value={huggingFaceToken}
 									placeholder={hasHuggingFaceToken ? '(leave empty to keep current)' : 'hf_...'}
-									class="w-full retro-input rounded"
+									class="w-full input"
 								/>
-								<a href="https://huggingface.co/settings/tokens" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-									# get token at huggingface.co/settings/tokens
-								</a>
-								<p class="text-xs font-mono text-surface-600 mt-1"># optional, for private models</p>
+								<p class="text-xs text-surface-500 mt-1">Optional, for private models</p>
 							</div>
 						{/if}
 
-					<div class="flex justify-end">
-						<RetroButton onclick={saveEmbeddingSettings} disabled={saving || (embeddingProvider === 'fastembed' && !huggingFaceToken.trim())}>
-							{saving ? 'saving...' : 'save embeddings'}
-						</RetroButton>
+						<div class="flex justify-end">
+							<button type="button" class="btn btn-primary" onclick={saveEmbeddingSettings} disabled={saving}>
+								{saving ? 'Saving...' : 'Save Embeddings'}
+							</button>
+						</div>
 					</div>
-					</div>
-				</RetroCard>
+				</div>
 
 				<!-- Web Search (Exa) -->
-				<RetroCard noPadding>
-					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-						<span class="text-blue-400 font-mono text-xs">@</span>
-						<span class="font-mono text-sm text-surface-300">web search (Exa)</span>
+				<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-surface-700/50 flex items-center gap-2">
+						<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+						<span class="text-sm text-surface-300">Web Search (Exa)</span>
 						{#if hasExaApiKey}
-							<span class="text-xs px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 rounded font-mono ml-auto">configured</span>
+							<span class="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded ml-auto">configured</span>
 						{/if}
 					</div>
 					<div class="p-4 space-y-4">
@@ -461,13 +450,13 @@
 								bind:checked={webSearchEnabled}
 								class="w-4 h-4 rounded border-surface-600 bg-surface-900 text-emerald-500 focus:ring-emerald-500"
 							/>
-							<label for="web-search-enabled" class="text-sm font-mono text-surface-300">
+							<label for="web-search-enabled" class="text-sm text-surface-300">
 								Enable web search for real-time information
 							</label>
 						</div>
 
 						<div>
-							<label for="exa-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+							<label for="exa-key" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
 								Exa API Key
 								{#if hasExaApiKey}
 									<span class="text-emerald-400 ml-1">[configured]</span>
@@ -478,37 +467,39 @@
 								type="password"
 								bind:value={exaApiKey}
 								placeholder={hasExaApiKey ? '(leave empty to keep current)' : 'exa-...'}
-								class="w-full retro-input rounded"
+								class="w-full input"
 							/>
-							<a href="https://dashboard.exa.ai/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-								# get key at dashboard.exa.ai/api-keys
+							<a href="https://dashboard.exa.ai/api-keys" target="_blank" class="text-xs text-primary-light hover:underline mt-1 inline-block">
+								Get key at dashboard.exa.ai/api-keys
 							</a>
 						</div>
 
-					<div class="flex justify-end">
-						<RetroButton onclick={saveExaSettings} disabled={saving || !exaApiKey.trim()}>
-							{saving ? 'saving...' : 'save web search'}
-						</RetroButton>
+						<div class="flex justify-end">
+							<button type="button" class="btn btn-primary" onclick={saveExaSettings} disabled={saving}>
+								{saving ? 'Saving...' : 'Save Web Search'}
+							</button>
+						</div>
 					</div>
-					</div>
-				</RetroCard>
+				</div>
 
 				<!-- Reranking (Cohere) -->
-				<RetroCard noPadding>
-					<div class="px-4 py-2 border-b retro-border flex items-center gap-2">
-						<span class="text-amber-400 font-mono text-xs">#</span>
-						<span class="font-mono text-sm text-surface-300">reranking (Cohere)</span>
+				<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-surface-700/50 flex items-center gap-2">
+						<svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+						</svg>
+						<span class="text-sm text-surface-300">Reranking (Cohere)</span>
 						{#if hasCohereApiKey}
-							<span class="text-xs px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 rounded font-mono ml-auto">configured</span>
+							<span class="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded ml-auto">configured</span>
 						{/if}
 					</div>
 					<div class="p-4 space-y-4">
-						<p class="text-sm font-mono text-surface-500">
+						<p class="text-sm text-surface-500">
 							Cohere reranking improves retrieval quality by reordering search results.
 						</p>
 
 						<div>
-							<label for="cohere-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">
+							<label for="cohere-key" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
 								Cohere API Key
 								{#if hasCohereApiKey}
 									<span class="text-emerald-400 ml-1">[configured]</span>
@@ -519,25 +510,25 @@
 								type="password"
 								bind:value={cohereApiKey}
 								placeholder={hasCohereApiKey ? '(leave empty to keep current)' : 'your-cohere-key'}
-								class="w-full retro-input rounded"
+								class="w-full input"
 							/>
-							<a href="https://dashboard.cohere.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-								# get key at dashboard.cohere.com/api-keys
+							<a href="https://dashboard.cohere.com/api-keys" target="_blank" class="text-xs text-primary-light hover:underline mt-1 inline-block">
+								Get key at dashboard.cohere.com/api-keys
 							</a>
 						</div>
 
-					<div class="flex justify-end">
-						<RetroButton onclick={saveCohereSettings} disabled={saving || !cohereApiKey.trim()}>
-							{saving ? 'saving...' : 'save cohere key'}
-						</RetroButton>
+						<div class="flex justify-end">
+							<button type="button" class="btn btn-primary" onclick={saveCohereSettings} disabled={saving || !cohereApiKey.trim()}>
+								{saving ? 'Saving...' : 'Save Cohere Key'}
+							</button>
+						</div>
 					</div>
-					</div>
-				</RetroCard>
+				</div>
 
 				<!-- Tips -->
-				<div class="text-xs font-mono text-surface-600 space-y-1">
-					<p># keys can be set via env vars (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
-					<p># without Cohere, reranking falls back to a local cross-encoder model</p>
+				<div class="text-xs text-surface-500 space-y-1">
+					<p>Keys can also be set via environment variables (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
+					<p>Without Cohere, reranking falls back to a local cross-encoder model</p>
 				</div>
 			{/if}
 		</div>
@@ -546,64 +537,60 @@
 	<!-- Add/Update Key Modal -->
 	{#if showAddKey && !isOnboarding}
 		<div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-			<RetroCard noPadding class="w-full max-w-md">
-				<div class="px-4 py-3 border-b retro-border flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="font-mono text-surface-100">
-							{isUpdatingKey ? 'Update OpenAI Key' : 'Add OpenAI Key'}
-						</span>
-					</div>
-					<RetroButton size="sm" onclick={cancelAddKey}>x</RetroButton>
+			<div class="bg-surface-900 border border-surface-700/50 rounded-lg w-full max-w-md">
+				<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+					<span class="font-medium text-surface-100">
+						{isUpdatingKey ? 'Update OpenAI Key' : 'Add OpenAI Key'}
+					</span>
+					<button type="button" class="btn btn-ghost btn-sm" onclick={cancelAddKey}>x</button>
 				</div>
 
 				<div class="p-4 space-y-4">
 					<div>
-						<label for="modal-api-key" class="block text-xs font-mono text-surface-500 mb-1 uppercase tracking-wider">API Key</label>
+						<label for="modal-api-key" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">API Key</label>
 						<input
 							id="modal-api-key"
 							type="password"
 							bind:value={newKeyInput}
 							placeholder="sk-..."
-							class="w-full retro-input rounded"
+							class="w-full input"
 						/>
-						<a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs font-mono text-blue-400 hover:text-blue-300 mt-1 inline-block">
-							# get key at platform.openai.com/api-keys
-						</a>
 						{#if isUpdatingKey && openaiSource === 'env'}
-							<p class="text-xs font-mono text-amber-400 mt-2"># will override the environment variable key</p>
+							<p class="text-xs text-amber-400 mt-2">This will override the environment variable key</p>
 						{/if}
 					</div>
 					{#if newKeyError}
-						<p class="text-sm font-mono text-red-400">{newKeyError}</p>
+						<p class="text-sm text-red-400">{newKeyError}</p>
 					{/if}
 					{#if newKeyModels.length === 0}
-						<RetroButton
+						<button
+							type="button"
 							onclick={validateNewKey}
 							disabled={newKeyValidating || !newKeyInput.trim()}
-							class="w-full"
+							class="btn btn-default w-full"
 						>
-							{newKeyValidating ? 'validating...' : 'validate'}
-						</RetroButton>
+							{newKeyValidating ? 'Validating...' : 'Validate'}
+						</button>
 					{:else}
-						<div class="space-y-3 pt-2 border-t border-surface-700">
-							<label for="modal-new-model" class="block text-xs font-mono text-surface-500 uppercase tracking-wider">Model</label>
-							<select id="modal-new-model" bind:value={newKeySelectedModel} class="w-full retro-input rounded">
+						<div class="space-y-3 pt-2 border-t border-surface-700/50">
+							<label for="modal-new-model" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500">Model</label>
+							<select id="modal-new-model" bind:value={newKeySelectedModel} class="w-full input">
 								{#each newKeyModels as model}
 									<option value={model}>{model}</option>
 								{/each}
 							</select>
-							<RetroButton
-								variant="primary"
-								class="w-full"
+							<button
+								type="button"
+								class="btn btn-primary w-full"
 								onclick={saveNewKey}
 								disabled={saving}
 							>
-								{saving ? 'saving...' : isUpdatingKey ? 'update key' : 'save key'}
-							</RetroButton>
+								{saving ? 'Saving...' : isUpdatingKey ? 'Update Key' : 'Save Key'}
+							</button>
 						</div>
 					{/if}
 				</div>
-			</RetroCard>
+			</div>
 		</div>
 	{/if}
 </div>

@@ -46,8 +46,8 @@
 
 <button
 	onclick={onSelect}
-	class="w-full group px-3 py-2.5 text-left rounded transition-all mb-1 font-mono
-		{isActive ? 'retro-card-glow-blue text-blue-300' : 'retro-card hover:bg-surface-800/60 text-surface-300'}"
+	class="w-full group px-3 py-2.5 text-left rounded-lg transition-all mb-1
+		{isActive ? 'bg-primary/10 border border-primary/20 text-primary-light' : 'bg-surface-800/50 border border-surface-700/50 hover:bg-surface-800 text-surface-300'}"
 >
 	{#if isEditing}
 		<input
@@ -56,7 +56,7 @@
 			oninput={(e) => onEditInput(e.currentTarget.value)}
 			onblur={onSaveEdit}
 			onkeydown={onEditKeydown}
-			class="w-full retro-input text-xs px-2 py-1"
+			class="w-full input text-xs px-2 py-1"
 		/>
 	{:else}
 		<div class="flex items-center justify-between">

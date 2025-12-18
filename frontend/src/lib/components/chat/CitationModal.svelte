@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { RetroCard, RetroButton } from '$lib/components';
 	import type { CitationObject } from '$lib/api';
 
 	interface Props {
@@ -45,12 +44,12 @@
 		onkeydown={(e) => e.key === 'Enter' && onClose()}
 	>
 		<!-- Modal content -->
-		<div class="w-full max-w-lg animate-scale-in">
-			<RetroCard variant={citation.type === 'web' ? 'glow-cyan' : 'glow-blue'} class="!p-0">
+		<div class="w-full max-w-lg animate-fade-in">
+			<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
 				<!-- Header -->
-				<div class="px-4 py-3 border-b border-surface-700 flex items-center justify-between">
+				<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between bg-surface-800/50">
 					<div class="flex items-center gap-3">
-						<span class="flex items-center justify-center w-6 h-6 rounded bg-surface-800 text-xs font-mono text-blue-400 font-bold">
+						<span class="flex items-center justify-center w-6 h-6 rounded bg-surface-800 text-xs text-primary-light font-bold border border-surface-700/50">
 							{index}
 						</span>
 						<div class="flex items-center gap-2">
@@ -58,12 +57,12 @@
 								<svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
 								</svg>
-								<span class="text-[10px] font-mono text-cyan-400 uppercase tracking-wider">Web Source</span>
+								<span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400">Web Source</span>
 							{:else}
-								<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+								<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
 								</svg>
-								<span class="text-[10px] font-mono text-blue-400 uppercase tracking-wider">Documentation</span>
+								<span class="text-[10px] font-bold uppercase tracking-wider text-primary-light">Documentation</span>
 							{/if}
 						</div>
 					</div>
@@ -85,13 +84,13 @@
 						<h3 class="text-sm font-semibold text-surface-100 mb-1 line-clamp-2">
 							{citation.title}
 						</h3>
-						<p class="text-xs font-mono text-surface-500">
+						<p class="text-xs text-surface-500">
 							{extractDomain(citation.url)}
 						</p>
 					</div>
 
 					{#if citation.content_preview}
-						<div class="p-3 rounded bg-surface-900/50 border border-surface-700">
+						<div class="p-3 rounded-lg bg-surface-800/50 border border-surface-700/50">
 							<p class="text-xs text-surface-300 leading-relaxed line-clamp-6">
 								{citation.content_preview}
 							</p>
@@ -100,16 +99,16 @@
 				</div>
 
 				<!-- Footer -->
-				<div class="px-4 py-3 border-t border-surface-700 flex justify-end gap-2">
-					<RetroButton size="sm" onclick={onClose}>
+				<div class="px-4 py-3 border-t border-surface-700/50 flex justify-end gap-2">
+					<button type="button" class="btn btn-ghost btn-sm" onclick={onClose}>
 						Close
-					</RetroButton>
+					</button>
 					{#if citation.url}
 						<a
 							href={citation.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="retro-button retro-button-sm retro-button-primary inline-flex items-center gap-1.5"
+							class="btn btn-primary btn-sm inline-flex items-center gap-1.5"
 						>
 							<span>Open Source</span>
 							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -118,7 +117,7 @@
 						</a>
 					{/if}
 				</div>
-			</RetroCard>
+			</div>
 		</div>
 	</div>
 {/if}
@@ -135,18 +134,5 @@
 		-webkit-line-clamp: 6;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-	}
-	@keyframes scale-in {
-		from {
-			opacity: 0;
-			transform: scale(0.95);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-	.animate-scale-in {
-		animation: scale-in 0.15s ease-out;
 	}
 </style>

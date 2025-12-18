@@ -161,10 +161,10 @@
 	<!-- Pending Confirmation UI -->
 	<!-- ================================================================ -->
 	{#if isPending}
-		<div class="retro-card-glow-amber rounded-xl p-5">
+		<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg flex items-center justify-center retro-border-amber {result.warning_level === 'high' ? 'bg-red-500/20' : 'bg-amber-500/20'}"
+					class="w-9 h-9 rounded-lg flex items-center justify-center border border-amber-500/30 {result.warning_level === 'high' ? 'bg-red-500/20' : 'bg-amber-500/20'}"
 				>
 					<svg
 						class="w-5 h-5 {result.warning_level === 'high' ? 'text-red-400' : 'text-amber-400'}"
@@ -261,10 +261,10 @@
 	<!-- List Topics Result -->
 	<!-- ================================================================ -->
 	{:else if displayResult.operation === 'list_topics' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center retro-border-green"
+					class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30"
 				>
 					<svg
 						class="w-5 h-5 text-emerald-400"
@@ -287,10 +287,10 @@
 			</div>
 
 			{#if topics.length > 0}
-				<div class="retro-card rounded-lg overflow-hidden">
+				<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
 					<table class="w-full text-xs font-mono">
 						<thead>
-							<tr class="border-b retro-border bg-surface-900/50">
+							<tr class="border-b border-surface-700/50 bg-surface-900/50">
 								<th class="px-3 py-2 text-left text-surface-500">Topic Name</th>
 								<th class="px-3 py-2 text-right text-surface-500">Partitions</th>
 							</tr>
@@ -298,7 +298,7 @@
 						<tbody>
 							{#each topics.slice(0, 20) as topic}
 								<tr
-									class="border-b retro-border last:border-b-0 hover:bg-surface-800/60 transition-colors"
+									class="border-b border-surface-700/50 last:border-b-0 hover:bg-surface-800/60 transition-colors"
 								>
 									<td class="px-3 py-2 text-emerald-400"
 										>{typeof topic === 'string' ? topic : topic.name}</td
@@ -325,10 +325,10 @@
 		<!-- Describe Topic Result -->
 		<!-- ================================================================ -->
 	{:else if displayResult.operation === 'describe_topic' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center retro-border-green"
+					class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30"
 				>
 					<svg
 						class="w-5 h-5 text-emerald-400"
@@ -365,10 +365,10 @@
 					<h4 class="text-xs font-bold font-mono text-surface-400 uppercase tracking-wider mb-2">
 						Partitions
 					</h4>
-					<div class="retro-card rounded-lg overflow-hidden">
+					<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
 						<table class="w-full text-xs font-mono">
 							<thead>
-								<tr class="border-b retro-border bg-surface-900/50">
+								<tr class="border-b border-surface-700/50 bg-surface-900/50">
 									<th class="px-3 py-2 text-left text-surface-500">Partition</th>
 									<th class="px-3 py-2 text-left text-surface-500">Leader</th>
 									<th class="px-3 py-2 text-left text-surface-500">Replicas</th>
@@ -378,7 +378,7 @@
 							<tbody>
 								{#each partitions as partition}
 									<tr
-										class="border-b retro-border last:border-b-0 hover:bg-surface-800/60 transition-colors"
+										class="border-b border-surface-700/50 last:border-b-0 hover:bg-surface-800/60 transition-colors"
 									>
 										<td class="px-3 py-2 text-emerald-400">{partition.partition}</td>
 										<td class="px-3 py-2 text-surface-300">{partition.leader ?? '-'}</td>
@@ -430,10 +430,10 @@
 		<!-- List Consumer Groups Result -->
 		<!-- ================================================================ -->
 	{:else if displayResult.operation === 'list_consumer_groups' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center retro-border-cyan"
+					class="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30"
 				>
 					<svg
 						class="w-5 h-5 text-cyan-400"
@@ -456,10 +456,10 @@
 			</div>
 
 			{#if groups.length > 0}
-				<div class="retro-card rounded-lg overflow-hidden">
+				<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
 					<table class="w-full text-xs font-mono">
 						<thead>
-							<tr class="border-b retro-border bg-surface-900/50">
+							<tr class="border-b border-surface-700/50 bg-surface-900/50">
 								<th class="px-3 py-2 text-left text-surface-500">Group ID</th>
 								<th class="px-3 py-2 text-right text-surface-500">State</th>
 							</tr>
@@ -467,7 +467,7 @@
 						<tbody>
 							{#each groups.slice(0, 20) as group}
 								<tr
-									class="border-b retro-border last:border-b-0 hover:bg-surface-800/60 transition-colors"
+									class="border-b border-surface-700/50 last:border-b-0 hover:bg-surface-800/60 transition-colors"
 								>
 									<td class="px-3 py-2 text-cyan-400"
 										>{typeof group === 'string' ? group : group.group_id}</td
@@ -494,10 +494,10 @@
 		<!-- Describe Cluster Result -->
 		<!-- ================================================================ -->
 	{:else if displayResult.operation === 'describe_cluster' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-violet-500/20 flex items-center justify-center retro-border-violet"
+					class="w-9 h-9 rounded-lg bg-violet-500/20 flex items-center justify-center border-surface-700/50-violet"
 				>
 					<svg
 						class="w-5 h-5 text-violet-400"
@@ -535,10 +535,10 @@
 					<h4 class="text-xs font-bold font-mono text-surface-400 uppercase tracking-wider mt-4">
 						Brokers
 					</h4>
-					<div class="retro-card rounded-lg overflow-hidden">
+					<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
 						<table class="w-full text-xs font-mono">
 							<thead>
-								<tr class="border-b retro-border bg-surface-900/50">
+								<tr class="border-b border-surface-700/50 bg-surface-900/50">
 									<th class="px-3 py-2 text-left text-surface-500">ID</th>
 									<th class="px-3 py-2 text-left text-surface-500">Host</th>
 									<th class="px-3 py-2 text-right text-surface-500">Port</th>
@@ -547,7 +547,7 @@
 							<tbody>
 								{#each brokers as broker}
 									<tr
-										class="border-b retro-border last:border-b-0 hover:bg-surface-800/60 transition-colors"
+										class="border-b border-surface-700/50 last:border-b-0 hover:bg-surface-800/60 transition-colors"
 									>
 										<td class="px-3 py-2 text-violet-400">{broker.id}</td>
 										<td class="px-3 py-2 text-surface-300">{broker.host}</td>
@@ -565,10 +565,10 @@
 		<!-- Describe Consumer Group Result -->
 		<!-- ================================================================ -->
 	{:else if displayResult.operation === 'describe_consumer_group' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center retro-border-cyan"
+					class="w-9 h-9 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30"
 				>
 					<svg
 						class="w-5 h-5 text-cyan-400"
@@ -626,10 +626,10 @@
 		<!-- Consumer Offsets Result -->
 		<!-- ================================================================ -->
 	{:else if displayResult.operation === 'get_consumer_group_offsets' && (displayResult.success || displayResult.executed)}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-4">
 				<div
-					class="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center retro-border-amber"
+					class="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center border border-amber-500/30"
 				>
 					<svg
 						class="w-5 h-5 text-amber-400"
@@ -654,10 +654,10 @@
 			</div>
 
 			{#if offsets.length > 0}
-				<div class="retro-card rounded-lg overflow-hidden">
+				<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
 					<table class="w-full text-xs font-mono">
 						<thead>
-							<tr class="border-b retro-border bg-surface-900/50">
+							<tr class="border-b border-surface-700/50 bg-surface-900/50">
 								<th class="px-3 py-2 text-left text-surface-500">Topic</th>
 								<th class="px-3 py-2 text-right text-surface-500">Partition</th>
 								<th class="px-3 py-2 text-right text-surface-500">Offset</th>
@@ -666,7 +666,7 @@
 						<tbody>
 							{#each offsets.slice(0, 20) as offset}
 								<tr
-									class="border-b retro-border last:border-b-0 hover:bg-surface-800/60 transition-colors"
+									class="border-b border-surface-700/50 last:border-b-0 hover:bg-surface-800/60 transition-colors"
 								>
 									<td class="px-3 py-2 text-amber-400">{offset.topic}</td>
 									<td class="px-3 py-2 text-right text-surface-300">{offset.partition}</td>
@@ -688,7 +688,7 @@
 		<!-- Generic Executed Success -->
 		<!-- ================================================================ -->
 	{:else if displayResult.executed && displayResult.success}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-3">
 				<StatusIndicator status="active" size="md" pulse />
 				<span class="text-sm font-bold font-mono text-emerald-400"
@@ -720,7 +720,7 @@
 		<!-- Legacy Success (non-executed) -->
 		<!-- ================================================================ -->
 	{:else if displayResult.success && !displayResult.pending && !displayResult.needs_info && !displayResult.unclear}
-		<div class="retro-card-glow-green rounded-xl p-5">
+		<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-3">
 				<StatusIndicator status="active" size="md" pulse />
 				<span class="text-sm font-bold font-mono text-emerald-400"
@@ -747,7 +747,7 @@
 		<!-- Error Card -->
 		<!-- ================================================================ -->
 	{:else if displayResult.error}
-		<div class="retro-card-glow-amber rounded-xl p-5">
+		<div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5">
 			<div class="flex items-center gap-2.5 mb-3">
 				<StatusIndicator status="error" size="md" />
 				<span class="text-sm font-bold font-mono text-red-400">Operation Failed</span>

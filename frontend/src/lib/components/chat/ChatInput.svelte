@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { RetroButton, RetroCard } from '$lib/components';
-
 	interface Props {
 		value: string;
 		disabled: boolean;
@@ -23,11 +21,11 @@
 	}
 </script>
 
-<div class="border-t retro-border bg-surface-900/60 backdrop-blur-sm p-6">
+<div class="border-t border-surface-700/50 bg-surface-900 p-6">
 	<div class="max-w-4xl mx-auto space-y-2">
-		<RetroCard variant="elevated" class="!p-0">
-			<div class="flex items-end gap-3 p-3 focus-within:border-glow-blue">
-				<span class="text-blue-400 font-mono text-lg pb-1">></span>
+		<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
+			<div class="flex items-end gap-3 p-3">
+				<span class="text-primary-light text-lg pb-1">&gt;</span>
 				<textarea
 					bind:this={inputRef}
 					bind:value
@@ -36,12 +34,12 @@
 					placeholder="Enter command..."
 					{disabled}
 					rows="1"
-					class="flex-1 bg-transparent text-surface-100 placeholder-surface-600 resize-none focus:outline-none disabled:opacity-50 text-sm font-mono"
+					class="flex-1 bg-transparent text-surface-100 placeholder-surface-600 resize-none focus:outline-none disabled:opacity-50 text-sm"
 					style="field-sizing: content; max-height: 150px;"
 				></textarea>
-				<RetroButton
-					variant="primary"
-					size="sm"
+				<button
+					type="button"
+					class="btn btn-primary btn-sm"
 					onclick={onSend}
 					disabled={disabled || !value.trim()}
 				>
@@ -55,11 +53,11 @@
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
 						</svg>
 					{/if}
-				</RetroButton>
+				</button>
 			</div>
-		</RetroCard>
-		<p class="text-center text-xs text-surface-600 font-mono">
-			[ENTER] send | [SHIFT+ENTER] newline
+		</div>
+		<p class="text-center text-xs text-surface-600">
+			ENTER to send / SHIFT+ENTER for newline
 		</p>
 	</div>
 </div>

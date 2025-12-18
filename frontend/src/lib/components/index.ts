@@ -1,19 +1,18 @@
-// UI Components (new design system)
+// UI Components (design system)
 export * from './ui';
 
 // Layout Components
 export * from './layout';
 
-// Legacy components (for backward compatibility during migration)
+// Admin Components
+export { AdminResultCard } from './admin';
+
+// Shared Components
 export { default as MessageCard } from './MessageCard.svelte';
 export { default as MetricCard } from './MetricCard.svelte';
 export { default as CodeBlock } from './CodeBlock.svelte';
 export { default as FormattedMessage } from './FormattedMessage.svelte';
 export { default as AgentActivitySidebar } from './AgentActivitySidebar.svelte';
-export { default as AdminResultCard } from './AdminResultCard.svelte';
-export { default as RetroCard } from './RetroCard.svelte';
-export { default as RetroButton } from './RetroButton.svelte';
-export { default as RetroHeader } from './RetroHeader.svelte';
 export { default as StatusIndicator } from './StatusIndicator.svelte';
 export { default as Image } from './Image.svelte';
 
@@ -26,3 +25,12 @@ export type { Source, SourceGroup, SourceMetadata } from './sources';
 
 // Cluster components
 export * from './cluster';
+
+// Cluster page components
+export * from './cluster-page';
+
+// Architecture components
+export * from './architecture';
+
+// Documents components
+export * from './documents';

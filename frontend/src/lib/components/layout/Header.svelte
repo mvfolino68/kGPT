@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		title: string;
@@ -11,7 +10,7 @@
 	let { title, subtitle, actions }: Props = $props();
 </script>
 
-<header class="h-14 px-6 flex items-center justify-between border-b border-surface-700/50 bg-surface-800/30 backdrop-blur-sm">
+<header class="h-14 px-6 flex items-center justify-between border-b border-surface-700/50 bg-surface-900">
 	<div class="flex items-center gap-4">
 		<div>
 			<h1 class="text-lg font-semibold text-surface-100">{title}</h1>

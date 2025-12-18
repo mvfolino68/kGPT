@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { Card, Badge } from '$lib/components/ui';
-
 	interface Props {
 		topics: string[];
 		maxDisplay?: number;
@@ -15,36 +13,40 @@
 	const hasMore = $derived(topics.length > maxDisplay);
 </script>
 
-<Card>
-	<div class="flex items-center justify-between mb-4">
-		<h3 class="text-sm font-semibold text-surface-200">Topics</h3>
-		<Badge variant="default">{topics.length}</Badge>
+<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+	<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+		<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500">Topics</h3>
+		<span class="px-2 py-0.5 text-xs bg-surface-800 text-surface-400 rounded border border-surface-700/50">
+			{topics.length}
+		</span>
 	</div>
 
-	{#if topics.length === 0}
-		<p class="text-sm text-surface-500 py-4 text-center">No topics found</p>
-	{:else}
-		<div class="space-y-1">
-			{#each displayedTopics as topic}
+	<div class="p-2">
+		{#if topics.length === 0}
+			<p class="text-sm text-surface-500 py-4 text-center">No topics found</p>
+		{:else}
+			<div class="space-y-0.5">
+				{#each displayedTopics as topic}
+					<button
+						type="button"
+						class="w-full text-left px-3 py-2 rounded text-sm font-mono text-surface-300 hover:bg-surface-800/50 hover:text-surface-100 transition-colors truncate"
+						onclick={() => onTopicClick?.(topic)}
+						title={topic}
+					>
+						{topic}
+					</button>
+				{/each}
+			</div>
+
+			{#if hasMore}
 				<button
 					type="button"
-					class="w-full text-left px-3 py-2 rounded-md text-sm font-mono text-surface-300 hover:bg-surface-700/50 hover:text-surface-100 transition-colors truncate"
-					onclick={() => onTopicClick?.(topic)}
-					title={topic}
+					class="w-full mt-2 py-2 text-sm text-primary-light hover:text-primary transition-colors"
+					onclick={() => showAll = !showAll}
 				>
-					{topic}
+					{showAll ? 'Show less' : `Show ${topics.length - maxDisplay} more`}
 				</button>
-			{/each}
-		</div>
-
-		{#if hasMore}
-			<button
-				type="button"
-				class="w-full mt-3 py-2 text-sm text-primary-light hover:text-primary transition-colors"
-				onclick={() => showAll = !showAll}
-			>
-				{showAll ? 'Show less' : `Show ${topics.length - maxDisplay} more`}
-			</button>
+			{/if}
 		{/if}
-	{/if}
-</Card>
+	</div>
+</div>

@@ -66,11 +66,11 @@
 </script>
 
 {#if isVisible}
-	<aside class="w-80 bg-surface-900/70 backdrop-blur-xl border-l retro-border flex flex-col overflow-hidden">
+	<aside class="w-80 bg-surface-900 border-l border-surface-700/50 flex flex-col overflow-hidden">
 		<!-- Header -->
-		<div class="p-4 border-b retro-border flex items-center justify-between">
+		<div class="p-4 border-b border-surface-700/50 flex items-center justify-between">
 			<div class="flex items-center gap-2 flex-1 min-w-0">
-				<svg class="w-4 h-4 {isViewingHistory ? 'text-violet-400' : 'text-confluent-primary'} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+				<svg class="w-4 h-4 {isViewingHistory ? 'text-violet-400' : 'text-primary-light'} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 					{#if isViewingHistory}
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
 					{:else}
@@ -84,7 +84,7 @@
 					{#if isViewingHistory}
 						<span class="text-[9px] font-mono text-violet-400 truncate">Click message to view its trace</span>
 					{:else if isStreaming}
-						<span class="text-[9px] font-mono text-confluent-primary animate-pulse">Live</span>
+						<span class="text-[9px] text-primary-light animate-pulse">Live</span>
 					{/if}
 				</div>
 			</div>
@@ -93,7 +93,7 @@
 					<button
 						type="button"
 						onclick={handleClearSelection}
-						class="retro-button px-2 py-1 text-[10px] font-mono text-violet-400 hover:text-violet-300"
+						class="btn btn-ghost btn-sm px-2 py-1 text-[10px] text-violet-400 hover:text-violet-300"
 						aria-label="Show live trace"
 					>
 						Live
@@ -102,7 +102,7 @@
 				<button
 					type="button"
 					onclick={toggleAgentActivity}
-					class="retro-button px-1.5 py-1 text-surface-500 hover:text-surface-300"
+					class="btn btn-ghost btn-sm px-1.5 py-1 text-surface-500 hover:text-surface-300"
 					aria-label="Close agent activity"
 				>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -133,7 +133,7 @@
 					{#each trace.agentTimeline as activity}
 						{@const config = agentConfig[activity.agent] || agentConfig.error}
 						{@const statusIndicator = getStatusIndicator(activity.status)}
-						<div class="retro-card rounded-lg overflow-hidden hover:bg-surface-800/60 transition-colors">
+						<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden hover:bg-surface-800 transition-colors">
 							<button
 								type="button"
 								onclick={(e) => toggleSection(activity.agent, e)}
@@ -170,7 +170,7 @@
 
 							<!-- Expanded details -->
 							{#if expandedSections[activity.agent] && activity.result}
-								<div class="px-3 pb-3 border-t retro-border mt-1 pt-2 bg-surface-900/50">
+								<div class="px-3 pb-3 border-t border-surface-700/50 mt-1 pt-2 bg-surface-900/50">
 									<pre class="text-xs font-mono text-surface-400 overflow-x-auto whitespace-pre-wrap break-all">{JSON.stringify(activity.result, null, 2)}</pre>
 								</div>
 							{/if}
@@ -372,7 +372,7 @@
 		</div>
 
 		<!-- Footer info -->
-		<div class="p-3 border-t retro-border bg-surface-900/50">
+		<div class="p-3 border-t border-surface-700/50 bg-surface-900/50">
 			<p class="text-[10px] text-surface-600 text-center font-mono">
 				Agent pipeline shows the AI reasoning process
 			</p>
