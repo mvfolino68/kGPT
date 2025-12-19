@@ -515,6 +515,29 @@ export async function ingestDocument(request: IngestRequest): Promise<IngestResp
 	return response.json();
 }
 
+export async function ingestFile(
+	file: File,
+	params: {
+		name?: string;
+		collection_name?: string;
+		auto_name?: boolean;
+	} = {}
+): Promise<IngestResponse> {
+	const formData = new FormData();
+	formData.append('file', file);
+	if (params.name) formData.append('name', params.name);
+	if (params.collection_name) formData.append('collection_name', params.collection_name);
+	if (params.auto_name !== undefined) formData.append('auto_name', String(params.auto_name));
+
+	const response = await fetch(`${API_BASE}/documents/sources/ingest/file`, {
+		method: 'POST',
+		body: formData
+	});
+
+	if (!response.ok) throw new Error(`File ingest failed: ${response.statusText}`);
+	return response.json();
+}
+
 export async function getIngestionStatus(sourceId: number): Promise<IngestionStatus> {
 	const response = await fetch(`${API_BASE}/documents/sources/${sourceId}/status`);
 	if (!response.ok) throw new Error(`Failed to get status: ${response.statusText}`);

@@ -74,8 +74,8 @@
 		</div>
 	</div>
 
-	{#snippet footer()}
-		<Button variant="primary" onclick={onsave} disabled={saving} loading={saving}>
+	{#snippet headerAction()}
+		<Button variant="primary" size="sm" onclick={onsave} disabled={saving} loading={saving}>
 			Save
 		</Button>
 	{/snippet}

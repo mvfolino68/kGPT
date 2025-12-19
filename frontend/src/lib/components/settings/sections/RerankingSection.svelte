@@ -54,8 +54,8 @@
 		</FormField>
 	</div>
 
-	{#snippet footer()}
-		<Button variant="primary" onclick={onsave} disabled={saving || !apiKeyValue.trim()} loading={saving}>
+	{#snippet headerAction()}
+		<Button variant="primary" size="sm" onclick={onsave} disabled={saving || !apiKeyValue.trim()} loading={saving}>
 			Save
 		</Button>
 	{/snippet}

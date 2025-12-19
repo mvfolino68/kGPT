@@ -32,11 +32,11 @@
 	}: Props = $props();
 
 	const textareaClasses = `
-		w-full bg-surface rounded-md px-3 py-2 text-sm text-text
+		w-full bg-surface-800 rounded-md px-3 py-2 text-sm text-text
+		border border-surface-700
 		placeholder:text-text-tertiary
-		border border-transparent
-		transition-colors duration-100
-		focus:outline-none focus:bg-surface-hover focus:border-primary-muted
+		transition-colors duration-150
+		focus:outline-none focus:bg-surface-700 focus:ring-1 focus:ring-primary/50 focus:border-primary/50
 		disabled:opacity-50 disabled:cursor-not-allowed
 		resize-none
 	`.trim().replace(/\s+/g, ' ');

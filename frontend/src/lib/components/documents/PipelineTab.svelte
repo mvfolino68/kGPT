@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Panel, LoadingState } from '$lib/components/ui';
+	import { Button, Panel, LoadingState, Input, Textarea } from '$lib/components/ui';
 	import { getSimilarityColor, type RAGPipelineInfo, type RAGDemoResponse, type ChunkAnalytics } from './types';
 
 	interface Props {
@@ -135,12 +135,12 @@
 		<Panel title="Interactive RAG Demo">
 			{#snippet children()}
 				<form onsubmit={(e) => { e.preventDefault(); onRunDemo(); }} class="flex gap-3 items-center">
-					<input
+					<Input
 						type="text"
 						value={demoQuery}
-						oninput={(e) => onDemoQueryChange(e.currentTarget.value)}
+						oninput={(e) => onDemoQueryChange((e.target as HTMLInputElement).value)}
 						placeholder="Enter a query to see the RAG pipeline in action..."
-						class="flex-1 min-w-0 bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
+						class="flex-1 min-w-0"
 					/>
 					<Button
 						type="submit"
@@ -283,25 +283,23 @@
 				<div class="grid grid-cols-2 gap-4">
 					<div>
 							<label for="pipeline-embed-text-1" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 1</label>
-						<textarea
+						<Textarea
 								id="pipeline-embed-text-1"
 							value={embedText1}
-							oninput={(e) => onEmbedText1Change(e.currentTarget.value)}
+							oninput={(e) => onEmbedText1Change((e.target as HTMLTextAreaElement).value)}
 							placeholder="Enter first text..."
-							rows="3"
-							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
-						></textarea>
+							rows={3}
+						/>
 					</div>
 					<div>
 							<label for="pipeline-embed-text-2" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 2</label>
-						<textarea
+						<Textarea
 								id="pipeline-embed-text-2"
 							value={embedText2}
-							oninput={(e) => onEmbedText2Change(e.currentTarget.value)}
+							oninput={(e) => onEmbedText2Change((e.target as HTMLTextAreaElement).value)}
 							placeholder="Enter second text..."
-							rows="3"
-							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
-						></textarea>
+							rows={3}
+						/>
 					</div>
 				</div>
 

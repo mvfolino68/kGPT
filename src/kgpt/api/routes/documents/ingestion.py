@@ -1,10 +1,12 @@
 """Ingestion endpoints for managing document sources and background ingestion jobs."""
 
 import asyncio
+import io
 import time
 from datetime import datetime
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+import pypdf
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from loguru import logger
 
 from kgpt.api.schemas import (
@@ -509,6 +511,103 @@ async def ingest_documents(
         source_id=source_id,
         status="started",
         message=f"Ingestion started for {source_name}",
+    )
+
+
+@router.post("/ingest/file", response_model=IngestResponse)
+async def ingest_file(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    name: str | None = Form(None),
+    collection_name: str = Form("kgpt_docs"),
+    auto_name: bool = Form(True),
+) -> IngestResponse:
+    """
+    Ingest a file (PDF, text, MD, etc.).
+    Extracts text from the file and ingests it as a text source.
+    """
+    db = get_db()
+
+    # Read file content
+    content = await file.read()
+    filename = file.filename or "uploaded_file"
+
+    text_content = ""
+
+    # Handle different file types
+    try:
+        if filename.lower().endswith(".pdf"):
+            # Process PDF
+            try:
+                pdf_file = io.BytesIO(content)
+                reader = pypdf.PdfReader(pdf_file)
+                text_content = ""
+                for page in reader.pages:
+                    text_content += page.extract_text() + "\n"
+
+                if not text_content.strip():
+                    raise ValueError("No text extracted from PDF (may be scanned image)")
+            except Exception as e:
+                logger.error(f"Failed to extract text from PDF: {e}")
+                raise HTTPException(
+                    status_code=400, detail=f"Failed to process PDF: {str(e)}"
+                ) from e
+
+        else:
+            # Try to decode as text
+            try:
+                text_content = content.decode("utf-8")
+            except UnicodeDecodeError:
+                # Try fallback encodings
+                try:
+                    text_content = content.decode("latin-1")
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Could not decode file content as text. Only text-based files and PDFs are supported.",
+                    ) from e
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        logger.error(f"File processing error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to process file: {str(e)}") from e
+
+    # Determine name
+    source_name = name
+    if not source_name:
+        if auto_name:
+            # Use filename without extension as base, clean it up
+            base_name = filename.rsplit(".", 1)[0].replace("-", " ").replace("_", " ")
+            source_name = base_name.title()
+        else:
+            source_name = filename
+
+    # Create document source (store as TEXT type for now since we extracted the text)
+    # We could add a 'FILE' type but 'TEXT' works with the existing pipeline which handles text content
+    source_id = db.add_document_source(
+        name=source_name,
+        source_type="text",  # We ingest as text content
+        url="file://" + filename,  # Pseudo-URL for reference
+        collection_name=collection_name,
+    )
+
+    # Create ingest request for background processing
+    # We pass the extracted text as the 'url' param because that's how TEXT type works in run_ingestion
+    ingest_request = IngestRequest(
+        name=source_name,
+        source_type="text",
+        url=text_content,
+        collection_name=collection_name,
+        auto_name=False,
+    )
+
+    # Start background ingestion
+    background_tasks.add_task(run_ingestion, source_id, ingest_request)
+
+    return IngestResponse(
+        source_id=source_id,
+        status="started",
+        message=f"Ingestion started for {filename}",
     )
 
 

@@ -5,6 +5,7 @@
 	import {
 		getDocuments,
 		ingestDocument,
+		ingestFile,
 		deleteDocument,
 		cancelIngestion,
 		getIngestionStatus,
@@ -95,6 +96,7 @@
 	let nameSuggestions = $state<string[]>([]);
 	let smartName = $state<string | null>(null);
 	let fetchingName = $state(false);
+	let selectedFile = $state<File | null>(null);
 	let urlDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Delete confirmation
@@ -296,22 +298,35 @@
 	// =========================================================================
 	async function handleIngest() {
 		if (sourceType === 'text' && !rawTextContent.trim()) return;
-		if (sourceType !== 'text' && !sourceUrl.trim()) return;
+		if (sourceType === 'file' && !selectedFile && !rawTextContent.trim()) return;
+		if (sourceType !== 'text' && sourceType !== 'file' && !sourceUrl.trim()) return;
+
 		ingesting = true;
 		error = null;
 		try {
-			const result = await ingestDocument({
-				source_type: sourceType,
-				name: sourceName || undefined,
-				url: sourceType === 'text' ? rawTextContent : sourceUrl,
-				auto_name: useSmartNaming && !sourceName
-			});
+			let result;
+
+			if (sourceType === 'file' && selectedFile) {
+				result = await ingestFile(selectedFile, {
+					name: sourceName || undefined,
+					collection_name: 'kgpt_docs', // Default collection
+					auto_name: useSmartNaming && !sourceName
+				});
+			} else {
+				result = await ingestDocument({
+					source_type: sourceType,
+					name: sourceName || undefined,
+					url: sourceType === 'text' ? rawTextContent : sourceUrl,
+					auto_name: useSmartNaming && !sourceName
+				});
+			}
+
 			activeIngestions.set(result.source_id, { status: 'running', progress: 0, stage: 'init', message: 'Starting...' });
 			activeIngestions = new Map(activeIngestions);
 			ingestionStartTimes.set(result.source_id, Date.now());
 			ingestionStartTimes = new Map(ingestionStartTimes);
 			startPolling();
-			sourceName = ''; sourceUrl = ''; rawTextContent = ''; nameSuggestions = []; smartName = null;
+			sourceName = ''; sourceUrl = ''; rawTextContent = ''; selectedFile = null; nameSuggestions = []; smartName = null;
 			await loadDocuments();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to start ingestion';
@@ -528,7 +543,9 @@
 			{smartName}
 			{fetchingName}
 			{ingesting}
-			onSourceTypeChange={(type) => { sourceType = type; nameSuggestions = []; smartName = null; sourceName = ''; }}
+			hasFile={!!selectedFile}
+			onFileChange={(file) => selectedFile = file}
+			onSourceTypeChange={(type) => { sourceType = type; nameSuggestions = []; smartName = null; sourceName = ''; selectedFile = null; }}
 			onSourceNameChange={(name) => sourceName = name}
 			onUrlInput={handleUrlInput}
 			onTextContentInput={handleTextContentInput}

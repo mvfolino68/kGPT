@@ -47,12 +47,13 @@
 			{disabled}
 			bind:value
 			class="
-				w-full bg-surface-hover rounded-md px-3 py-2 text-sm text-text pl-10
+				w-full bg-surface-800 rounded-md px-3 py-2 text-sm text-text pl-10
+				border border-surface-700
 				placeholder:text-text-tertiary
 				transition-colors duration-150
-				focus:outline-none focus:bg-surface-active focus:ring-1 focus:ring-primary/50
+				focus:outline-none focus:bg-surface-700 focus:ring-1 focus:ring-primary/50 focus:border-primary/50
 				disabled:opacity-50 disabled:cursor-not-allowed
-				{error ? 'ring-1 ring-error/50' : ''}
+				{error ? 'ring-1 ring-error/50 border-error' : ''}
 			"
 			{oninput}
 			{onkeydown}
@@ -69,12 +70,13 @@
 		{disabled}
 		bind:value
 		class="
-			w-full bg-surface-hover rounded-md px-3 py-2 text-sm text-text
+			w-full bg-surface-800 rounded-md px-3 py-2 text-sm text-text
+			border border-surface-700
 			placeholder:text-text-tertiary
 			transition-colors duration-150
-			focus:outline-none focus:bg-surface-active focus:ring-1 focus:ring-primary/50
+			focus:outline-none focus:bg-surface-700 focus:ring-1 focus:ring-primary/50 focus:border-primary/50
 			disabled:opacity-50 disabled:cursor-not-allowed
-			{error ? 'ring-1 ring-error/50' : ''}
+			{error ? 'ring-1 ring-error/50 border-error' : ''}
 			{className}
 		"
 		{oninput}

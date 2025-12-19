@@ -79,8 +79,8 @@
 		</FormField>
 	</div>
 
-	{#snippet footer()}
-		<Button variant="primary" onclick={onsave} disabled={saving || validating} loading={saving || validating}>
+	{#snippet headerAction()}
+		<Button variant="primary" size="sm" onclick={onsave} disabled={saving || validating} loading={saving || validating}>
 			Save
 		</Button>
 	{/snippet}
