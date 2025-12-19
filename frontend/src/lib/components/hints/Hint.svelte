@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Icon } from '$lib/components/ui';
+	import { Button, Icon, IconButton } from '$lib/components/ui';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { isHintDismissed, dismissHint } from './hintsStore.svelte';
@@ -56,14 +56,16 @@
 					</div>
 
 					<!-- Dismiss button -->
-					<button
-						type="button"
-						class="btn-action btn-action-default flex-shrink-0"
+					<IconButton
+						variant="ghost"
+						size="sm"
+						class="flex-shrink-0"
 						onclick={handleDismiss}
-						aria-label="Dismiss hint"
+						ariaLabel="Dismiss hint"
+						title="Dismiss"
 					>
 						<Icon name="close" size="sm" strokeWidth={2} />
-					</button>
+					</IconButton>
 				</div>
 
 				<!-- Got it button -->

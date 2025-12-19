@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { formatConfigValue, type ConfigEntry } from './types';
+	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		config: Record<string, ConfigEntry>;
@@ -38,13 +39,14 @@
 				</div>
 			{/each}
 			{#if hasMore}
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					size="xs"
+					class="px-0 py-0 text-xs text-surface-500 hover:text-surface-300 hover:bg-transparent"
 					onclick={() => showAll = !showAll}
-					class="text-xs text-surface-500 hover:text-surface-300 transition-colors"
 				>
 					{showAll ? 'Show less' : `Show ${entries.length - initialShow} more...`}
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>

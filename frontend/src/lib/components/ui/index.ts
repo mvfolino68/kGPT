@@ -15,6 +15,8 @@ export { default as Icon } from './Icon.svelte';
 // Specialized Components
 export { default as IconButton } from './IconButton.svelte';
 export { default as DeleteButton } from './DeleteButton.svelte';
+export { default as CardButton } from './CardButton.svelte';
+export { default as ResizeHandle } from './ResizeHandle.svelte';
 
 // Aliases for backward compatibility
 export { default as Panel } from './Card.svelte';

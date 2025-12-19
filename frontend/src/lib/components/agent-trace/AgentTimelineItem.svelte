@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AgentActivity } from '$lib/stores/chat';
 	import { agentConfig, getTraceStatusColor, formatDuration } from './types';
+	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		activity: AgentActivity;
@@ -18,12 +19,12 @@
 </script>
 
 <div class="rounded-lg bg-surface-800 overflow-hidden">
-	<button
-		type="button"
+	<Button
+		variant="ghost"
+		size={compact ? 'sm' : 'md'}
+		class="w-full justify-start gap-2 rounded-none {compact ? 'px-2.5 py-2' : 'px-3 py-2.5'} {hasResult ? '' : 'cursor-default pointer-events-none'}"
+		disabled={!hasResult}
 		onclick={() => hasResult && onToggle()}
-		class="w-full flex items-center gap-2 transition-colors
-			{compact ? 'px-2.5 py-2' : 'px-3 py-2.5'}
-			{hasResult ? 'cursor-pointer hover:bg-surface-800/50' : 'cursor-default'}"
 	>
 		<!-- Status indicator -->
 		<div class="w-1.5 h-1.5 rounded-full {statusColor} flex-shrink-0"></div>
@@ -71,7 +72,7 @@
 				<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 			</svg>
 		{/if}
-	</button>
+	</Button>
 
 	<!-- Expanded result -->
 	{#if expanded && hasResult}

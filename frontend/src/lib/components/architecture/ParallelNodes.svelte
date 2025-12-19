@@ -2,6 +2,7 @@
 	import type { AgentGraphNode } from '$lib/api';
 	import type { NodeInfo } from './types';
 	import { getPathColor } from './types';
+	import { CardButton } from '$lib/components/ui';
 
 	interface Props {
 		retrievalNode: AgentGraphNode;
@@ -24,16 +25,12 @@
 	</div>
 	<div class="flex gap-3">
 		<!-- Retrieval Node -->
-		<button
-			type="button"
+		<CardButton
+			variant="active"
+			size="md"
+			selected={selectedNode === 'retrieval'}
+			class="flex-1 {getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
 			onclick={onSelectRetrieval}
-			class="
-				flex-1 p-3 rounded-xl border
-				transition-all duration-150 ease-out
-				focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-				{getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} shadow-lg {getPathColor(pathColor, 'glow')}
-				{selectedNode === 'retrieval' ? 'ring-1 ring-white/10' : ''}
-			"
 		>
 			<div class="flex items-center gap-3">
 				<div class="w-10 h-10 rounded-lg flex items-center justify-center {getPathColor(pathColor, 'bg')}">
@@ -63,19 +60,15 @@
 					</div>
 				</div>
 			{/if}
-		</button>
+		</CardButton>
 
 		<!-- Web Search Node -->
-		<button
-			type="button"
+		<CardButton
+			variant="active"
+			size="md"
+			selected={selectedNode === 'web_search'}
+			class="flex-1 {getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
 			onclick={onSelectWebSearch}
-			class="
-				flex-1 p-3 rounded-xl border
-				transition-all duration-150 ease-out
-				focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-				{getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} shadow-lg {getPathColor(pathColor, 'glow')}
-				{selectedNode === 'web_search' ? 'ring-1 ring-white/10' : ''}
-			"
 		>
 			<div class="flex items-center gap-3">
 				<div class="w-10 h-10 rounded-lg flex items-center justify-center {getPathColor(pathColor, 'bg')}">
@@ -105,7 +98,7 @@
 					</div>
 				</div>
 			{/if}
-		</button>
+		</CardButton>
 	</div>
 	<div class="flex items-center justify-center gap-2 mt-2">
 		<div class="h-px flex-1 bg-white/10"></div>

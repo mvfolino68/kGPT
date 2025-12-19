@@ -97,9 +97,10 @@
 			{#if mode === 'choice'}
 				<!-- Initial choice -->
 				<div class="space-y-3">
-					<button
-						type="button"
-						class="w-full p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-primary/50 hover:bg-surface-800 transition-all text-left group"
+					<Button
+						variant="secondary"
+						size="lg"
+						class="w-full justify-start text-left p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-primary/50 hover:bg-surface-800 group"
 						onclick={connectDemo}
 					>
 						<div class="flex items-center gap-4">
@@ -116,11 +117,12 @@
 								<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 							</svg>
 						</div>
-					</button>
+					</Button>
 
-					<button
-						type="button"
-						class="w-full p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-primary/50 hover:bg-surface-800 transition-all text-left group"
+					<Button
+						variant="secondary"
+						size="lg"
+						class="w-full justify-start text-left p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-primary/50 hover:bg-surface-800 group"
 						onclick={showCustomForm}
 					>
 						<div class="flex items-center gap-4">
@@ -137,7 +139,7 @@
 								<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 							</svg>
 						</div>
-					</button>
+					</Button>
 				</div>
 
 			{:else if mode === 'demo'}

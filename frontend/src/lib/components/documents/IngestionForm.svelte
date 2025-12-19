@@ -51,18 +51,21 @@
 		<!-- Source type selection -->
 		<div class="flex gap-2">
 			{#each sourceTypeOptions as option}
-				<button
-					type="button"
-					onclick={() => onSourceTypeChange(option.value)}
-					class="flex-1 p-3 rounded-lg transition-all text-left {sourceType === option.value
+				<Button
+					variant={sourceType === option.value ? 'secondary' : 'ghost'}
+					size="lg"
+					class="flex-1 justify-start text-left p-3 rounded-lg {sourceType === option.value
 						? 'bg-surface-700/50'
 						: 'bg-surface-800/30 hover:bg-surface-700/30'}"
+					onclick={() => onSourceTypeChange(option.value)}
 				>
-					<div class="text-sm {sourceType === option.value ? 'text-surface-100' : 'text-surface-300'}">
-						{option.label}
+					<div class="w-full">
+						<div class="text-sm {sourceType === option.value ? 'text-surface-100' : 'text-surface-300'}">
+							{option.label}
+						</div>
+						<div class="text-xs text-surface-500 mt-0.5">{option.description}</div>
 					</div>
-					<div class="text-xs text-surface-500 mt-0.5">{option.description}</div>
-				</button>
+				</Button>
 			{/each}
 		</div>
 

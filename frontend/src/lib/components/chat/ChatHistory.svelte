@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button } from '$lib/components/ui';
+	import { Button, ResizeHandle } from '$lib/components/ui';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {
@@ -52,7 +52,6 @@
 
 	let sidebarWidth = $state(DEFAULT_WIDTH);
 	let isResizing = $state(false);
-	let resizeHandle: HTMLButtonElement;
 
 	onMount(() => {
 		const savedWidth = localStorage.getItem(STORAGE_KEY);
@@ -132,14 +131,8 @@
 	</div>
 
 	<!-- Resize Handle -->
-	<button
-		type="button"
-		data-no-hover
-		bind:this={resizeHandle}
+	<ResizeHandle
 		onmousedown={handleMouseDown}
-		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/50 transition-colors group"
-		aria-label="Resize sidebar"
-	>
-		<div class="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 w-1 h-8 bg-surface-600 group-hover:bg-primary-light rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-	</button>
+		ariaLabel="Resize sidebar"
+	/>
 </aside>

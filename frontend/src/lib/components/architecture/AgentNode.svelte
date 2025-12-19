@@ -2,6 +2,7 @@
 	import type { AgentGraphNode } from '$lib/api';
 	import type { NodeInfo } from './types';
 	import { getPathColor } from './types';
+	import { CardButton } from '$lib/components/ui';
 
 	interface Props {
 		node: AgentGraphNode;
@@ -16,18 +17,14 @@
 	let { node, info, isActive, isSelected, pathColor, stepNumber, onToggle }: Props = $props();
 </script>
 
-<button
-	type="button"
+<CardButton
+	variant={isActive ? 'active' : 'default'}
+	size="lg"
+	selected={isSelected}
+	class="max-w-md {isActive
+		? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'border')} ${getPathColor(pathColor, 'glow')}`
+		: ''}"
 	onclick={onToggle}
-	class="
-		w-full max-w-md p-4 rounded-xl border
-		transition-all duration-150 ease-out
-		focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-		{isActive
-			? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'border')} shadow-lg ${getPathColor(pathColor, 'glow')}`
-			: 'bg-bg-elevated border-white/5 hover:border-white/10'}
-		{isSelected ? 'ring-1 ring-white/10' : ''}
-	"
 >
 	<div class="flex items-center gap-4">
 		<!-- Icon -->
@@ -76,4 +73,4 @@
 			</div>
 		</div>
 	{/if}
-</button>
+</CardButton>

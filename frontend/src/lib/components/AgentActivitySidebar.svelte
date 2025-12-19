@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Icon } from '$lib/components/ui';
+	import { Button, Icon, IconButton } from '$lib/components/ui';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,
@@ -74,14 +74,15 @@
 						Live
 					</Button>
 				{/if}
-				<button
-					type="button"
+				<IconButton
+					variant="ghost"
+					size="sm"
 					onclick={toggleAgentActivity}
-					class="btn-action btn-action-default"
-					aria-label="Close agent activity"
+					ariaLabel="Close agent activity"
+					title="Close"
 				>
 					<Icon name="close" size="sm" strokeWidth={2} />
-				</button>
+				</IconButton>
 			</div>
 		</div>
 
@@ -148,10 +149,11 @@
 				<!-- Validation Results (inline since it's simple) -->
 				{#if trace.validationResults}
 					<div class="space-y-2">
-						<button
-							type="button"
+						<Button
+							variant="ghost"
+							size="xs"
+							class="w-full justify-start gap-2 px-0 py-0 text-[10px] font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 hover:bg-transparent"
 							onclick={() => toggleSection('validation')}
-							class="w-full flex items-center gap-2 text-[10px] font-semibold text-surface-500 uppercase tracking-wider hover:text-surface-400 transition-colors"
 						>
 							<svg
 								class="w-2.5 h-2.5 transition-transform {expandedSections['validation'] ? 'rotate-90' : ''}"
@@ -160,7 +162,7 @@
 								<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
 							</svg>
 							Validation
-						</button>
+						</Button>
 
 					{#if expandedSections['validation']}
 						<div class="bg-surface-800/40 rounded-lg border border-surface-700/20 p-3">

@@ -271,6 +271,16 @@ select {
     transform: translateY(1px);
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-border) 70%, transparent);
   }
+
+  /* Ensure citation buttons and other dynamically generated buttons have hover effects */
+  button.citation-ref:not(:disabled):hover {
+    background: color-mix(in oklab, var(--color-primary) 30%, transparent) !important;
+    transform: scale(1.1);
+  }
+
+  button.citation-ref:not(:disabled):active {
+    transform: scale(1.05);
+  }
 }
 
 /* ============================================================================

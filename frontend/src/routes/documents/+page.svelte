@@ -44,7 +44,7 @@
 		type SyncStatusResponse,
 		type ChunkAnalytics
 	} from '$lib/components/documents';
-	import { Card, Icon, IconButton, StatusDot } from '$lib/components/ui';
+	import { Card, Icon, IconButton, StatusDot, Button } from '$lib/components/ui';
 
 	// =========================================================================
 	// Tab Navigation
@@ -496,22 +496,17 @@
 				{ id: 'pipeline' as Tab, label: 'RAG Pipeline' }
 			] as tab}
 				{@const isActive = activeTab === tab.id}
-				<button
+				<Button
 					id={"tab-" + tab.id}
 					type="button"
 					role="tab"
 					aria-selected={isActive}
 					aria-controls={"tabpanel-" + tab.id}
 					tabindex={isActive ? 0 : -1}
+					variant={isActive ? 'secondary' : 'ghost'}
+					size="sm"
+					class="relative px-3 py-2 rounded-md {isActive ? 'bg-surface-active shadow-sm' : ''}"
 					onclick={() => setActiveTab(tab.id)}
-					class={[
-						'relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 select-none cursor-pointer',
-						'text-text-secondary',
-						'hover:text-text hover:bg-surface-700',
-						'active:bg-surface-active active:translate-y-px',
-						'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-						isActive ? 'text-text bg-surface-active shadow-sm' : ''
-					].join(' ')}
 				>
 					<span class="relative z-10">{tab.label}</span>
 					<span
@@ -522,7 +517,7 @@
 							isActive ? 'opacity-100' : 'opacity-0'
 						].join(' ')}
 					></span>
-				</button>
+				</Button>
 			{/each}
 			</div>
 		</div>

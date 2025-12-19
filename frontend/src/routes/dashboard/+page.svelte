@@ -244,9 +244,10 @@
 
 					{#if !showConnectForm}
 						<div class="max-w-md mx-auto space-y-3">
-							<button
-								type="button"
-								class="w-full p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
+							<Button
+								variant="secondary"
+								size="lg"
+								class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
 								onclick={connectDemo}
 								disabled={connecting}
 							>
@@ -268,11 +269,12 @@
 										<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
 									{/if}
 								</div>
-							</button>
+							</Button>
 
-							<button
-								type="button"
-								class="w-full p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
+							<Button
+								variant="secondary"
+								size="lg"
+								class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
 								onclick={() => (showConnectForm = true)}
 							>
 								<div class="flex items-center gap-4">
@@ -289,7 +291,7 @@
 									</div>
 									<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
 								</div>
-							</button>
+							</Button>
 
 							<p class="text-xs text-text-tertiary text-center pt-2">
 								Manage saved clusters in <a href="/settings" class="text-text-secondary hover:underline">Settings</a>

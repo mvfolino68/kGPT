@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { AdminOperationResult, InputField } from '$lib/stores/chat';
 	import { executeAdminOperation } from '$lib/api';
+	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		result: AdminOperationResult;
@@ -133,31 +134,24 @@
 	{/if}
 
 	<div class="flex gap-3">
-		<button
-			type="button"
+		<Button
+			variant="primary"
+			size="md"
+			class="flex-1 font-mono font-bold"
 			disabled={isExecuting}
+			loading={isExecuting}
 			onclick={handleSubmit}
-			class="flex-1 px-4 py-2 rounded-lg font-mono text-sm font-bold transition-all bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
 		>
-			{#if isExecuting}
-				<span class="flex items-center justify-center gap-2">
-					<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-					</svg>
-					Executing...
-				</span>
-			{:else}
-				Submit
-			{/if}
-		</button>
-		<button
-			type="button"
+			Submit
+		</Button>
+		<Button
+			variant="secondary"
+			size="md"
+			class="font-mono"
 			disabled={isExecuting}
 			onclick={handleCancel}
-			class="px-4 py-2 rounded-lg font-mono text-sm text-surface-400 border border-surface-700/50 hover:bg-surface-800/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 		>
 			Cancel
-		</button>
+		</Button>
 	</div>
 </div>
