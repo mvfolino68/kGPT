@@ -559,6 +559,7 @@
 					role="tabpanel"
 					aria-labelledby="tab-sources"
 					tabindex="0"
+					class="space-y-6"
 				>
 				<IngestionForm
 					{sourceType}
@@ -621,6 +622,7 @@
 					role="tabpanel"
 					aria-labelledby="tab-search"
 					tabindex="0"
+					class="space-y-6"
 				>
 				<SearchTab
 					{searchQuery}
@@ -639,6 +641,7 @@
 					role="tabpanel"
 					aria-labelledby="tab-browse"
 					tabindex="0"
+					class="space-y-6"
 				>
 				<BrowseTab
 					{browseResults}
@@ -657,6 +660,7 @@
 					role="tabpanel"
 					aria-labelledby="tab-pipeline"
 					tabindex="0"
+					class="space-y-6"
 				>
 				<PipelineTab
 					{pipelineInfo}

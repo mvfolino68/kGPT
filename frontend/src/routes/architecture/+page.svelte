@@ -56,7 +56,7 @@
 	</Header>
 
 	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-5xl mx-auto space-y-8">
+		<div class="max-w-5xl mx-auto space-y-6">
 			{#if error}
 				<StatusMessage variant="error" message={error}>
 					{#snippet actions()}
