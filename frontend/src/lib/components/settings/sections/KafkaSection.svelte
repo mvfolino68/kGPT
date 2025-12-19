@@ -77,7 +77,7 @@
 		{/if}
 	{/snippet}
 
-	<div class="space-y-4">
+	<div class="space-y-6">
 		{#if error}
 			<div class="flex items-center gap-2 text-sm text-error bg-error-bg rounded-lg px-3 py-2">
 				<Icon name="error" size="sm" />
@@ -86,118 +86,152 @@
 		{/if}
 
 		{#if clusterInfo.connected}
-			<div>
-				<p class="text-sm font-medium text-text">{clusterInfo.cluster_id || 'Connected Cluster'}</p>
-				<p class="text-xs text-text-tertiary mt-0.5">
-					{clusterInfo.brokers || 0} broker(s) | {clusterInfo.topics?.length || 0} topics
-				</p>
+			<div class="bg-surface-800/50 rounded-lg p-4 border border-surface-700/50">
+				<div class="flex items-center justify-between mb-2">
+					<span class="text-xs font-bold uppercase tracking-wider text-surface-400">Current Connection</span>
+					<div class="flex items-center gap-2">
+						<span class="relative flex h-2 w-2">
+						  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+						  <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+						</span>
+						<span class="text-xs text-emerald-500 font-medium">Connected</span>
+					</div>
+				</div>
+				<div>
+					<p class="text-sm font-medium text-text">{clusterInfo.cluster_id || 'Connected Cluster'}</p>
+					<p class="text-xs text-text-tertiary mt-0.5">
+						{clusterInfo.brokers || 0} broker(s) | {clusterInfo.topics?.length || 0} topics
+					</p>
+				</div>
 			</div>
-		{:else if showForm}
-			<form onsubmit={(e) => { e.preventDefault(); onconnect(); }} class="space-y-4">
-				<div class="grid grid-cols-2 gap-3">
-					<FormField label="Name" id="cluster-name">
+		{/if}
+
+		{#if showForm}
+			<div class="bg-surface-800/50 rounded-lg p-4 border border-surface-700/50">
+				<div class="mb-4">
+					<span class="text-xs font-bold uppercase tracking-wider text-surface-400">New Connection</span>
+				</div>
+				<form onsubmit={(e) => { e.preventDefault(); onconnect(); }} class="space-y-4">
+					<div class="grid grid-cols-2 gap-3">
+						<FormField label="Name" id="cluster-name">
+							<Input
+								id="cluster-name"
+								type="text"
+								bind:value={nameValue}
+								oninput={(e) => onformnamechange((e.target as HTMLInputElement).value)}
+								placeholder="my-cluster"
+							/>
+						</FormField>
+						<FormField label="Protocol" id="cluster-protocol">
+							<Select
+								id="cluster-protocol"
+								bind:value={protocolValue}
+								options={protocolOptions}
+								onchange={() => onformprotocolchange(protocolValue)}
+							/>
+						</FormField>
+					</div>
+					<FormField label="Bootstrap Servers" id="cluster-bootstrap">
 						<Input
-							id="cluster-name"
+							id="cluster-bootstrap"
 							type="text"
-							bind:value={nameValue}
-							oninput={() => onformnamechange(nameValue)}
-							placeholder="my-cluster"
+							bind:value={bootstrapValue}
+							oninput={(e) => onformbootstrapchange((e.target as HTMLInputElement).value)}
+							placeholder="localhost:9092"
 						/>
 					</FormField>
-					<FormField label="Protocol" id="cluster-protocol">
-						<Select
-							id="cluster-protocol"
-							bind:value={protocolValue}
-							options={protocolOptions}
-							onchange={() => onformprotocolchange(protocolValue)}
-						/>
-					</FormField>
-				</div>
-				<FormField label="Bootstrap Servers" id="cluster-bootstrap">
-					<Input
-						id="cluster-bootstrap"
-						type="text"
-						bind:value={bootstrapValue}
-						oninput={() => onformbootstrapchange(bootstrapValue)}
-						placeholder="localhost:9092"
-					/>
-				</FormField>
-				<div class="flex gap-2 justify-end pt-2">
-					<Button type="button" variant="ghost" onclick={onhideform}>
-						Cancel
-					</Button>
-					<Button
-						type="submit"
-						variant="primary"
-						disabled={connecting || !nameValue.trim() || !bootstrapValue.trim()}
-						loading={connecting}
-					>
-						Connect
-					</Button>
-				</div>
-			</form>
+					<div class="flex gap-2 justify-end pt-2">
+						<Button type="button" variant="ghost" onclick={onhideform}>
+							Cancel
+						</Button>
+						<Button
+							type="submit"
+							variant="primary"
+							disabled={connecting || !nameValue.trim() || !bootstrapValue.trim()}
+							loading={connecting}
+						>
+							Connect
+						</Button>
+					</div>
+				</form>
+			</div>
 		{:else}
-			<div class="space-y-2">
+			<div class="grid grid-cols-2 gap-3">
 				<Button
 					variant="secondary"
 					size="lg"
-					class="w-full justify-start text-left"
+					class="justify-start text-left h-auto py-3"
 					onclick={onconnectdemo}
 				>
 					<div class="flex items-center gap-3">
-						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center">
+						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center shrink-0">
 							<Icon name="play" size="sm" class="text-text-secondary" />
 						</div>
-						<div class="flex-1">
-							<span class="text-sm font-medium">Demo Cluster</span>
-							<p class="text-xs text-text-tertiary">localhost:9094</p>
+						<div class="min-w-0">
+							<span class="text-sm font-medium block">Demo Cluster</span>
+							<span class="text-xs text-text-tertiary block truncate">localhost:9094</span>
 						</div>
-						<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
 					</div>
 				</Button>
 				<Button
 					variant="secondary"
 					size="lg"
-					class="w-full justify-start text-left"
+					class="justify-start text-left h-auto py-3"
 					onclick={onshowform}
 				>
 					<div class="flex items-center gap-3">
-						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center">
+						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center shrink-0">
 							<Icon name="plus" size="sm" class="text-text-secondary" />
 						</div>
-						<div class="flex-1">
-							<span class="text-sm font-medium">Custom Cluster</span>
-							<p class="text-xs text-text-tertiary">Enter connection details</p>
+						<div class="min-w-0">
+							<span class="text-sm font-medium block">Custom Cluster</span>
+							<span class="text-xs text-text-tertiary block truncate">Add new connection</span>
 						</div>
-						<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
 					</div>
 				</Button>
-
-				{#if clusters.length > 0}
-					<div class="pt-3 mt-2">
-						<p class="label mb-2">Saved Clusters</p>
-						<div class="space-y-1.5">
-							{#each clusters as cluster}
-								<Button
-									variant="secondary"
-									size="md"
-									class="w-full justify-start text-left"
-									onclick={() => onconnect(cluster)}
-									disabled={connecting}
-								>
-									<div class="flex items-center justify-between w-full">
-										<div>
-											<span class="text-sm">{cluster.name}</span>
-											<p class="text-xs text-text-tertiary">{cluster.bootstrap_servers}</p>
-										</div>
-										<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
-									</div>
-								</Button>
-							{/each}
-						</div>
-					</div>
-				{/if}
 			</div>
+
+			{#if clusters.length > 0}
+				<div class="pt-2">
+					<div class="flex items-center justify-between mb-3 px-1">
+						<span class="text-xs font-bold uppercase tracking-wider text-surface-400">Saved Clusters</span>
+					</div>
+					<div class="space-y-2">
+						{#each clusters as cluster}
+							<div class="group flex items-center gap-2 p-3 bg-surface-800/30 hover:bg-surface-800/80 border border-transparent hover:border-surface-700/50 rounded-lg transition-all duration-200">
+								<div class="w-2 h-2 rounded-full {cluster.is_active ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-surface-600'} shrink-0"></div>
+								<div class="flex-1 min-w-0 grid gap-0.5">
+									<span class="text-sm font-medium text-surface-200 truncate">{cluster.name}</span>
+									<span class="text-xs text-surface-500 font-mono truncate">{cluster.bootstrap_servers}</span>
+								</div>
+
+								<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+									{#if !cluster.is_active}
+										<Button
+											variant="ghost"
+											size="sm"
+											class="h-7 px-2 text-xs"
+											onclick={() => onconnect(cluster)}
+											disabled={connecting}
+										>
+											Connect
+										</Button>
+									{:else}
+										<Button
+											variant="ghost"
+											size="sm"
+											class="h-7 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10"
+											onclick={ondisconnect}
+										>
+											Disconnect
+										</Button>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </SettingsCard>

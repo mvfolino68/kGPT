@@ -256,6 +256,7 @@ async def get_cluster_details():
 
         return ClusterDetailsResponse(
             connected=True,
+            name=active.get("name"),
             cluster_id=metadata.cluster_id,
             controller_id=metadata.controller_id,
             brokers=brokers,

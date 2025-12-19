@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { getClusters, connectCluster, disconnectCluster, type KafkaCluster } from '$lib/api';
 	import { onMount } from 'svelte';
-	import { Button, ListItem } from '$lib/components/ui';
+	import { Button, Icon } from '$lib/components/ui';
+	import { fly } from 'svelte/transition';
 
 	interface Props {
 		currentClusterId?: string | null;
@@ -81,138 +82,90 @@
 		<Button
 			variant="ghost"
 			size="sm"
-			class="px-2 py-1 text-xs hover:bg-transparent"
+			class="px-3 py-1.5 h-auto hover:bg-surface-800 border border-transparent hover:border-surface-700/50 transition-all duration-200"
 			onclick={() => (isOpen = !isOpen)}
 		>
-			<span class="flex items-center gap-2">
-				<span class="text-surface-400 max-w-24 truncate">
-					{activeCluster?.name || 'Select Cluster'}
+			<span class="flex items-center gap-2.5">
+				<span class="relative flex h-2 w-2">
+				  {#if activeCluster}
+					<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+					<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+				  {:else}
+					<span class="relative inline-flex rounded-full h-2 w-2 bg-surface-500"></span>
+				  {/if}
 				</span>
-				<svg
-					class="w-3 h-3 text-surface-500 transition-transform {isOpen ? 'rotate-180' : ''}"
-					fill="none"
-					stroke="currentColor"
-					viewBox="0 0 24 24"
-					stroke-width="2"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-				</svg>
+				<span class="text-sm font-medium text-surface-200 max-w-32 truncate">
+					{activeCluster?.name || 'No Cluster'}
+				</span>
+				<Icon name="chevron-down" size="sm" class="text-surface-500 transition-transform duration-200 {isOpen ? 'rotate-180' : ''}" />
 			</span>
 		</Button>
 
 		{#if isOpen}
 			<div
-				class="absolute top-full right-0 mt-2 w-64 bg-surface-800 border border-surface-700/30 rounded-lg shadow-2xl overflow-hidden z-50"
+				transition:fly={{ y: 5, duration: 200 }}
+				class="absolute top-full right-0 mt-2 w-72 bg-[#1A1D21] border border-surface-700/50 rounded-xl shadow-2xl overflow-hidden z-50 ring-1 ring-black/5"
 			>
-				<div class="px-3 py-2">
+				<!-- Header -->
+				<div class="px-4 py-3 border-b border-surface-800/50 bg-surface-800/20">
 					<span class="text-[10px] font-bold uppercase tracking-wider text-surface-400">
 						Saved Clusters
 					</span>
 				</div>
 
-				<div class="max-h-64 overflow-y-auto">
+				<!-- Cluster List -->
+				<div class="max-h-64 overflow-y-auto py-1">
 					{#each clusters as cluster}
-						<ListItem
-							variant="subtle"
-							active={cluster.is_active}
-							disabled={switchingTo !== null}
-							class="px-3 py-2.5 rounded-none hover:bg-surface-600/50"
+						<button
+							class="w-full text-left px-4 py-3 group hover:bg-surface-800/50 transition-colors relative flex items-start gap-3"
 							onclick={() => handleSwitch(cluster)}
+							disabled={switchingTo !== null}
 						>
+							<div class="mt-1.5">
+								<div class="w-2 h-2 rounded-full ring-2 ring-offset-2 ring-offset-[#1A1D21] transition-all {cluster.is_active ? 'bg-emerald-500 ring-emerald-500/20' : 'bg-surface-600 ring-transparent group-hover:bg-surface-500'}"></div>
+							</div>
 							<div class="min-w-0 flex-1">
-								<div class="flex items-center gap-2">
-									<div
-										class="w-2 h-2 rounded-full {cluster.is_active
-											? 'bg-emerald-400'
-											: 'bg-surface-500'}"
-									></div>
-									<span class="text-sm text-surface-200 truncate">{cluster.name}</span>
+								<div class="flex items-center justify-between">
+									<span class="text-sm font-medium text-surface-200 group-hover:text-white transition-colors">
+										{cluster.name}
+									</span>
+									{#if switchingTo === cluster.id}
+										<Icon name="spinner" size="sm" class="animate-spin text-primary" />
+									{:else if cluster.is_active}
+										<Icon name="check" size="sm" class="text-emerald-500" />
+									{/if}
 								</div>
-								<p class="text-xs text-surface-400 font-mono truncate mt-0.5 ml-4">
+								<p class="text-xs text-surface-500 font-mono mt-0.5 truncate group-hover:text-surface-400 transition-colors">
 									{cluster.bootstrap_servers}
 								</p>
 							</div>
-
-							{#if switchingTo === cluster.id}
-								<svg class="w-4 h-4 text-primary animate-spin shrink-0" fill="none" viewBox="0 0 24 24">
-									<circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle>
-									<path
-										class="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-									></path>
-								</svg>
-							{:else if cluster.is_active}
-								<svg class="w-4 h-4 text-emerald-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-									<path
-										fill-rule="evenodd"
-										d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							{/if}
-						</ListItem>
+						</button>
 					{/each}
 				</div>
 
-				{#if activeCluster}
-					<div class="pt-1">
-						<Button
-							variant="ghost"
-							size="md"
-							class="w-full justify-start text-left px-3 py-2.5 text-sm text-surface-300 hover:bg-surface-600/50"
+				<!-- Actions -->
+				<div class="border-t border-surface-800/50 p-1 bg-surface-800/10 space-y-0.5">
+					{#if activeCluster}
+						<button
+							class="w-full flex items-center gap-3 px-3 py-2 text-sm text-surface-400 hover:text-white hover:bg-surface-800/50 rounded-lg transition-colors group"
 							onclick={handleDisconnect}
 							disabled={loading}
 						>
 							{#if loading}
-								<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-									<circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle>
-									<path
-										class="opacity-75"
-										fill="currentColor"
-										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-									></path>
-								</svg>
+								<Icon name="spinner" size="sm" class="animate-spin" />
 							{:else}
-								<svg
-									class="w-4 h-4"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"
-									/>
-								</svg>
+								<Icon name="x" size="sm" class="group-hover:text-red-400 transition-colors" />
 							{/if}
-							Disconnect
-						</Button>
-					</div>
-				{/if}
+							<span>Disconnect</span>
+						</button>
+					{/if}
 
-				<div class="pb-1">
 					<a
 						href="/settings"
-						class="block px-3 py-2.5 hover:bg-surface-600/50 transition-colors text-sm text-surface-300"
+						class="w-full flex items-center gap-3 px-3 py-2 text-sm text-surface-400 hover:text-white hover:bg-surface-800/50 rounded-lg transition-colors"
 					>
-						Manage Clusters
+						<Icon name="settings" size="sm" />
+						<span>Manage Clusters</span>
 					</a>
 				</div>
 			</div>

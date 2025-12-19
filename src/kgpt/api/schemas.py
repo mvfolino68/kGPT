@@ -280,6 +280,7 @@ class ClusterDetailsResponse(BaseModel):
     """Comprehensive cluster details for dashboard."""
 
     connected: bool
+    name: str | None = None
     cluster_id: str | None = None
     controller_id: int | None = None
 

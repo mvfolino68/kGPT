@@ -147,11 +147,10 @@
 <Page
 	title="Kafka Dashboard"
 	subtitle={clusterDetails.connected
-		? `Cluster ${clusterDetails.cluster_id || ''}`
+		? `Cluster: ${clusterDetails.name || clusterDetails.cluster_id || 'Unknown'}`
 		: 'Connect to monitor your Kafka cluster'}
 	loading={loading && !clusterDetails.connected}
 	error={error}
-	status={{ connected: clusterDetails.connected }}
 >
 	{#snippet headerActions()}
 		<div class="flex items-center gap-4">
@@ -179,6 +178,7 @@
 		<ClusterHealthCard
 			connected={clusterDetails.connected}
 			clusterId={clusterDetails.cluster_id}
+			clusterName={clusterDetails.name}
 			controllerId={clusterDetails.controller_id}
 			brokerCount={clusterDetails.broker_count}
 			topicCount={clusterDetails.topic_count}

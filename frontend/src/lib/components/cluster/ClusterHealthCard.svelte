@@ -4,6 +4,7 @@
 	interface Props {
 		connected: boolean;
 		clusterId: string | null;
+		clusterName?: string | null;
 		controllerId: number | null;
 		brokerCount: number;
 		topicCount: number;
@@ -15,6 +16,7 @@
 	let {
 		connected,
 		clusterId,
+		clusterName,
 		controllerId,
 		brokerCount,
 		topicCount,
@@ -30,7 +32,7 @@
 	});
 </script>
 
-<Card title="Cluster Health" subtitle={clusterId || ''}>
+<Card title="Cluster Health" subtitle={clusterName || clusterId || ''}>
 	{#snippet actions()}
 		<div class="flex items-center gap-2">
 			<StatusPill

@@ -301,6 +301,7 @@ export interface ConsumerGroupInfo {
 
 export interface ClusterDetailsResponse {
 	connected: boolean;
+	name?: string | null;
 	cluster_id: string | null;
 	controller_id: number | null;
 	brokers: BrokerInfo[];
