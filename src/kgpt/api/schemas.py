@@ -239,6 +239,69 @@ class ClusterResponse(BaseModel):
 
 
 # ============================================================================
+# Enhanced Cluster Details (for dashboard)
+# ============================================================================
+
+
+class BrokerInfo(BaseModel):
+    """Detailed broker information."""
+
+    id: int
+    host: str
+    port: int
+    is_controller: bool = False
+    partition_count: int = 0
+    leader_count: int = 0
+
+
+class TopicInfo(BaseModel):
+    """Detailed topic information."""
+
+    name: str
+    partition_count: int
+    replication_factor: int
+    leader_distribution: dict[int, int] = {}  # broker_id -> partition count
+    is_internal: bool = False
+    under_replicated: bool = False
+
+
+class ConsumerGroupInfo(BaseModel):
+    """Detailed consumer group information."""
+
+    group_id: str
+    state: str
+    protocol_type: str | None = None
+    member_count: int = 0
+    coordinator_id: int | None = None
+    topics: list[str] = []
+
+
+class ClusterDetailsResponse(BaseModel):
+    """Comprehensive cluster details for dashboard."""
+
+    connected: bool
+    cluster_id: str | None = None
+    controller_id: int | None = None
+
+    # Broker details
+    brokers: list[BrokerInfo] = []
+    broker_count: int = 0
+
+    # Topic details
+    topics: list[TopicInfo] = []
+    topic_count: int = 0
+    total_partitions: int = 0
+    under_replicated_count: int = 0
+
+    # Consumer group details
+    consumer_groups: list[ConsumerGroupInfo] = []
+    consumer_group_count: int = 0
+
+    # Error if any
+    error: str | None = None
+
+
+# ============================================================================
 # Settings Schemas
 # ============================================================================
 

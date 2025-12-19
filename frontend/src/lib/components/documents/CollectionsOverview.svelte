@@ -58,7 +58,7 @@
 
 					<!-- HNSW Config -->
 					{#if col.hnsw_config}
-						<div class="border-t border-surface-700/20 pt-4 mt-4">
+						<div class="pt-4 mt-4">
 							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-2">
 								HNSW Index Configuration
 							</div>

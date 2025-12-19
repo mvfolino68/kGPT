@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
-	import { Header, StatusIndicator } from '$lib/components';
+	import { Header, HeaderStatus } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import {
 		PathSelector,
@@ -44,11 +44,8 @@
 <div class="flex flex-col h-full bg-surface-900">
 	<Header title="Agent Architecture" subtitle="Multi-agent RAG orchestration">
 		{#snippet actions()}
-			<div class="flex items-center gap-4 text-xs">
-				<div class="flex items-center gap-2">
-					<StatusIndicator status="active" size="sm" pulse />
-					<span class="text-surface-400">LangGraph</span>
-				</div>
+			<div class="flex items-center gap-4">
+				<HeaderStatus status="active" label="LangGraph" pulse />
 				<button type="button" class="btn btn-ghost btn-sm" onclick={loadGraph} disabled={loading}>
 					{loading ? 'Loading...' : 'Refresh'}
 				</button>

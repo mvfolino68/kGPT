@@ -23,7 +23,7 @@
 		type DocumentSource,
 		type SourceType
 	} from '$lib/api';
-	import { Header, StatusIndicator } from '$lib/components';
+	import { Header, HeaderStatus } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import {
 		IngestionForm,
@@ -465,29 +465,13 @@
 	<!-- Header -->
 	<Header title="Vector Store" subtitle="RAG Document & Embedding Management">
 		{#snippet actions()}
-			<div class="flex items-center gap-4 text-xs">
-				{#if syncStatus}
-					<div class="flex items-center gap-2">
-						<StatusIndicator status={syncStatus.synced ? 'active' : 'warning'} size="sm" pulse={!syncStatus.synced} />
-						<span class="text-surface-500">sync:</span>
-						<span class="{syncStatus.synced ? 'text-emerald-400/80' : 'text-amber-400/80'}">{syncStatus.synced ? 'OK' : 'WARN'}</span>
-					</div>
-				{/if}
-				{#if collections}
-					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
-						<span class="text-surface-500">col:</span>
-						<span class="text-surface-300">{collections.total_collections}</span>
-					</div>
-					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
-						<span class="text-surface-500">vec:</span>
-						<span class="text-surface-300">{collections.total_vectors.toLocaleString()}</span>
-					</div>
-				{/if}
-				<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
-					<span class="text-surface-500">src:</span>
-					<span class="text-surface-300">{documents.length}</span>
-				</div>
-			</div>
+			{#if syncStatus}
+				<HeaderStatus
+					status={syncStatus.synced ? 'active' : 'warning'}
+					label={syncStatus.synced ? 'Synced' : 'Sync Warning'}
+					pulse={!syncStatus.synced}
+				/>
+			{/if}
 		{/snippet}
 	</Header>
 
@@ -501,9 +485,7 @@
 		] as tab}
 			<button
 				onclick={() => setActiveTab(tab.id)}
-				class="px-4 py-2.5 text-sm transition-all {activeTab === tab.id
-					? 'text-surface-100 border-b-2 border-surface-400 bg-surface-800/30'
-					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/20 border-b-2 border-transparent'}"
+				class="btn-tab {activeTab === tab.id ? 'btn-tab-active' : ''}"
 			>
 				{tab.label}
 			</button>
@@ -514,20 +496,28 @@
 		<div class="max-w-6xl mx-auto space-y-4">
 			<!-- Error display -->
 			{#if error}
-				<div class="bg-red-500/5 border border-red-500/15 rounded-lg p-3 text-sm text-red-400/80 flex items-center justify-between">
+				<div class="bg-red-500/10 rounded-lg p-3 text-sm text-red-400/80 flex items-center justify-between">
 					<span>{error}</span>
-					<button onclick={() => error = null} class="text-red-400/60 hover:text-red-400">x</button>
+					<button onclick={() => error = null} class="btn-action btn-action-danger">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
 				</div>
 			{/if}
 
 			<!-- Success message for destructive operations -->
 			{#if lastDestructiveResult}
-				<div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center justify-between">
+				<div class="bg-emerald-500/10 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<StatusIndicator status="active" size="sm" />
 						{lastDestructiveResult.message}
 					</div>
-					<button onclick={() => lastDestructiveResult = null} class="btn btn-ghost btn-sm">x</button>
+					<button onclick={() => lastDestructiveResult = null} class="btn-action btn-action-success">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
 				</div>
 			{/if}
 

@@ -257,14 +257,14 @@
 				<div class="flex bg-surface-800 rounded-lg p-0.5">
 					<button
 						type="button"
-						class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {currentView === 'chat' ? 'bg-surface-700 text-surface-100' : 'text-surface-400 hover:text-surface-200'}"
+						class="btn-segment {currentView === 'chat' ? 'btn-segment-active' : ''}"
 						onclick={() => currentView = 'chat'}
 					>
 						Chat
 					</button>
 					<button
 						type="button"
-						class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 {currentView === 'history' ? 'bg-surface-700 text-surface-100' : 'text-surface-400 hover:text-surface-200'}"
+						class="btn-segment {currentView === 'history' ? 'btn-segment-active' : ''}"
 						onclick={() => currentView = 'history'}
 					>
 						History

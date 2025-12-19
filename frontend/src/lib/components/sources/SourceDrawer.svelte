@@ -136,8 +136,7 @@
 
 					<button
 						type="button"
-						class="flex-shrink-0 p-2 rounded-lg hover:bg-surface-800
-							transition-colors text-surface-400 hover:text-surface-200"
+						class="btn-action btn-action-default p-2"
 						onclick={onClose}
 						aria-label="Close drawer"
 					>

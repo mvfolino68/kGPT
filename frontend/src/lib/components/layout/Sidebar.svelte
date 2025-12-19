@@ -40,7 +40,7 @@
 	let hoveredItem = $state<string | null>(null);
 </script>
 
-<aside class="w-56 bg-surface-900 flex flex-col">
+<aside class="w-56 bg-surface-900 flex flex-col border-r border-surface-800">
 	<!-- Logo -->
 	<div class="px-4 py-5">
 		<a href="/dashboard" class="flex items-center gap-3 group">

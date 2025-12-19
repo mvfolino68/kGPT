@@ -59,9 +59,9 @@
 				<button
 					type="button"
 					onclick={() => onSourceTypeChange(option.value)}
-					class="flex-1 p-3 rounded-lg border transition-all text-left {sourceType === option.value
-						? 'border-surface-600/50 bg-surface-800/60'
-						: 'border-surface-700/30 bg-surface-800/30 hover:border-surface-600/40'}"
+					class="flex-1 p-3 rounded-lg transition-all text-left {sourceType === option.value
+						? 'bg-surface-700/50'
+						: 'bg-surface-800/30 hover:bg-surface-700/30'}"
 				>
 					<div class="text-sm {sourceType === option.value ? 'text-surface-100' : 'text-surface-300'}">
 						{option.label}
@@ -147,7 +147,7 @@
 							<button
 								type="button"
 								onclick={() => onSelectSuggestion(suggestion)}
-								class="px-2 py-1 text-xs bg-surface-800/50 hover:bg-surface-700/50 text-surface-300 rounded border border-surface-700/30 hover:border-surface-600/40 transition-colors"
+								class="btn btn-ghost btn-xs"
 							>
 								{suggestion}
 							</button>

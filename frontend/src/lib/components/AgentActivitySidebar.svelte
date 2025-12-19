@@ -66,7 +66,7 @@
 					<button
 						type="button"
 						onclick={handleClearSelection}
-						class="btn btn-ghost btn-sm px-2 py-1 text-[10px] text-violet-400 hover:text-violet-300"
+						class="btn btn-link btn-xs text-violet-400"
 						aria-label="Show live trace"
 					>
 						Live
@@ -75,7 +75,7 @@
 				<button
 					type="button"
 					onclick={toggleAgentActivity}
-					class="btn btn-ghost btn-sm px-1.5 py-1 text-surface-500 hover:text-surface-300"
+					class="btn-action btn-action-default"
 					aria-label="Close agent activity"
 				>
 					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

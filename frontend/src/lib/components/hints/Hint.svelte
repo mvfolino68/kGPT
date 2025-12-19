@@ -57,7 +57,7 @@
 					<!-- Dismiss button -->
 					<button
 						type="button"
-						class="flex-shrink-0 p-1 rounded-lg hover:bg-surface-700 transition-colors text-surface-500 hover:text-surface-300"
+						class="btn-action btn-action-default flex-shrink-0"
 						onclick={handleDismiss}
 						aria-label="Dismiss hint"
 					>
@@ -71,7 +71,7 @@
 				<div class="mt-3 flex justify-end">
 					<button
 						type="button"
-						class="text-xs text-surface-300 hover:text-surface-100 font-medium"
+						class="btn btn-link btn-xs"
 						onclick={handleDismiss}
 					>
 						Got it

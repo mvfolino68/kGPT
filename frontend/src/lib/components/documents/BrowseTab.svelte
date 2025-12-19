@@ -44,14 +44,14 @@
 				</label>
 				<button
 					onclick={() => onLoadVectors()}
-					class="text-surface-500 hover:text-surface-300 text-xs"
+					class="btn btn-link btn-xs"
 				>
 					Refresh
 				</button>
 			</div>
 		</div>
 
-		<div class="p-3 bg-surface-800/30 text-xs text-surface-400 border-b border-surface-700/20">
+		<div class="p-3 bg-surface-900/50 text-xs text-surface-400">
 			<span class="text-surface-300">Browse:</span> Explore the raw vectors stored in Qdrant. Each point represents a document chunk with its embedding.
 		</div>
 	</div>
@@ -82,9 +82,9 @@
 				</div>
 			</div>
 
-			<div class="divide-y divide-surface-700/20">
+			<div class="space-y-1">
 				{#each browseResults.points as point}
-					<div class="p-4">
+					<div class="p-4 hover:bg-surface-800/30 transition-colors rounded">
 						<div class="flex items-start justify-between mb-2">
 							<span class="text-xs text-surface-500">id: {point.id}</span>
 							{#if point.vector_dimensions}

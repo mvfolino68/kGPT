@@ -10,10 +10,14 @@ from kgpt.agents.admin import (
     get_suggested_operations,
 )
 from kgpt.api.schemas import (
+    BrokerInfo,
     ClusterConnectRequest,
+    ClusterDetailsResponse,
     ClusterInfo,
     ClusterResponse,
+    ConsumerGroupInfo,
     KafkaCluster,
+    TopicInfo,
 )
 from kgpt.db import get_db
 
@@ -103,6 +107,170 @@ async def get_cluster_info_endpoint():
         return cluster_info
 
     return {"connected": False}
+
+
+@router.get("/details", response_model=ClusterDetailsResponse)
+async def get_cluster_details():
+    """
+    Get comprehensive cluster details for dashboard display.
+
+    Returns enriched information about brokers, topics, and consumer groups.
+    """
+    db = get_db()
+    active = db.get_active_kafka_cluster()
+
+    if not active:
+        return ClusterDetailsResponse(connected=False)
+
+    try:
+        from confluent_kafka.admin import AdminClient
+
+        admin_config = {"bootstrap.servers": active["bootstrap_servers"]}
+
+        if active.get("security_protocol") and active["security_protocol"] != "PLAINTEXT":
+            admin_config["security.protocol"] = active["security_protocol"]
+            if active.get("sasl_mechanism"):
+                admin_config["sasl.mechanism"] = active["sasl_mechanism"]
+            if active.get("sasl_username"):
+                admin_config["sasl.username"] = active["sasl_username"]
+            if active.get("sasl_password"):
+                admin_config["sasl.password"] = active["sasl_password"]
+
+        admin = AdminClient(admin_config)
+        metadata = admin.list_topics(timeout=10)
+
+        # Process brokers
+        brokers: list[BrokerInfo] = []
+        broker_partition_counts: dict[int, int] = {}
+        broker_leader_counts: dict[int, int] = {}
+
+        for broker_id, broker in metadata.brokers.items():
+            broker_partition_counts[broker_id] = 0
+            broker_leader_counts[broker_id] = 0
+            brokers.append(
+                BrokerInfo(
+                    id=broker_id,
+                    host=broker.host,
+                    port=broker.port,
+                    is_controller=(broker_id == metadata.controller_id),
+                )
+            )
+
+        # Process topics
+        topics: list[TopicInfo] = []
+        total_partitions = 0
+        under_replicated_count = 0
+
+        for topic_name, topic_meta in metadata.topics.items():
+            is_internal = topic_name.startswith("_")
+            partition_count = len(topic_meta.partitions)
+            total_partitions += partition_count
+
+            # Calculate replication factor and leader distribution
+            replication_factor = 0
+            leader_distribution: dict[int, int] = {}
+            under_replicated = False
+
+            for partition_id, partition in topic_meta.partitions.items():
+                if replication_factor == 0:
+                    replication_factor = len(partition.replicas)
+
+                # Track leader distribution
+                if partition.leader is not None and partition.leader >= 0:
+                    leader_distribution[partition.leader] = (
+                        leader_distribution.get(partition.leader, 0) + 1
+                    )
+                    broker_leader_counts[partition.leader] = (
+                        broker_leader_counts.get(partition.leader, 0) + 1
+                    )
+
+                # Track partition counts per broker
+                for replica in partition.replicas:
+                    broker_partition_counts[replica] = broker_partition_counts.get(replica, 0) + 1
+
+                # Check for under-replication
+                if len(partition.isrs) < len(partition.replicas):
+                    under_replicated = True
+
+            if under_replicated:
+                under_replicated_count += 1
+
+            topics.append(
+                TopicInfo(
+                    name=topic_name,
+                    partition_count=partition_count,
+                    replication_factor=replication_factor,
+                    leader_distribution=leader_distribution,
+                    is_internal=is_internal,
+                    under_replicated=under_replicated,
+                )
+            )
+
+        # Update broker partition/leader counts
+        for broker in brokers:
+            broker.partition_count = broker_partition_counts.get(broker.id, 0)
+            broker.leader_count = broker_leader_counts.get(broker.id, 0)
+
+        # Sort topics: user topics first, then internal
+        topics.sort(key=lambda t: (t.is_internal, t.name))
+
+        # Get consumer groups
+        consumer_groups: list[ConsumerGroupInfo] = []
+        try:
+            groups_future = admin.list_consumer_groups()
+            groups_result = groups_future.result(timeout=10)
+
+            for group in groups_result.valid:
+                group_info = ConsumerGroupInfo(
+                    group_id=group.group_id,
+                    state=str(group.state) if hasattr(group, "state") else "Unknown",
+                    protocol_type=None,
+                    member_count=0,
+                )
+
+                # Try to get more details
+                try:
+                    describe_future = admin.describe_consumer_groups([group.group_id])
+                    for gid, future in describe_future.items():
+                        result = future.result(timeout=5)
+                        group_info.state = str(result.state)
+                        group_info.protocol_type = result.protocol_type
+                        group_info.member_count = len(result.members)
+                        if result.coordinator:
+                            group_info.coordinator_id = result.coordinator.id
+
+                        # Get subscribed topics
+                        subscribed_topics = set()
+                        for member in result.members:
+                            if hasattr(member, "assignment") and member.assignment:
+                                for tp in member.assignment.topic_partitions:
+                                    subscribed_topics.add(tp.topic)
+                        group_info.topics = sorted(subscribed_topics)
+                except Exception as e:
+                    logger.debug(f"Could not get details for group {group.group_id}: {e}")
+
+                consumer_groups.append(group_info)
+
+        except Exception as e:
+            logger.warning(f"Could not fetch consumer groups: {e}")
+
+        return ClusterDetailsResponse(
+            connected=True,
+            cluster_id=metadata.cluster_id,
+            controller_id=metadata.controller_id,
+            brokers=brokers,
+            broker_count=len(brokers),
+            topics=topics,
+            topic_count=len([t for t in topics if not t.is_internal]),
+            total_partitions=total_partitions,
+            under_replicated_count=under_replicated_count,
+            consumer_groups=consumer_groups,
+            consumer_group_count=len(consumer_groups),
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to get cluster details: {e}")
+        return ClusterDetailsResponse(connected=False, error=str(e))
 
 
 @router.post("/connect", response_model=ClusterInfo)

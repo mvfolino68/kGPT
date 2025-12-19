@@ -40,7 +40,7 @@
 </script>
 
 {#if showPanel}
-	<div class="panel overflow-hidden border-amber-500/15">
+	<div class="panel overflow-hidden">
 		<div class="panel-header flex items-center justify-between bg-amber-500/5">
 			<div class="flex items-center gap-2">
 				<svg class="w-4 h-4 text-amber-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -72,7 +72,7 @@
 							<button
 								onclick={() => onStartDestructiveOp('cleanup_orphans')}
 								disabled={cleanupLoading || activeDestructiveOp !== null}
-								class="px-3 py-1 text-xs bg-amber-500/10 text-amber-400/80 hover:bg-amber-500/15 rounded border border-amber-500/15 disabled:opacity-50"
+								class="btn btn-warning btn-xs"
 							>
 								Cleanup Orphans
 							</button>
@@ -83,14 +83,14 @@
 					</p>
 					<div class="flex flex-wrap gap-2">
 						{#each syncStatus.orphaned_collections as collection}
-							<span class="px-2 py-1 text-xs bg-surface-800/50 text-surface-300 rounded border border-surface-700/30">
+							<span class="px-2 py-1 text-xs bg-surface-900/50 text-surface-300 rounded">
 								{collection}
 							</span>
 						{/each}
 					</div>
 
 					{#if activeDestructiveOp === 'cleanup_orphans'}
-						<div class="mt-4 p-4 bg-amber-500/5 border border-amber-500/15 rounded-lg">
+						<div class="mt-4 p-4 bg-amber-500/5 rounded-lg">
 							<p class="text-sm text-amber-300 mb-3">This will permanently delete orphaned collections.</p>
 							<div class="mb-3">
 								<label class="block text-xs text-surface-500 mb-1">
@@ -135,7 +135,7 @@
 							<button
 								onclick={() => onStartDestructiveOp('cleanup_stale')}
 								disabled={cleanupLoading || activeDestructiveOp !== null}
-								class="px-3 py-1 text-xs bg-red-500/10 text-red-400/80 hover:bg-red-500/15 rounded border border-red-500/15 disabled:opacity-50"
+								class="btn btn-danger btn-xs"
 							>
 								Remove Stale Entries
 							</button>
@@ -146,14 +146,14 @@
 					</p>
 					<div class="flex flex-wrap gap-2">
 						{#each syncStatus.missing_sources as source}
-							<span class="px-2 py-1 text-xs bg-surface-800/50 text-surface-300 rounded border border-surface-700/30">
+							<span class="px-2 py-1 text-xs bg-surface-900/50 text-surface-300 rounded">
 								{source}
 							</span>
 						{/each}
 					</div>
 
 					{#if activeDestructiveOp === 'cleanup_stale'}
-						<div class="mt-4 p-4 bg-red-500/5 border border-red-500/15 rounded-lg">
+						<div class="mt-4 p-4 bg-red-500/5 rounded-lg">
 							<p class="text-sm text-red-300 mb-3">This will permanently remove stale database entries.</p>
 							<div class="mb-3">
 								<label class="block text-xs text-surface-500 mb-1">
@@ -185,12 +185,12 @@
 			{/if}
 
 			<!-- Danger zone -->
-			<div class="pt-2 border-t border-surface-700/20">
+			<div class="pt-4 mt-2">
 				{#if activeDestructiveOp !== 'purge_all'}
 					<button
 						onclick={() => onStartDestructiveOp('purge_all')}
 						disabled={cleanupLoading || activeDestructiveOp !== null}
-						class="px-3 py-1 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400/80 rounded border border-red-500/20 disabled:opacity-50 inline-flex items-center gap-1.5"
+						class="btn btn-danger btn-xs"
 					>
 						<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -201,7 +201,7 @@
 				{/if}
 
 				{#if activeDestructiveOp === 'purge_all'}
-					<div class="mt-2 p-4 bg-red-900/20 border border-red-500/20 rounded-lg">
+					<div class="mt-2 p-4 bg-red-900/20 rounded-lg">
 						<div class="flex items-center gap-2 mb-3">
 							<svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

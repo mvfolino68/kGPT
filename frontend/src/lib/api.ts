@@ -271,6 +271,49 @@ export interface ClusterInfo {
 	consumer_groups?: string[];
 }
 
+// Enhanced cluster details for dashboard
+export interface BrokerInfo {
+	id: number;
+	host: string;
+	port: number;
+	is_controller: boolean;
+	partition_count: number;
+	leader_count: number;
+}
+
+export interface TopicInfo {
+	name: string;
+	partition_count: number;
+	replication_factor: number;
+	leader_distribution: Record<number, number>;
+	is_internal: boolean;
+	under_replicated: boolean;
+}
+
+export interface ConsumerGroupInfo {
+	group_id: string;
+	state: string;
+	protocol_type: string | null;
+	member_count: number;
+	coordinator_id: number | null;
+	topics: string[];
+}
+
+export interface ClusterDetailsResponse {
+	connected: boolean;
+	cluster_id: string | null;
+	controller_id: number | null;
+	brokers: BrokerInfo[];
+	broker_count: number;
+	topics: TopicInfo[];
+	topic_count: number;
+	total_partitions: number;
+	under_replicated_count: number;
+	consumer_groups: ConsumerGroupInfo[];
+	consumer_group_count: number;
+	error: string | null;
+}
+
 export interface KeyStatus {
 	configured: boolean;
 	source: 'env' | 'db' | null;
@@ -892,6 +935,12 @@ export async function getClusters(): Promise<KafkaCluster[]> {
 export async function getClusterInfo(): Promise<ClusterInfo> {
 	const response = await fetch(`${API_BASE}/cluster/info`);
 	if (!response.ok) throw new Error(`Failed to get cluster info: ${response.statusText}`);
+	return response.json();
+}
+
+export async function getClusterDetails(): Promise<ClusterDetailsResponse> {
+	const response = await fetch(`${API_BASE}/cluster/details`);
+	if (!response.ok) throw new Error(`Failed to get cluster details: ${response.statusText}`);
 	return response.json();
 }
 

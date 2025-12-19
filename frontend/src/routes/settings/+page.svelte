@@ -13,7 +13,7 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, StatusIndicator } from '$lib/components';
+	import { Header, HeaderStatus, StatusIndicator } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import {
@@ -291,11 +291,12 @@
 	<Header title="Settings" subtitle="Configure your kGPT instance">
 		{#snippet actions()}
 			{#if openaiValid && openaiSelectedModel && !isOnboarding}
-				<div class="px-3 py-1.5 bg-surface-800 rounded-lg text-xs flex items-center gap-2">
-					<StatusIndicator status="active" size="sm" pulse />
-					<span class="text-surface-500">active:</span>
-					<span class="text-surface-200 font-medium">openai/{openaiSelectedModel}</span>
-				</div>
+				<HeaderStatus
+					status="active"
+					label="Active"
+					sublabel="openai/{openaiSelectedModel}"
+					pulse
+				/>
 			{/if}
 		{/snippet}
 	</Header>
@@ -309,7 +310,7 @@
 					<span>{error}</span>
 					<button
 						type="button"
-						class="ml-auto text-red-400/60 hover:text-red-400"
+						class="btn-action btn-action-danger ml-auto"
 						onclick={() => error = null}
 						aria-label="Dismiss error"
 					>

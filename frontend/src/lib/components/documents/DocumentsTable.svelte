@@ -64,7 +64,7 @@
 		</div>
 	{:else}
 		<!-- Table header -->
-		<div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surface-800/30 border-b border-surface-700/20 text-[10px] font-bold uppercase tracking-wider text-surface-500">
+		<div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surface-900/50 text-[10px] font-bold uppercase tracking-wider text-surface-500">
 			<div class="col-span-1">ID</div>
 			<div class="col-span-2">Name</div>
 			<div class="col-span-1">Type</div>
@@ -78,7 +78,7 @@
 		{#each documents as doc}
 			{@const progress = activeIngestions.get(doc.id)}
 			{@const startTime = ingestionStartTimes.get(doc.id)}
-			<div class="border-b border-surface-700/20 last:border-b-0">
+			<div class="">
 				<div class="grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center hover:bg-surface-800/30 transition-colors">
 					<div class="col-span-1 text-surface-500 text-xs">#{doc.id}</div>
 					<div class="col-span-2 text-surface-100 truncate" title={doc.name}>{doc.name}</div>
@@ -97,7 +97,7 @@
 						{#if doc.status === 'indexing'}
 							<button
 								onclick={() => onCancel(doc.id)}
-								class="px-2 py-0.5 text-xs bg-amber-500/10 text-amber-400/80 hover:bg-amber-500/15 rounded border border-amber-500/15"
+								class="btn btn-warning btn-xs"
 							>
 								Cancel
 							</button>
@@ -105,7 +105,7 @@
 						{#if confirmingDeleteId === doc.id}
 							<button
 								onclick={() => onConfirmDelete(doc.id, doc.name)}
-								class="px-2 py-0.5 text-xs bg-red-600 text-white hover:bg-red-500 rounded flex items-center gap-1"
+								class="btn btn-danger-solid btn-xs"
 							>
 								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -114,14 +114,14 @@
 							</button>
 							<button
 								onclick={onCancelDelete}
-								class="px-2 py-0.5 text-xs bg-surface-600 text-surface-200 hover:bg-surface-500 rounded"
+								class="btn btn-default btn-xs"
 							>
 								Cancel
 							</button>
 						{:else}
 							<button
 								onclick={() => onDeleteClick(doc.id)}
-								class="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors"
+								class="btn-action btn-action-danger"
 								title="Delete source"
 							>
 								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -134,7 +134,7 @@
 
 				<!-- Progress section -->
 				{#if doc.status === 'indexing' && progress}
-					<div class="px-4 py-3 bg-surface-800/20 border-t border-surface-700/20">
+					<div class="px-4 py-3 bg-surface-900/30">
 						<div class="flex items-center gap-4 mb-2">
 							<div class="flex-1 h-1.5 bg-surface-800 rounded-full overflow-hidden">
 								<div class="h-full bg-surface-500 transition-all duration-300" style="width: {progress.progress}%"></div>
@@ -169,14 +169,14 @@
 
 				<!-- Error display -->
 				{#if doc.status === 'error' && progress?.error}
-					<div class="px-4 py-2 bg-red-500/5 border-t border-red-500/10">
+					<div class="px-4 py-2 bg-red-500/5">
 						<span class="text-xs text-red-400/80">Error: {progress.error}</span>
 					</div>
 				{/if}
 
 				<!-- Completed display -->
 				{#if progress?.status === 'completed' && progress.count !== undefined}
-					<div class="px-4 py-2 bg-emerald-500/5 border-t border-emerald-500/10">
+					<div class="px-4 py-2 bg-emerald-500/5">
 						<span class="text-xs text-emerald-400/80">
 							Indexed {progress.count.toLocaleString()} chunks
 							{#if progress.pages} from {progress.pages} pages{/if}
@@ -187,7 +187,7 @@
 
 				<!-- Cancelled display -->
 				{#if doc.status === 'cancelled' || progress?.status === 'cancelled'}
-					<div class="px-4 py-2 bg-surface-800/50 border-t border-surface-700/30">
+					<div class="px-4 py-2 bg-surface-800/50">
 						<span class="text-xs text-surface-500">Cancelled</span>
 					</div>
 				{/if}

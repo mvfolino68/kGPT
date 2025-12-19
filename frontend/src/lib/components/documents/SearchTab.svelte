@@ -36,7 +36,7 @@
 		</div>
 
 		<div class="p-4 space-y-4">
-			<div class="p-3 bg-surface-800/30 rounded-lg text-xs text-surface-400">
+			<div class="p-3 bg-surface-900/50 rounded text-xs text-surface-400">
 				<span class="text-surface-300">How it works:</span> Your query is converted to an embedding vector, then compared against all stored document chunks using cosine similarity.
 			</div>
 
@@ -78,9 +78,9 @@
 				</span>
 			</div>
 
-			<div class="divide-y divide-surface-700/20">
+			<div class="space-y-1">
 				{#each searchResults.chunks as chunk, i}
-					<div class="p-4 hover:bg-surface-800/20 transition-colors">
+					<div class="p-4 hover:bg-surface-800/30 transition-colors rounded">
 						<div class="flex items-start justify-between mb-2">
 							<div class="flex items-center gap-3">
 								<span class="text-surface-500 text-xs">#{i + 1}</span>
@@ -91,7 +91,7 @@
 							</div>
 							<button
 								onclick={() => selectedChunk = selectedChunk === chunk ? null : chunk}
-								class="text-xs text-surface-400 hover:text-surface-200 transition-colors"
+								class="btn btn-link btn-xs"
 							>
 								{selectedChunk === chunk ? 'Hide' : 'Details'}
 							</button>

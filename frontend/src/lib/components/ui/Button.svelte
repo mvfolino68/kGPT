@@ -1,9 +1,23 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
+	type ButtonVariant =
+		| 'default'
+		| 'primary'
+		| 'ghost'
+		| 'danger'
+		| 'danger-solid'
+		| 'warning'
+		| 'success'
+		| 'link'
+		| 'outline'
+		| 'outline-primary';
+
+	type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon';
+
 	interface Props {
-		variant?: 'default' | 'primary' | 'ghost' | 'danger';
-		size?: 'sm' | 'md' | 'lg' | 'icon';
+		variant?: ButtonVariant;
+		size?: ButtonSize;
 		type?: 'button' | 'submit' | 'reset';
 		disabled?: boolean;
 		loading?: boolean;
@@ -23,14 +37,21 @@
 		onclick
 	}: Props = $props();
 
-	const variantClasses = {
+	const variantClasses: Record<ButtonVariant, string> = {
 		default: 'btn btn-default',
 		primary: 'btn btn-primary',
 		ghost: 'btn btn-ghost',
-		danger: 'btn btn-danger'
+		danger: 'btn btn-danger',
+		'danger-solid': 'btn btn-danger-solid',
+		warning: 'btn btn-warning',
+		success: 'btn btn-success',
+		link: 'btn btn-link',
+		outline: 'btn btn-outline',
+		'outline-primary': 'btn btn-outline-primary'
 	};
 
-	const sizeClasses = {
+	const sizeClasses: Record<ButtonSize, string> = {
+		xs: 'btn-xs',
 		sm: 'btn-sm',
 		md: '',
 		lg: 'btn-lg',

@@ -93,8 +93,16 @@ body {
   font-variant-ligatures: none;
 }
 
+/* Reset button defaults */
+button {
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
 /* ============================================================================
-   BUTTONS
+   BUTTONS - Consistent Hover Behavior
    ============================================================================ */
 
 .btn {
@@ -106,7 +114,10 @@ body {
   font-size: 0.875rem;
   font-weight: 500;
   border-radius: var(--radius-md);
-  transition: all var(--transition-base) ease;
+  transition: background-color var(--transition-base) ease,
+              color var(--transition-base) ease,
+              border-color var(--transition-base) ease,
+              opacity var(--transition-base) ease;
   cursor: pointer;
   border: none;
 }
@@ -114,6 +125,7 @@ body {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
 .btn:focus-visible {
@@ -121,7 +133,11 @@ body {
   outline-offset: 2px;
 }
 
-/* Default button */
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Default button - neutral surface */
 .btn-default {
   background: rgb(var(--color-surface-800));
   color: rgb(var(--color-surface-200));
@@ -132,7 +148,7 @@ body {
   color: rgb(var(--color-surface-100));
 }
 
-/* Primary button */
+/* Primary button - brand blue */
 .btn-primary {
   background: rgb(var(--color-primary));
   color: white;
@@ -142,7 +158,7 @@ body {
   background: rgb(var(--color-primary-dark));
 }
 
-/* Ghost button */
+/* Ghost button - transparent with subtle hover */
 .btn-ghost {
   background: transparent;
   color: rgb(var(--color-surface-300));
@@ -153,7 +169,7 @@ body {
   color: rgb(var(--color-surface-100));
 }
 
-/* Danger button */
+/* Danger button - soft red background */
 .btn-danger {
   background: rgb(var(--color-error) / 0.15);
   color: rgb(var(--color-error-light));
@@ -161,19 +177,99 @@ body {
 
 .btn-danger:hover:not(:disabled) {
   background: rgb(var(--color-error) / 0.25);
+  color: rgb(var(--color-error));
+}
+
+/* Danger solid - for confirm delete actions */
+.btn-danger-solid {
+  background: rgb(var(--color-error));
+  color: white;
+}
+
+.btn-danger-solid:hover:not(:disabled) {
+  background: rgb(220 38 38);
+}
+
+/* Warning button - amber/yellow */
+.btn-warning {
+  background: rgb(var(--color-warning) / 0.15);
+  color: rgb(var(--color-warning-light));
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: rgb(var(--color-warning) / 0.25);
+  color: rgb(var(--color-warning));
+}
+
+/* Success button - green */
+.btn-success {
+  background: rgb(var(--color-success) / 0.15);
+  color: rgb(var(--color-success-light));
+}
+
+.btn-success:hover:not(:disabled) {
+  background: rgb(var(--color-success) / 0.25);
+  color: rgb(var(--color-success));
+}
+
+/* Link button - text-only, for inline actions */
+.btn-link {
+  background: transparent;
+  color: rgb(var(--color-surface-400));
+  padding: 0.25rem 0.5rem;
+}
+
+.btn-link:hover:not(:disabled) {
+  background: transparent;
+  color: rgb(var(--color-surface-200));
+}
+
+/* Outline button variants */
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgb(var(--color-surface-600));
+  color: rgb(var(--color-surface-300));
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: rgb(var(--color-surface-800));
+  border-color: rgb(var(--color-surface-500));
+  color: rgb(var(--color-surface-100));
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid rgb(var(--color-primary) / 0.5);
+  color: rgb(var(--color-primary-light));
+}
+
+.btn-outline-primary:hover:not(:disabled) {
+  background: rgb(var(--color-primary) / 0.1);
+  border-color: rgb(var(--color-primary));
+  color: rgb(var(--color-primary-light));
 }
 
 /* Button sizes */
 .btn-sm {
   padding: 0.375rem 0.75rem;
   font-size: 0.75rem;
+  gap: 0.375rem;
+}
+
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  gap: 0.25rem;
+  border-radius: var(--radius-sm);
 }
 
 .btn-lg {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
+  gap: 0.625rem;
 }
 
+/* Icon buttons - square aspect ratio */
 .btn-icon {
   padding: 0.5rem;
   width: 2.25rem;
@@ -184,6 +280,146 @@ body {
   width: 1.75rem;
   height: 1.75rem;
   padding: 0.25rem;
+}
+
+.btn-icon.btn-xs {
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.25rem;
+}
+
+/* Action buttons - for icon-only actions like edit/delete in lists */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-base) ease,
+              color var(--transition-base) ease;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-action-default {
+  color: rgb(var(--color-surface-400));
+}
+
+.btn-action-default:hover:not(:disabled) {
+  background: rgb(var(--color-surface-700));
+  color: rgb(var(--color-surface-200));
+}
+
+.btn-action-danger {
+  color: rgb(var(--color-error-light));
+}
+
+.btn-action-danger:hover:not(:disabled) {
+  background: rgb(var(--color-error) / 0.2);
+  color: rgb(var(--color-error));
+}
+
+.btn-action-primary {
+  color: rgb(var(--color-primary-light));
+}
+
+.btn-action-primary:hover:not(:disabled) {
+  background: rgb(var(--color-primary) / 0.2);
+  color: rgb(var(--color-primary));
+}
+
+.btn-action-warning {
+  color: rgb(var(--color-warning-light));
+}
+
+.btn-action-warning:hover:not(:disabled) {
+  background: rgb(var(--color-warning) / 0.2);
+  color: rgb(var(--color-warning));
+}
+
+.btn-action-success {
+  color: rgb(var(--color-success-light));
+}
+
+.btn-action-success:hover:not(:disabled) {
+  background: rgb(var(--color-success) / 0.2);
+  color: rgb(var(--color-success));
+}
+
+/* Tab buttons - for navigation tabs */
+.btn-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(var(--color-surface-400));
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition-base) ease,
+              background-color var(--transition-base) ease,
+              border-color var(--transition-base) ease;
+  cursor: pointer;
+  background: transparent;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.btn-tab:hover:not(:disabled):not(.btn-tab-active) {
+  color: rgb(var(--color-surface-200));
+  background: rgb(var(--color-surface-800) / 0.2);
+}
+
+.btn-tab-active,
+.btn-tab.active {
+  color: rgb(var(--color-surface-100));
+  border-bottom-color: rgb(var(--color-surface-400));
+  background: rgb(var(--color-surface-800) / 0.3);
+}
+
+.btn-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Segmented control - for toggle groups */
+.btn-segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(var(--color-surface-400));
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-base) ease,
+              color var(--transition-base) ease;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.btn-segment:hover:not(:disabled):not(.btn-segment-active) {
+  color: rgb(var(--color-surface-200));
+}
+
+.btn-segment-active,
+.btn-segment.active {
+  background: rgb(var(--color-surface-700));
+  color: rgb(var(--color-surface-100));
+}
+
+.btn-segment:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============================================================================
