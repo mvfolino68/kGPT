@@ -1,24 +1,19 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import { refreshHealth } from '$lib/stores/health';
-	import { checkOnboarding } from '$lib/stores/onboarding.svelte';
+	import { checkOnboarding, getOnboardingState, completeOnboarding } from '$lib/stores/onboarding.svelte';
 	import { Sidebar } from '$lib/components/layout';
+	import { OnboardingWizard } from '$lib/components/onboarding';
 
 	let { children } = $props();
 
 	let ready = $state(false);
+	let onboardingState = getOnboardingState();
 
 	onMount(async () => {
 		// Check onboarding status
-		const needsOnboarding = await checkOnboarding();
-
-		// Redirect to settings if onboarding is needed (unless already there)
-		if (needsOnboarding && !$page.url.pathname.startsWith('/settings')) {
-			goto('/settings', { replaceState: true });
-		}
+		await checkOnboarding();
 
 		// Quick fade-in after check
 		setTimeout(() => { ready = true; }, 100);
@@ -27,6 +22,10 @@
 		const interval = setInterval(refreshHealth, 30000);
 		return () => clearInterval(interval);
 	});
+
+	function handleOnboardingComplete() {
+		completeOnboarding();
+	}
 </script>
 
 <svelte:head>
@@ -41,3 +40,8 @@
 		{@render children()}
 	</main>
 </div>
+
+<!-- Onboarding Wizard Modal -->
+{#if onboardingState.showWizard}
+	<OnboardingWizard onComplete={handleOnboardingComplete} />
+{/if}

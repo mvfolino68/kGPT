@@ -6,40 +6,34 @@
 	interface NavItem {
 		href: string;
 		label: string;
-		icon: 'dashboard' | 'cluster' | 'architecture' | 'vectorstore' | 'settings';
+		icon: 'dashboard' | 'architecture' | 'vectorstore' | 'settings';
 		tooltip: string;
 	}
 
 	const navItems: NavItem[] = [
 		{
 			href: '/dashboard',
-			label: 'Cluster View',
+			label: 'Dashboard',
 			icon: 'dashboard',
-			tooltip: 'Real-time Kafka chat interface with RAG-powered responses'
-		},
-		{
-			href: '/cluster',
-			label: 'Cluster Connection',
-			icon: 'cluster',
-			tooltip: 'Connect to Kafka clusters and manage broker configurations'
+			tooltip: 'Chat with your Kafka cluster using natural language AI'
 		},
 		{
 			href: '/architecture',
-			label: 'Agent Architecture',
+			label: 'Architecture',
 			icon: 'architecture',
-			tooltip: 'View multi-agent RAG orchestration and query routing flows'
+			tooltip: 'See how multi-agent RAG orchestration routes your queries'
 		},
 		{
 			href: '/documents',
 			label: 'Vector Store',
 			icon: 'vectorstore',
-			tooltip: 'Manage RAG documents, embeddings, and Qdrant vector database'
+			tooltip: 'Manage documents, embeddings, and the Qdrant vector database'
 		},
 		{
 			href: '/settings',
 			label: 'Settings',
 			icon: 'settings',
-			tooltip: 'Configure LLM providers, API keys, and system preferences'
+			tooltip: 'Configure API keys, Kafka clusters, and preferences'
 		}
 	];
 
@@ -76,11 +70,7 @@
 				>
 					{#if item.icon === 'dashboard'}
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-						</svg>
-					{:else if item.icon === 'cluster'}
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" />
+							<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
 						</svg>
 					{:else if item.icon === 'architecture'}
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">

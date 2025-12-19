@@ -24,6 +24,7 @@
 		type SourceType
 	} from '$lib/api';
 	import { Header, StatusIndicator } from '$lib/components';
+	import { Hint } from '$lib/components/hints';
 	import {
 		IngestionForm,
 		DocumentsTable,
@@ -632,3 +633,10 @@
 		</div>
 	</div>
 </div>
+
+<!-- Contextual Hint -->
+<Hint
+	id="documents"
+	title="Build Your Knowledge Base"
+	description="Add documentation, websites, or files here. The AI uses this content to provide more accurate, context-aware responses."
+/>

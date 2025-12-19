@@ -4,11 +4,18 @@
 		getSettings,
 		updateSettings,
 		validateApiKey,
+		getClusters,
+		getClusterInfo,
+		connectCluster,
+		disconnectCluster,
 		type Settings,
-		type KeyStatus
+		type KeyStatus,
+		type KafkaCluster,
+		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
 	import { Header, StatusIndicator } from '$lib/components';
+	import { Hint } from '$lib/components/hints';
 
 	let settings = $state<Settings | null>(null);
 	let loading = $state(true);
@@ -51,6 +58,17 @@
 
 	// Onboarding
 	let isOnboarding = $state(false);
+
+	// Kafka cluster state
+	let clusters = $state<KafkaCluster[]>([]);
+	let clusterInfo = $state<Partial<ClusterInfo> & { connected: boolean }>({ connected: false });
+	let clusterLoading = $state(false);
+	let clusterConnecting = $state(false);
+	let clusterError = $state<string | null>(null);
+	let showClusterForm = $state(false);
+	let clusterFormName = $state('');
+	let clusterFormBootstrap = $state('');
+	let clusterFormProtocol = $state('PLAINTEXT');
 
 	const EMBEDDING_PROVIDERS = [
 		{ value: 'fastembed', label: 'FastEmbed (Local)' },
@@ -247,7 +265,77 @@
 		}
 	}
 
-	onMount(() => { loadSettings(); });
+	// Kafka cluster functions
+	async function loadClusterData() {
+		clusterLoading = true;
+		clusterError = null;
+		try {
+			const [clustersResult, infoResult] = await Promise.all([
+				getClusters().catch(() => []),
+				getClusterInfo().catch(() => ({ connected: false }))
+			]);
+			clusters = clustersResult;
+			clusterInfo = infoResult;
+		} catch (e) {
+			clusterError = e instanceof Error ? e.message : 'Failed to load cluster data';
+		} finally {
+			clusterLoading = false;
+		}
+	}
+
+	async function handleClusterConnect(cluster?: KafkaCluster) {
+		clusterConnecting = true;
+		clusterError = null;
+		try {
+			if (cluster) {
+				await connectCluster({
+					name: cluster.name,
+					bootstrap_servers: cluster.bootstrap_servers,
+					security_protocol: cluster.security_protocol
+				});
+			} else {
+				await connectCluster({
+					name: clusterFormName,
+					bootstrap_servers: clusterFormBootstrap,
+					security_protocol: clusterFormProtocol
+				});
+				showClusterForm = false;
+				clusterFormName = '';
+				clusterFormBootstrap = '';
+				clusterFormProtocol = 'PLAINTEXT';
+			}
+			await loadClusterData();
+			success = 'Connected to cluster';
+			setTimeout(() => { success = null; }, 2000);
+		} catch (e) {
+			clusterError = e instanceof Error ? e.message : 'Failed to connect';
+		} finally {
+			clusterConnecting = false;
+		}
+	}
+
+	async function handleClusterDisconnect() {
+		try {
+			await disconnectCluster();
+			await loadClusterData();
+			success = 'Disconnected from cluster';
+			setTimeout(() => { success = null; }, 2000);
+		} catch (e) {
+			clusterError = e instanceof Error ? e.message : 'Failed to disconnect';
+		}
+	}
+
+	function connectDemoCluster() {
+		clusterFormName = 'Demo Cluster';
+		clusterFormBootstrap = 'localhost:9094';
+		clusterFormProtocol = 'PLAINTEXT';
+		showClusterForm = true;
+	}
+
+	onMount(() => {
+		loadSettings();
+		loadClusterData();
+	});
 </script>
 
 <svelte:head>
@@ -375,6 +463,158 @@
 								{saving ? '...' : 'Update'}
 							</button>
 						</div>
+					</div>
+				</div>
+
+				<!-- Kafka Cluster -->
+				<div class="bg-surface-900 border {clusterInfo.connected ? 'border-emerald-500/30' : 'border-surface-700/50'} rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<svg class="w-4 h-4 {clusterInfo.connected ? 'text-emerald-400' : 'text-surface-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" />
+							</svg>
+							<span class="text-sm text-surface-300">Kafka Cluster</span>
+							{#if clusterInfo.connected}
+								<span class="text-xs px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">connected</span>
+							{/if}
+						</div>
+						{#if clusterLoading}
+							<span class="text-xs text-surface-500">Loading...</span>
+						{/if}
+					</div>
+					<div class="p-4 space-y-4">
+						{#if clusterError}
+							<div class="flex items-center gap-2 text-sm text-red-400">
+								<StatusIndicator status="error" size="sm" />
+								<span>{clusterError}</span>
+							</div>
+						{/if}
+
+						{#if clusterInfo.connected}
+							<!-- Connected state -->
+							<div class="flex items-center justify-between">
+								<div>
+									<p class="text-sm font-medium text-surface-100">{clusterInfo.cluster_id || 'Connected Cluster'}</p>
+									<p class="text-xs text-surface-500 mt-1">
+										{clusterInfo.brokers || 0} broker(s) | {clusterInfo.topics?.length || 0} topics
+									</p>
+								</div>
+								<button type="button" class="btn btn-ghost btn-sm text-red-400 hover:text-red-300" onclick={handleClusterDisconnect}>
+									Disconnect
+								</button>
+							</div>
+						{:else if showClusterForm}
+							<!-- Connect form -->
+							<form onsubmit={(e) => { e.preventDefault(); handleClusterConnect(); }} class="space-y-4">
+								<div class="grid grid-cols-2 gap-3">
+									<div>
+										<label for="cluster-name" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Name</label>
+										<input
+											id="cluster-name"
+											type="text"
+											bind:value={clusterFormName}
+											placeholder="my-cluster"
+											class="w-full input"
+										/>
+									</div>
+									<div>
+										<label for="cluster-protocol" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Protocol</label>
+										<select id="cluster-protocol" bind:value={clusterFormProtocol} class="w-full input">
+											<option value="PLAINTEXT">PLAINTEXT</option>
+											<option value="SSL">SSL</option>
+											<option value="SASL_PLAINTEXT">SASL_PLAINTEXT</option>
+											<option value="SASL_SSL">SASL_SSL</option>
+										</select>
+									</div>
+								</div>
+								<div>
+									<label for="cluster-bootstrap" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">Bootstrap Servers</label>
+									<input
+										id="cluster-bootstrap"
+										type="text"
+										bind:value={clusterFormBootstrap}
+										placeholder="localhost:9092"
+										class="w-full input"
+									/>
+								</div>
+								<div class="flex gap-2">
+									<button
+										type="submit"
+										class="btn btn-primary"
+										disabled={clusterConnecting || !clusterFormName.trim() || !clusterFormBootstrap.trim()}
+									>
+										{clusterConnecting ? 'Connecting...' : 'Connect'}
+									</button>
+									<button type="button" class="btn btn-ghost" onclick={() => showClusterForm = false}>
+										Cancel
+									</button>
+								</div>
+							</form>
+						{:else}
+							<!-- Quick connect options -->
+							<div class="space-y-3">
+								<button
+									type="button"
+									class="w-full p-3 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-emerald-500/30 hover:bg-surface-800 transition-all text-left group"
+									onclick={connectDemoCluster}
+								>
+									<div class="flex items-center gap-3">
+										<div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+											<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+											</svg>
+										</div>
+										<div class="flex-1">
+											<span class="text-sm font-medium text-surface-100 group-hover:text-emerald-400">Demo Cluster</span>
+											<p class="text-xs text-surface-500">localhost:9094</p>
+										</div>
+									</div>
+								</button>
+								<button
+									type="button"
+									class="w-full p-3 rounded-lg bg-surface-800/50 border border-surface-700/50 hover:border-primary/30 hover:bg-surface-800 transition-all text-left group"
+									onclick={() => showClusterForm = true}
+								>
+									<div class="flex items-center gap-3">
+										<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+											<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+												<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+											</svg>
+										</div>
+										<div class="flex-1">
+											<span class="text-sm font-medium text-surface-100 group-hover:text-primary-light">Custom Cluster</span>
+											<p class="text-xs text-surface-500">Enter connection details</p>
+										</div>
+									</div>
+								</button>
+
+								{#if clusters.length > 0}
+									<div class="pt-3 border-t border-surface-700/50">
+										<p class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-2">Saved Clusters</p>
+										<div class="space-y-2">
+											{#each clusters as cluster}
+												<button
+													type="button"
+													class="w-full p-2 rounded-lg bg-surface-800/30 border border-surface-700/50 hover:border-primary/30 hover:bg-surface-800 transition-all text-left"
+													onclick={() => handleClusterConnect(cluster)}
+													disabled={clusterConnecting}
+												>
+													<div class="flex items-center justify-between">
+														<div>
+															<span class="text-sm text-surface-200">{cluster.name}</span>
+															<p class="text-xs text-surface-500">{cluster.bootstrap_servers}</p>
+														</div>
+														<svg class="w-4 h-4 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+															<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+														</svg>
+													</div>
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 				</div>
 
@@ -535,6 +775,13 @@
 			{/if}
 		</div>
 	</div>
+
+	<!-- Contextual Hint -->
+	<Hint
+		id="settings"
+		title="Configure Your Setup"
+		description="Customize AI providers, connect Kafka clusters, and fine-tune your kGPT experience here."
+	/>
 
 	<!-- Add/Update Key Modal -->
 	{#if showAddKey && !isOnboarding}

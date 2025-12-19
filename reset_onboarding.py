@@ -218,8 +218,10 @@ Examples:
 
     print("\nNext steps:")
     print("  1. Restart the kGPT server (if running)")
-    print("  2. Visit http://localhost:5173/settings")
-    print("  3. Complete the onboarding flow")
+    print("  2. Clear browser localStorage or open an incognito window")
+    print("     (The onboarding wizard completion is stored in the browser)")
+    print("  3. Visit http://localhost:5173")
+    print("  4. Complete the onboarding wizard")
 
 
 if __name__ == "__main__":

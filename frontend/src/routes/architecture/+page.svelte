@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, StatusIndicator } from '$lib/components';
+	import { Hint } from '$lib/components/hints';
 	import {
 		PathSelector,
 		SelectedPathInfo,
@@ -116,3 +117,10 @@
 		</div>
 	</div>
 </div>
+
+<!-- Contextual Hint -->
+<Hint
+	id="architecture"
+	title="Explore the AI Pipeline"
+	description="This visualization shows how your queries flow through specialized agents. Each agent handles a different task like routing, retrieval, or synthesis."
+/>
