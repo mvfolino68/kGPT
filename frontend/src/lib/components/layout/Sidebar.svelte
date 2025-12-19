@@ -91,7 +91,7 @@
 							</div>
 							<span class="text-text-secondary group-hover:text-text transition-colors">Qdrant</span>
 						</div>
-						<StatusDot status={$health.qdrant_connected ? 'success' : 'error'} size="sm" pulse={$health.qdrant_connected} />
+						<StatusDot status={$health.qdrant_connected ? 'success' : 'error'} size="sm" pulse={$health.qdrant_connected} class="ml-2" />
 					</a>
 				</Tooltip>
 
@@ -103,7 +103,7 @@
 							</div>
 							<span class="text-text-secondary group-hover:text-text transition-colors">Kafka</span>
 						</div>
-						<StatusDot status={$health.kafka_connected ? 'success' : 'inactive'} size="sm" pulse={$health.kafka_connected} />
+						<StatusDot status={$health.kafka_connected ? 'success' : 'inactive'} size="sm" pulse={$health.kafka_connected} class="ml-2" />
 					</a>
 				</Tooltip>
 			</div>
