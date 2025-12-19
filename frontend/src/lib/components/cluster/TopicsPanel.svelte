@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { TopicInfo } from '$lib/api';
+	import { ListItem, Button } from '$lib/components/ui';
 
 	interface Props {
 		topics: TopicInfo[];
@@ -80,13 +81,14 @@
 				<option value="replication">Replication</option>
 			</select>
 
-			<button
-				type="button"
-				class="btn btn-ghost btn-sm {showInternalTopics ? 'bg-primary/20 text-primary' : ''}"
+			<Button
+				variant="ghost"
+				size="sm"
+				class={showInternalTopics ? 'bg-primary/20 text-primary' : ''}
 				onclick={() => (showInternalTopics = !showInternalTopics)}
 			>
 				Internal
-			</button>
+			</Button>
 		</div>
 	</div>
 
@@ -107,9 +109,8 @@
 
 			<!-- Grid rows -->
 			{#each filteredTopics() as topic}
-				<button
-					type="button"
-					class="w-full grid grid-cols-12 gap-2 px-4 py-2.5 text-left items-center hover:bg-surface-700/30 transition-colors"
+				<ListItem
+					class="grid grid-cols-12 gap-2 items-center"
 					onclick={() => onTopicClick?.(topic.name)}
 				>
 					<div class="col-span-6 flex items-center gap-2 min-w-0">
@@ -150,7 +151,7 @@
 							<span class="w-2 h-2 inline-block rounded-full bg-emerald-400/80"></span>
 						{/if}
 					</div>
-				</button>
+				</ListItem>
 			{/each}
 		{/if}
 	</div>

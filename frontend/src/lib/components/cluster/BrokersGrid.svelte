@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { BrokerInfo } from '$lib/api';
+	import { ClickableCard } from '$lib/components/ui';
 
 	interface Props {
 		brokers: BrokerInfo[];
@@ -28,11 +29,7 @@
 	{:else}
 		<div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 			{#each brokers as broker}
-				<button
-					type="button"
-					class="text-left p-4 rounded-lg bg-surface-700/30 hover:bg-surface-700/50 transition-colors"
-					onclick={() => onBrokerClick?.(broker.id)}
-				>
+				<ClickableCard onclick={() => onBrokerClick?.(broker.id)}>
 					<div class="flex items-center justify-between mb-3">
 						<div class="flex items-center gap-2">
 							<div
@@ -73,7 +70,7 @@
 							<span class="text-surface-300 font-medium tabular-nums">{broker.leader_count} partitions</span>
 						</div>
 					</div>
-				</button>
+				</ClickableCard>
 			{/each}
 		</div>
 	{/if}

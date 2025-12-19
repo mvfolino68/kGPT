@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ConsumerGroupInfo } from '$lib/api';
+	import { ListItem } from '$lib/components/ui';
 
 	interface Props {
 		groups: ConsumerGroupInfo[];
@@ -93,9 +94,8 @@
 		{:else}
 			<div>
 				{#each filteredGroups() as group}
-					<button
-						type="button"
-						class="w-full text-left px-4 py-3 hover:bg-surface-700/30 transition-colors"
+					<ListItem
+						class="py-3"
 						onclick={() => onGroupClick?.(group.group_id)}
 					>
 						<div class="flex items-start justify-between gap-4">
@@ -173,7 +173,7 @@
 								<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 							</svg>
 						</div>
-					</button>
+					</ListItem>
 				{/each}
 			</div>
 		{/if}

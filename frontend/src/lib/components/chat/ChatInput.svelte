@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
+
 	interface Props {
 		value: string;
 		disabled: boolean;
@@ -37,9 +39,9 @@
 					class="flex-1 bg-transparent text-surface-100 placeholder-surface-600 resize-none focus:outline-none disabled:opacity-50 text-sm"
 					style="field-sizing: content; max-height: 150px;"
 				></textarea>
-				<button
-					type="button"
-					class="btn btn-primary btn-sm"
+				<Button
+					variant="primary"
+					size="sm"
 					onclick={onSend}
 					disabled={disabled || !value.trim()}
 				>
@@ -53,7 +55,7 @@
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
 						</svg>
 					{/if}
-				</button>
+				</Button>
 			</div>
 		</div>
 		<p class="text-center text-xs text-surface-600">

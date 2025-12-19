@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
+
 	interface Props {
 		onAction: (action: string) => void;
 		disabled?: boolean;
@@ -18,9 +20,9 @@
 	<div class="flex items-center gap-2 flex-wrap">
 		<span class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mr-2">Quick Actions</span>
 		{#each actions as action}
-			<button
-				type="button"
-				class="btn btn-ghost btn-sm"
+			<Button
+				variant="ghost"
+				size="sm"
 				{disabled}
 				onclick={() => onAction(action.id)}
 			>
@@ -42,7 +44,7 @@
 					</svg>
 				{/if}
 				{action.label}
-			</button>
+			</Button>
 		{/each}
 	</div>
 </div>

@@ -5,7 +5,7 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot } from '$lib/components';
+	import { Header, HeaderStatus, Card, Button, StatusDot, ClickableCard } from '$lib/components';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -158,9 +158,9 @@
 					currentClusterId={clusterDetails.cluster_id}
 					onSwitch={loadClusterData}
 				/>
-				<button type="button" class="btn btn-ghost btn-sm" onclick={loadClusterData} disabled={loading}>
+				<Button variant="ghost" size="sm" onclick={loadClusterData} disabled={loading}>
 					{loading ? 'Loading...' : 'Refresh'}
-				</button>
+				</Button>
 				{#if !clusterDetails.connected && !loading}
 					<Button variant="primary" size="sm" onclick={connectDemo} loading={connecting}>
 						Quick Connect
@@ -268,9 +268,9 @@
 
 					{#if !showConnectForm}
 						<div class="max-w-md mx-auto space-y-3">
-							<button
-								type="button"
-								class="w-full p-4 rounded-xl bg-surface-800 hover:bg-surface-700/80 transition-all text-left group"
+							<ClickableCard
+								variant="subtle"
+								class="group"
 								onclick={connectDemo}
 								disabled={connecting}
 							>
@@ -332,11 +332,11 @@
 										</svg>
 									{/if}
 								</div>
-							</button>
+							</ClickableCard>
 
-							<button
-								type="button"
-								class="w-full p-4 rounded-xl bg-surface-800 hover:bg-surface-700/80 transition-all text-left group"
+							<ClickableCard
+								variant="subtle"
+								class="group"
 								onclick={() => (showConnectForm = true)}
 							>
 								<div class="flex items-center gap-4">
@@ -375,7 +375,7 @@
 										/>
 									</svg>
 								</div>
-							</button>
+							</ClickableCard>
 
 							<p class="text-xs text-surface-500 text-center pt-2">
 								Manage saved clusters in <a href="/settings" class="text-surface-300 hover:underline"

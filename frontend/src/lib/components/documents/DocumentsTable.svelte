@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { StatusIndicator } from '$lib/components';
+	import { StatusIndicator, Button, IconButton } from '$lib/components';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
 	interface Props {
@@ -45,9 +45,9 @@
 			<span class="text-sm text-surface-300">Document Sources</span>
 			<span class="text-surface-500 text-xs">({documents.length})</span>
 		</div>
-		<button type="button" onclick={onRefresh} class="btn btn-ghost btn-sm">
+		<Button variant="ghost" size="sm" onclick={onRefresh}>
 			Refresh
-		</button>
+		</Button>
 	</div>
 
 	{#if loading}
@@ -95,39 +95,31 @@
 					</div>
 					<div class="col-span-2 text-right flex items-center justify-end gap-2">
 						{#if doc.status === 'indexing'}
-							<button
-								onclick={() => onCancel(doc.id)}
-								class="btn btn-warning btn-xs"
-							>
+							<Button variant="warning" size="xs" onclick={() => onCancel(doc.id)}>
 								Cancel
-							</button>
+							</Button>
 						{/if}
 						{#if confirmingDeleteId === doc.id}
-							<button
-								onclick={() => onConfirmDelete(doc.id, doc.name)}
-								class="btn btn-danger-solid btn-xs"
-							>
+							<Button variant="danger-solid" size="xs" onclick={() => onConfirmDelete(doc.id, doc.name)}>
 								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 								</svg>
 								Delete
-							</button>
-							<button
-								onclick={onCancelDelete}
-								class="btn btn-default btn-xs"
-							>
+							</Button>
+							<Button variant="default" size="xs" onclick={onCancelDelete}>
 								Cancel
-							</button>
+							</Button>
 						{:else}
-							<button
-								onclick={() => onDeleteClick(doc.id)}
-								class="btn-action btn-action-danger"
+							<IconButton
+								variant="danger"
+								size="sm"
 								title="Delete source"
+								onclick={() => onDeleteClick(doc.id)}
 							>
 								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 								</svg>
-							</button>
+							</IconButton>
 						{/if}
 					</div>
 				</div>

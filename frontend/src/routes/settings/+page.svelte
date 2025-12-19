@@ -13,7 +13,7 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, StatusIndicator } from '$lib/components';
+	import { Header, HeaderStatus, StatusIndicator, IconButton } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import {
@@ -308,16 +308,17 @@
 				<div class="bg-red-500/5 border border-red-500/15 rounded-lg p-3 text-sm text-red-400/80 flex items-center gap-2">
 					<StatusIndicator status="error" size="sm" />
 					<span>{error}</span>
-					<button
-						type="button"
-						class="btn-action btn-action-danger ml-auto"
+					<IconButton
+						variant="danger"
+						size="sm"
+						class="ml-auto"
+						title="Dismiss error"
 						onclick={() => error = null}
-						aria-label="Dismiss error"
 					>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 						</svg>
-					</button>
+					</IconButton>
 				</div>
 			{/if}
 			{#if success}

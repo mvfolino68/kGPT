@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ListItem, Button, IconButton } from '$lib/components/ui';
 
 	interface Props {
 		session: { id: string; title: string; updated_at: string };
@@ -44,10 +45,11 @@
 	}
 </script>
 
-<button
+<ListItem
+	variant="subtle"
+	active={isActive}
+	class="group rounded-lg mb-1 {isActive ? 'text-surface-100' : 'text-surface-300'}"
 	onclick={onSelect}
-	class="w-full group px-3 py-2.5 text-left rounded-lg transition-all mb-1
-		{isActive ? 'bg-surface-700/60 text-surface-100' : 'bg-surface-800/50 hover:bg-surface-700/50 text-surface-300'}"
 >
 	{#if isEditing}
 		<input
@@ -65,37 +67,31 @@
 			</span>
 			{#if isConfirmingDelete}
 				<div class="flex gap-1">
-					<button
-						onclick={onConfirmDelete}
-						class="btn btn-danger-solid btn-xs"
-					>
+					<Button variant="danger-solid" size="xs" onclick={onConfirmDelete}>
 						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 						</svg>
 						delete
-					</button>
-					<button
-						onclick={onCancelDelete}
-						class="btn btn-default btn-xs"
-					>
+					</Button>
+					<Button variant="default" size="xs" onclick={onCancelDelete}>
 						cancel
-					</button>
+					</Button>
 				</div>
 			{:else}
 				<div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-					<button onclick={onEdit} class="btn-action btn-action-primary" title="Edit">
+					<IconButton variant="primary" size="xs" title="Edit" onclick={onEdit}>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
 						</svg>
-					</button>
-					<button onclick={onDelete} class="btn-action btn-action-danger" title="Delete">
+					</IconButton>
+					<IconButton variant="danger" size="xs" title="Delete" onclick={onDelete}>
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
 						</svg>
-					</button>
+					</IconButton>
 				</div>
 			{/if}
 		</div>
 		<span class="text-[10px] text-surface-600 font-mono">{formatDate(session.updated_at)}</span>
 	{/if}
-</button>
+</ListItem>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Source } from './types';
+	import { ClickableCard } from '$lib/components/ui';
 
 	interface Props {
 		source: Source;
@@ -64,15 +65,13 @@
 	const typeConfig = $derived(getTypeConfig(source.type));
 </script>
 
-<button
-	type="button"
-	class="w-full text-left group"
+<ClickableCard
+	variant="bordered"
+	padding="sm"
+	class="group border {typeConfig.border}"
 	onclick={() => onSelect(source)}
 >
-	<div class="flex items-start gap-3 p-3 rounded-lg transition-all duration-150
-		bg-surface-800/40 hover:bg-surface-800/70 border {typeConfig.border}
-		hover:border-opacity-50 cursor-pointer">
-
+	<div class="flex items-start gap-3">
 		<!-- Index badge -->
 		<div class="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
 			{typeConfig.bg} {typeConfig.color} text-[10px] font-bold font-mono mt-0.5">
@@ -144,7 +143,7 @@
 			<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
 		</svg>
 	</div>
-</button>
+</ClickableCard>
 
 <style>
 	.line-clamp-2 {

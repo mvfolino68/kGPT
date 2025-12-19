@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { health } from '$lib/stores/health';
+	import { NavLink } from '$lib/components/ui';
 	import kgptLogo from '$lib/assets/kgpt-logo.svg';
 
 	interface NavItem {
@@ -58,16 +59,12 @@
 	<nav class="flex-1 py-4 px-3 space-y-1">
 		{#each navItems as item}
 			{@const isActive = $page.url.pathname === item.href || $page.url.pathname.startsWith(item.href + '/')}
-			<div class="relative group">
-				<a
-					href={item.href}
-					onmouseenter={() => hoveredItem = item.href}
-					onmouseleave={() => hoveredItem = null}
-					class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
-						{isActive
-						? 'bg-surface-800 text-surface-100'
-						: 'text-surface-400 hover:bg-surface-800/50 hover:text-surface-200'}"
-				>
+			<div
+				class="relative group"
+				onmouseenter={() => hoveredItem = item.href}
+				onmouseleave={() => hoveredItem = null}
+			>
+				<NavLink href={item.href} active={isActive}>
 					{#if item.icon === 'dashboard'}
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
@@ -87,7 +84,7 @@
 						</svg>
 					{/if}
 					<span>{item.label}</span>
-				</a>
+				</NavLink>
 
 				<!-- Tooltip -->
 				{#if hoveredItem === item.href}
@@ -107,31 +104,25 @@
 		<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">System Status</div>
 
 		{#if $health}
-			<div class="space-y-2">
-				<a
-					href="/documents"
-					class="flex items-center justify-between text-sm cursor-pointer hover:bg-surface-800/50 rounded px-2 py-1 -mx-2 transition-colors group"
-				>
-					<span class="text-surface-400 group-hover:text-surface-300">Qdrant</span>
+			<div class="space-y-1">
+				<NavLink href="/documents" class="justify-between text-sm py-1.5">
+					<span>Qdrant</span>
 					<div class="flex items-center gap-2">
 						<span class="w-2 h-2 rounded-full {$health.qdrant_connected ? 'bg-emerald-400/80' : 'bg-red-400/80'}"></span>
 						<span class="text-xs {$health.qdrant_connected ? 'text-emerald-400/80' : 'text-red-400/80'}">
 							{$health.qdrant_connected ? 'Connected' : 'Offline'}
 						</span>
 					</div>
-				</a>
-				<a
-					href="/dashboard"
-					class="flex items-center justify-between text-sm cursor-pointer hover:bg-surface-800/50 rounded px-2 py-1 -mx-2 transition-colors group"
-				>
-					<span class="text-surface-400 group-hover:text-surface-300">Kafka</span>
+				</NavLink>
+				<NavLink href="/dashboard" class="justify-between text-sm py-1.5">
+					<span>Kafka</span>
 					<div class="flex items-center gap-2">
 						<span class="w-2 h-2 rounded-full {$health.kafka_connected ? 'bg-emerald-400/80' : 'bg-surface-600'}"></span>
 						<span class="text-xs {$health.kafka_connected ? 'text-emerald-400/80' : 'text-surface-500'}">
 							{$health.kafka_connected ? 'Connected' : 'Not connected'}
 						</span>
 					</div>
-				</a>
+				</NavLink>
 			</div>
 		{:else}
 			<div class="flex items-center gap-2 text-sm text-surface-500">
