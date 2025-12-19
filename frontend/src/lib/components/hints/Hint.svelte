@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Icon } from '$lib/components/ui';
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { isHintDismissed, dismissHint } from './hintsStore.svelte';
@@ -61,21 +62,15 @@
 						onclick={handleDismiss}
 						aria-label="Dismiss hint"
 					>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
+						<Icon name="close" size="sm" strokeWidth={2} />
 					</button>
 				</div>
 
 				<!-- Got it button -->
 				<div class="mt-3 flex justify-end">
-					<button
-						type="button"
-						class="btn btn-link btn-xs"
-						onclick={handleDismiss}
-					>
+					<Button variant="link" size="xs" onclick={handleDismiss}>
 						Got it
-					</button>
+					</Button>
 				</div>
 			</div>
 		</div>

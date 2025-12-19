@@ -122,3 +122,19 @@ export function getPathColor(colorName: string, type: 'bg' | 'border' | 'text' |
 	};
 	return colors[colorName]?.[type] || '';
 }
+
+/**
+ * Tailwind-safe node color mapping (avoid dynamic class names from API payloads).
+ */
+export function getNodeColor(nodeName: string): string {
+	const colors: Record<string, string> = {
+		router: 'text-blue-400',
+		retrieval: 'text-emerald-400',
+		kafka: 'text-cyan-400',
+		admin: 'text-amber-400',
+		synthesis: 'text-violet-400',
+		web_search: 'text-primary'
+	};
+
+	return colors[nodeName] || 'text-text-secondary';
+}

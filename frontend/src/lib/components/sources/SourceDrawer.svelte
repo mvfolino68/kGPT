@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, IconButton, Icon } from '$lib/components/ui';
 	import type { Source } from './types';
 
 	interface Props {
@@ -126,24 +127,20 @@
 								rel="noopener noreferrer"
 								class="inline-flex items-center gap-1.5 mt-2 text-sm {typeConfig.color} hover:underline"
 							>
-								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-								</svg>
+								<Icon name="external" size="sm" class="w-3.5 h-3.5" strokeWidth={2} />
 								{extractDomain(source.url)}
 							</a>
 						{/if}
 					</div>
 
-					<button
-						type="button"
-						class="btn-action btn-action-default p-2"
+					<IconButton
+						variant="default"
+						size="md"
 						onclick={onClose}
-						aria-label="Close drawer"
+						title="Close drawer"
 					>
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
+						<Icon name="close" size="md" strokeWidth={2} />
+					</IconButton>
 				</div>
 			</header>
 
@@ -242,15 +239,15 @@
 			<!-- Footer -->
 			<footer class="flex-shrink-0 p-4 border-t border-surface-700/50 bg-surface-900">
 				<div class="flex gap-3">
-					<button type="button" class="btn btn-default flex-1" onclick={onClose}>
+					<Button variant="default" class="flex-1" onclick={onClose}>
 						Close
-					</button>
+					</Button>
 					{#if source.url}
 						<a
 							href={source.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="btn btn-primary flex-1 inline-flex items-center justify-center gap-2"
+							class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-primary-700 text-white hover:bg-primary-800 transition-colors"
 						>
 							<span>Open Source</span>
 							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

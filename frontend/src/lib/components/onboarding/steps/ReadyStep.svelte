@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, StatusPill } from '$lib/components/ui';
 	import WizardStep from '../WizardStep.svelte';
 
 	interface Props {
@@ -38,8 +39,8 @@
 		<div class="max-w-sm mx-auto">
 			<!-- Success indicator -->
 			<div class="flex justify-center mb-8">
-				<div class="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center border-2 border-emerald-500/30">
-					<svg class="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+				<div class="w-20 h-20 rounded-full bg-success-bg flex items-center justify-center border-2 border-success/30">
+					<svg class="w-10 h-10 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 					</svg>
 				</div>
@@ -50,23 +51,14 @@
 				<div class="space-y-2">
 					<div class="flex items-center justify-between text-sm">
 						<span class="text-surface-400">OpenAI API</span>
-						<span class="text-emerald-400 flex items-center gap-1.5">
-							<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-							Connected
-						</span>
+						<StatusPill status="success" label="Connected" size="sm" />
 					</div>
 					<div class="flex items-center justify-between text-sm">
 						<span class="text-surface-400">Kafka Cluster</span>
 						{#if hasCluster}
-							<span class="text-emerald-400 flex items-center gap-1.5">
-								<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-								Connected
-							</span>
+							<StatusPill status="success" label="Connected" size="sm" />
 						{:else}
-							<span class="text-surface-500 flex items-center gap-1.5">
-								<span class="w-1.5 h-1.5 rounded-full bg-surface-600"></span>
-								Not connected
-							</span>
+							<StatusPill status="inactive" label="Not connected" size="sm" />
 						{/if}
 					</div>
 				</div>
@@ -123,9 +115,9 @@
 
 	{#snippet actions()}
 		<div class="flex justify-center">
-			<button type="button" class="btn btn-primary px-8" onclick={onComplete}>
+			<Button variant="primary" class="px-8" onclick={onComplete}>
 				Start Using kGPT
-			</button>
+			</Button>
 		</div>
 	{/snippet}
 </WizardStep>

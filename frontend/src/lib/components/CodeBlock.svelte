@@ -9,9 +9,9 @@
 </script>
 
 <div class="relative group {className}">
-	<pre class="bg-surface-900 border border-white/5 rounded-xl p-4 overflow-x-auto shadow-xl"><code class="text-sm font-mono text-surface-200">{code}</code></pre>
+	<pre class="bg-surface-900 border border-surface-700/20 rounded-xl p-4 overflow-x-auto shadow-xl"><code class="text-sm font-mono text-foreground-muted">{code}</code></pre>
 	{#if language}
-		<div class="absolute top-2 right-2 px-2 py-0.5 bg-surface-800/80 border border-white/5 rounded text-xs text-surface-500 font-mono">
+		<div class="absolute top-2 right-2 px-2 py-0.5 bg-surface-800/80 border border-surface-700/20 rounded text-xs text-muted font-mono">
 			{language}
 		</div>
 	{/if}

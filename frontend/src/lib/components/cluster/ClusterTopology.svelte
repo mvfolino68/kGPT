@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { Card } from '$lib/components/ui';
 
 	interface Props {
 		brokers: number;
@@ -118,29 +119,31 @@
 	});
 </script>
 
-<div bind:this={container} class="w-full h-[400px] bg-surface-800 rounded-lg overflow-hidden">
-	{#if !connected}
-		<div class="flex items-center justify-center h-full">
-			<div class="text-center">
-				<svg class="w-16 h-16 mx-auto text-surface-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-				</svg>
-				<p class="text-surface-400 text-sm">Connect to a cluster to view topology</p>
-			</div>
-		</div>
-	{:else}
-		<svg {width} {height} class="w-full h-full">
-			<defs>
-				<!-- Gradient for connections -->
-				<linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" style="stop-color:rgb(139 92 246);stop-opacity:0.6" />
-					<stop offset="100%" style="stop-color:rgb(59 130 246);stop-opacity:0.6" />
-				</linearGradient>
-				<linearGradient id="consumerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-					<stop offset="0%" style="stop-color:rgb(59 130 246);stop-opacity:0.6" />
-					<stop offset="100%" style="stop-color:rgb(251 191 36);stop-opacity:0.6" />
-				</linearGradient>
-			</defs>
+<Card padding="none" class="w-full">
+	{#snippet children()}
+		<div bind:this={container} class="w-full h-[400px]">
+			{#if !connected}
+				<div class="flex items-center justify-center h-full">
+					<div class="text-center">
+						<svg class="w-16 h-16 mx-auto text-surface-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+						</svg>
+						<p class="text-surface-400 text-sm">Connect to a cluster to view topology</p>
+					</div>
+				</div>
+			{:else}
+				<svg {width} {height} class="w-full h-full">
+					<defs>
+						<!-- Gradient for connections -->
+						<linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+							<stop offset="0%" style="stop-color:rgb(139 92 246);stop-opacity:0.6" />
+							<stop offset="100%" style="stop-color:rgb(59 130 246);stop-opacity:0.6" />
+						</linearGradient>
+						<linearGradient id="consumerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+							<stop offset="0%" style="stop-color:rgb(59 130 246);stop-opacity:0.6" />
+							<stop offset="100%" style="stop-color:rgb(251 191 36);stop-opacity:0.6" />
+						</linearGradient>
+					</defs>
 
 			<!-- Connection lines -->
 			{#each connections() as conn}
@@ -249,6 +252,8 @@
 					+{consumerGroups.length - 6} more groups
 				</text>
 			{/if}
-		</svg>
-	{/if}
-</div>
+				</svg>
+			{/if}
+		</div>
+	{/snippet}
+</Card>

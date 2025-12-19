@@ -1,18 +1,52 @@
 // UI Components (design system)
-export * from './ui';
+export {
+	Button,
+	Card,
+	Input,
+	Select,
+	Textarea,
+	Badge,
+	StatusDot,
+	StatusPill,
+	Tooltip,
+	NavLink,
+	ListItem,
+	Icon,
+	IconButton,
+	DeleteButton,
+	Panel,
+	ClickableCard
+} from './ui';
 
 // Layout Components
-export * from './layout';
+export { Sidebar, Header, HeaderStatus } from './layout';
 
 // Admin Components
-export { AdminResultCard } from './admin';
+export {
+	AdminResultCard,
+	PendingConfirmation,
+	NeedsInfoForm,
+	UnclearOperation,
+	TopicsTable,
+	TopicDetails,
+	ConsumerGroupsTable,
+	ConsumerGroupDetails,
+	ClusterOverview,
+	OffsetsTable,
+	OperationSuccess,
+	OperationError,
+	OperationHeader,
+	DataTable,
+	ConfigList,
+	CodePreview
+} from './admin';
+export * from './admin/types';
 
 // Agent Trace Components
-export * from './agent-trace';
+export { AgentTimelineItem, RoutingDecisionCard, RetrievalResultsList, WebResultsList } from './agent-trace';
+export * from './agent-trace/types';
 
 // Shared Components
-export { default as MessageCard } from './MessageCard.svelte';
-export { default as MetricCard } from './MetricCard.svelte';
 export { default as CodeBlock } from './CodeBlock.svelte';
 export { default as FormattedMessage } from './FormattedMessage.svelte';
 export { default as AgentActivitySidebar } from './AgentActivitySidebar.svelte';
@@ -20,23 +54,72 @@ export { default as StatusIndicator } from './StatusIndicator.svelte';
 export { default as Image } from './Image.svelte';
 
 // Chat components
-export * from './chat';
+export {
+	ChatEmptyState,
+	ChatInput,
+	ChatHistory,
+	ChatMessage,
+	SessionListItem,
+	ChatDrawer,
+	AgentTraceDrawer,
+	AgentTracePanel
+} from './chat';
+export { ThinkingIndicator, MessageActions, SourcesList } from './chat/message';
 
 // Source components
 export { SourcesPanel, SourceItem, SourceDrawer } from './sources';
-export type { Source, SourceGroup, SourceMetadata } from './sources';
+export * from './sources/types';
 
 // Cluster components
-export * from './cluster';
+export {
+	ClusterTopology,
+	MetricsGrid,
+	QuickActions,
+	ClusterHealthCard,
+	BrokersGrid,
+	TopicsPanel,
+	ConsumerGroupsPanel,
+	ClusterSwitcher
+} from './cluster';
 
 // Cluster page components
-export * from './cluster-page';
+export {
+	ConnectionStatus,
+	ClusterStats,
+	TopicsChips,
+	OperationsPanel,
+	QuickConnect,
+	ConnectForm,
+	SavedClusters
+} from './cluster-page';
 
 // Architecture components
-export * from './architecture';
+export {
+	PathSelector,
+	SelectedPathInfo,
+	QueryFlowGraph,
+	AgentNode,
+	ParallelNodes,
+	FlowArrow,
+	AllAgentsOverview,
+	TechnologyStack,
+	GraphStats,
+	CallToAction
+} from './architecture';
+export * from './architecture/types';
 
 // Documents components
-export * from './documents';
+export {
+	IngestionForm,
+	DocumentsTable,
+	CollectionsOverview,
+	SyncStatusPanel,
+	SearchTab,
+	BrowseTab,
+	PipelineTab
+} from './documents';
+export * from './documents/types';
 
 // Settings components
-export * from './settings';
+export { SettingsCard, FormField } from './settings';
+export * from './settings/sections';

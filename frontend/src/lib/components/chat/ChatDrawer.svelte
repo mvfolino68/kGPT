@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick, onMount, onDestroy } from 'svelte';
-	import { Button, Badge } from '$lib/components/ui';
+	import { Button, Badge, Icon } from '$lib/components/ui';
 	import {
 		chatMessages,
 		currentSessionId,
@@ -23,7 +23,7 @@
 		selectedMessageId,
 		selectMessageForTrace
 	} from '$lib/stores/chat';
-	import type { AgentEvent, RoutingDecision, RetrievalResults, ValidationResults, WebSearchResults } from '$lib/api';
+	import type { AgentEvent, RoutingDecision, RetrievalResults, ValidationResults, WebSearchResults } from '$lib/stores/chat';
 	import { processSSEStream, fetchWithAbort } from '$lib/utils/chat-stream';
 	import ChatMessage from './ChatMessage.svelte';
 	import AgentTracePanel from './AgentTracePanel.svelte';
@@ -41,8 +41,8 @@
 
 	// Chat state
 	let inputValue = $state('');
-	let messagesContainer: HTMLDivElement;
-	let inputRef: HTMLTextAreaElement;
+	let messagesContainer: HTMLDivElement | null = $state(null);
+	let inputRef: HTMLTextAreaElement | null = $state(null);
 	let currentAbort: (() => void) | null = null;
 
 	// Derived
@@ -300,9 +300,7 @@
 
 				<!-- Close -->
 				<Button variant="ghost" size="icon" onclick={onClose}>
-					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-					</svg>
+					<Icon name="close" size="md" />
 				</Button>
 			</div>
 		</header>
@@ -314,9 +312,7 @@
 				{#if $chatMessages.length === 0}
 					<div class="flex flex-col items-center justify-center h-full text-center py-8">
 						<div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-							<svg class="w-7 h-7 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-							</svg>
+							<Icon name="sparkles" size="lg" class="text-primary-light" />
 						</div>
 						<h3 class="text-lg font-semibold text-surface-200 mb-2">How can I help?</h3>
 						<p class="text-sm text-surface-500 max-w-xs mb-6">
@@ -361,7 +357,7 @@
 						placeholder="Ask about your cluster..."
 						disabled={$isProcessing}
 						rows="1"
-						class="flex-1 input resize-none text-sm"
+						class="flex-1 bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted resize-none transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 						style="field-sizing: content; max-height: 120px;"
 					></textarea>
 					<Button

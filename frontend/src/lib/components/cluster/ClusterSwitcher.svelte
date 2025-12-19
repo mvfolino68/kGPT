@@ -98,7 +98,7 @@
 
 		{#if isOpen}
 			<div
-				class="absolute top-full right-0 mt-2 w-64 bg-surface-700 rounded-lg shadow-2xl ring-1 ring-white/10 overflow-hidden z-50"
+				class="absolute top-full right-0 mt-2 w-64 bg-surface-800 border border-surface-700/30 rounded-lg shadow-2xl overflow-hidden z-50"
 			>
 				<div class="px-3 py-2">
 					<span class="text-[10px] font-bold uppercase tracking-wider text-surface-400">

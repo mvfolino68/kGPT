@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Select, Icon } from '$lib/components/ui';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 
 	interface Props {
@@ -19,60 +20,63 @@
 		onmodelchange
 	}: Props = $props();
 
+	let providerValue = $state('');
+	let modelValue = $state('');
+
+	$effect(() => { providerValue = provider; });
+	$effect(() => { modelValue = model; });
+
 	const PROVIDERS = [
 		{ value: 'fastembed', label: 'FastEmbed (Local)' },
 		{ value: 'openai', label: 'OpenAI' }
 	];
 
-	const MODELS: Record<string, string[]> = {
-		fastembed: ['BAAI/bge-small-en-v1.5', 'BAAI/bge-base-en-v1.5', 'snowflake/arctic-embed-m'],
-		openai: ['text-embedding-3-small', 'text-embedding-3-large']
+	const MODELS: Record<string, Array<{ value: string; label: string }>> = {
+		fastembed: [
+			{ value: 'BAAI/bge-small-en-v1.5', label: 'BAAI/bge-small-en-v1.5' },
+			{ value: 'BAAI/bge-base-en-v1.5', label: 'BAAI/bge-base-en-v1.5' },
+			{ value: 'snowflake/arctic-embed-m', label: 'snowflake/arctic-embed-m' }
+		],
+		openai: [
+			{ value: 'text-embedding-3-small', label: 'text-embedding-3-small' },
+			{ value: 'text-embedding-3-large', label: 'text-embedding-3-large' }
+		]
 	};
 </script>
 
 <SettingsCard title="Embeddings" status="saved">
 	{#snippet icon()}
-		<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-			<path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-		</svg>
+		<Icon name="database" size="sm" class="text-text-tertiary" />
 	{/snippet}
 
 	<div class="space-y-4">
-		<p class="text-sm text-surface-400">
+		<p class="text-sm text-text-secondary">
 			Configure the embedding model for document vectorization. FastEmbed runs locally, OpenAI requires your API key.
 		</p>
 
 		<div class="grid grid-cols-2 gap-4">
 			<FormField label="Provider" id="embed-provider">
-				<select
+				<Select
 					id="embed-provider"
-					value={provider}
-					onchange={(e) => onproviderchange(e.currentTarget.value)}
-					class="w-full input"
-				>
-					{#each PROVIDERS as p}
-						<option value={p.value}>{p.label}</option>
-					{/each}
-				</select>
+					bind:value={providerValue}
+					options={PROVIDERS}
+					onchange={() => onproviderchange(providerValue)}
+				/>
 			</FormField>
 			<FormField label="Model" id="embed-model">
-				<select
+				<Select
 					id="embed-model"
-					value={model}
-					onchange={(e) => onmodelchange(e.currentTarget.value)}
-					class="w-full input"
-				>
-					{#each MODELS[provider] || [] as m}
-						<option value={m}>{m}</option>
-					{/each}
-				</select>
+					bind:value={modelValue}
+					options={MODELS[providerValue] || []}
+					onchange={() => onmodelchange(modelValue)}
+				/>
 			</FormField>
 		</div>
 	</div>
 
 	{#snippet footer()}
-		<button type="button" class="btn btn-primary" onclick={onsave} disabled={saving}>
-			{saving ? 'Saving...' : 'Save'}
-		</button>
+		<Button variant="primary" onclick={onsave} disabled={saving} loading={saving}>
+			Save
+		</Button>
 	{/snippet}
 </SettingsCard>

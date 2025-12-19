@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { Card } from '$lib/components/ui';
 
 	interface Props {
 		headers: string[];
@@ -10,10 +11,11 @@
 
 	let { headers, maxRows = 20, totalCount, children }: Props = $props();
 
-	const showMore = $derived(totalCount && totalCount > maxRows);
+	const showMore = $derived(typeof totalCount === 'number' && totalCount > maxRows);
+	const remainingCount = $derived((totalCount ?? 0) - maxRows);
 </script>
 
-<div class="bg-surface-800/30 rounded-lg overflow-hidden">
+<Card padding="none" variant="glass" class="bg-surface-800/30 shadow-none ring-white/[0.06]">
 	<table class="w-full text-xs">
 		<thead>
 			<tr class="border-b border-surface-700/30 bg-surface-800/50">
@@ -30,7 +32,7 @@
 	</table>
 	{#if showMore}
 		<div class="px-3 py-2 text-xs text-surface-500 bg-surface-800/30 border-t border-surface-700/30">
-			... and {totalCount - maxRows} more
+			... and {remainingCount} more
 		</div>
 	{/if}
-</div>
+</Card>

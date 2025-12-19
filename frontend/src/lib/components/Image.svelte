@@ -84,31 +84,49 @@
 </div>
 
 <style>
-	@reference "../../app.css";
-
 	.image-container {
-		@apply relative my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30;
-		@apply transition-all duration-200;
+		position: relative;
+		margin: 1rem 0;
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		border: 1px solid rgba(var(--color-border), 0.5);
+		background: rgba(var(--color-bg-elevated), 0.35);
+		transition: border-color 150ms ease, box-shadow 150ms ease;
 	}
 
 	.image-container:hover {
-		@apply border-surface-600/50 shadow-lg;
+		border-color: rgba(var(--color-border), 0.7);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 	}
 
 	.image-placeholder {
-		@apply absolute inset-0 flex items-center justify-center bg-surface-900/50;
-		@apply min-h-[200px];
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgba(var(--color-bg-elevated), 0.55);
+		min-height: 200px;
 	}
 
 	.image-error {
-		@apply flex flex-col items-center justify-center gap-2 p-8 bg-surface-900/50;
-		@apply min-h-[200px] text-center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 2rem;
+		background: rgba(var(--color-bg-elevated), 0.55);
+		min-height: 200px;
+		text-align: center;
 	}
 
 	.standardized-image {
-		@apply w-full h-auto max-w-full;
-		@apply transition-opacity duration-200;
-		@apply object-contain;
+		width: 100%;
+		height: auto;
+		max-width: 100%;
+		object-fit: contain;
+		transition: opacity 200ms ease;
 	}
 
 	/* Ensure images don't overflow containers */
@@ -120,13 +138,13 @@
 	/* GIF-specific styling */
 	.standardized-image[src$='.gif'],
 	.standardized-image[src$='.GIF'] {
-		@apply cursor-pointer;
+		cursor: pointer;
 	}
 
 	/* Responsive sizing */
 	@media (max-width: 768px) {
 		.image-container {
-			@apply my-3;
+			margin: 0.75rem 0;
 		}
 	}
 </style>

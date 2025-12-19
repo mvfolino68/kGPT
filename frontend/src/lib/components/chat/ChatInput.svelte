@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui';
+	import { Button, Icon } from '$lib/components/ui';
 
 	interface Props {
 		value: string;
@@ -27,7 +27,7 @@
 	<div class="max-w-4xl mx-auto space-y-2">
 		<div class="bg-surface-700/50 rounded-lg overflow-hidden">
 			<div class="flex items-end gap-3 p-3">
-				<span class="text-primary-light text-lg pb-1">&gt;</span>
+				<span class="text-primary-400 text-lg pb-1">&gt;</span>
 				<textarea
 					bind:this={inputRef}
 					bind:value
@@ -36,7 +36,7 @@
 					placeholder="Enter command..."
 					{disabled}
 					rows="1"
-					class="flex-1 bg-transparent text-surface-100 placeholder-surface-600 resize-none focus:outline-none disabled:opacity-50 text-sm"
+					class="flex-1 bg-transparent text-foreground placeholder:text-muted resize-none focus:outline-none disabled:opacity-50 text-sm"
 					style="field-sizing: content; max-height: 150px;"
 				></textarea>
 				<Button
@@ -51,9 +51,7 @@
 							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
 						</svg>
 					{:else}
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-						</svg>
+						<Icon name="send" size="sm" strokeWidth={2} />
 					{/if}
 				</Button>
 			</div>

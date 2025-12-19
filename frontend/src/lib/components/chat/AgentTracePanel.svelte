@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui';
+	import { Icon } from '$lib/components/ui';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,
@@ -31,9 +31,9 @@
 	let hasContent = $derived(trace.agentTimeline.length > 0 || trace.routingDecision !== null);
 </script>
 
-<aside class="w-80 bg-surface-950 flex flex-col border-l-2 border-surface-600 shadow-[-4px_0_12px_rgba(0,0,0,0.3)]">
+<aside class="w-80 bg-bg-elevated flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.5)] ring-1 ring-white/[0.04]">
 	<!-- Header -->
-	<header class="flex items-center justify-between px-3 py-3 bg-surface-900 border-b border-surface-700">
+	<header class="flex items-center justify-between px-3 py-3 bg-surface border-b border-white/5">
 		<div class="flex items-center gap-2">
 			<div class="w-6 h-6 rounded bg-violet-500/10 flex items-center justify-center">
 				<svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -41,8 +41,8 @@
 				</svg>
 			</div>
 			<div>
-				<h2 class="text-sm font-medium text-surface-200">Pipeline</h2>
-				<p class="text-[10px] text-surface-500">
+				<h2 class="text-sm font-medium text-text">Pipeline</h2>
+				<p class="text-[10px] text-text-tertiary">
 					{#if isViewingHistory}
 						Saved trace
 					{:else if isStreaming}
@@ -68,13 +68,11 @@
 			{/if}
 			<button
 				type="button"
-				class="p-1.5 text-surface-500 hover:text-surface-300 hover:bg-surface-700/50 rounded transition-colors"
+				class="p-1.5 text-text-tertiary hover:text-text-secondary hover:bg-surface-hover rounded transition-colors"
 				onclick={onClose}
 				title="Hide panel"
 			>
-				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-				</svg>
+				<Icon name="close" size="sm" />
 			</button>
 		</div>
 	</header>
@@ -83,13 +81,13 @@
 	<div class="flex-1 overflow-y-auto p-3">
 		{#if !hasContent}
 			<div class="flex flex-col items-center justify-center h-full text-center py-8">
-				<div class="w-12 h-12 rounded-xl bg-surface-800 flex items-center justify-center mb-3">
-					<svg class="w-6 h-6 text-surface-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1">
+				<div class="w-12 h-12 rounded-xl bg-surface flex items-center justify-center mb-3">
+					<svg class="w-6 h-6 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
 					</svg>
 				</div>
-				<p class="text-xs text-surface-400 mb-1">No activity yet</p>
-				<p class="text-[10px] text-surface-600 max-w-[180px]">
+				<p class="text-xs text-text-secondary mb-1">No activity yet</p>
+				<p class="text-[10px] text-text-tertiary max-w-[180px]">
 					{#if isViewingHistory}
 						This message has no trace data
 					{:else}
@@ -145,8 +143,8 @@
 	</div>
 
 	<!-- Footer -->
-	<footer class="px-3 py-2 bg-surface-900 border-t border-surface-700">
-		<p class="text-[10px] text-surface-600 text-center">
+	<footer class="px-3 py-2 bg-surface border-t border-white/5">
+		<p class="text-[10px] text-text-tertiary text-center">
 			AI decision process
 		</p>
 	</footer>

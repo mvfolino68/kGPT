@@ -74,7 +74,7 @@ export interface AdminOperationResult {
 // Agent Activity Types (for educational pipeline visibility)
 // ============================================================================
 
-export type AgentName = 'router' | 'retrieval' | 'kafka' | 'admin' | 'validation' | 'synthesis' | 'error';
+export type AgentName = 'router' | 'retrieval' | 'kafka' | 'admin' | 'validation' | 'web_search' | 'synthesis' | 'error';
 export type AgentStatus = 'pending' | 'started' | 'completed' | 'error';
 
 export interface AgentEvent {

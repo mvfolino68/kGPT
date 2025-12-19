@@ -1,8 +1,12 @@
 <script lang="ts">
+	type Status = 'success' | 'warning' | 'error' | 'inactive' | 'info';
+	type Size = 'sm' | 'md' | 'lg';
+
 	interface Props {
-		status: 'success' | 'warning' | 'error' | 'inactive' | 'info';
-		size?: 'sm' | 'md' | 'lg';
+		status?: Status;
+		size?: Size;
 		pulse?: boolean;
+		label?: string;
 		class?: string;
 	}
 
@@ -10,22 +14,29 @@
 		status = 'inactive',
 		size = 'md',
 		pulse = false,
+		label,
 		class: className = ''
 	}: Props = $props();
-
-	const statusClasses = {
-		success: 'status-dot-success',
-		warning: 'status-dot-warning',
-		error: 'status-dot-error',
-		inactive: 'status-dot-inactive',
-		info: 'bg-blue-500'
-	};
-
-	const sizeClasses = {
-		sm: 'w-1.5 h-1.5',
-		md: 'status-dot',
-		lg: 'status-dot status-dot-lg'
-	};
 </script>
 
-<span class="{sizeClasses[size]} {statusClasses[status]} {pulse ? 'status-dot-pulse' : ''} rounded-full flex-shrink-0 {className}"></span>
+<div class="inline-flex items-center gap-2 {className}">
+	<span
+		class="
+			rounded-full flex-shrink-0
+			{size === 'sm' ? 'w-2 h-2' : size === 'lg' ? 'w-3 h-3' : 'w-2.5 h-2.5'}
+			{status === 'success' ? 'bg-success' : ''}
+			{status === 'warning' ? 'bg-warning' : ''}
+			{status === 'error' ? 'bg-error' : ''}
+			{status === 'info' ? 'bg-info' : ''}
+			{status === 'inactive' ? 'bg-text-tertiary' : ''}
+			{status === 'success' && !pulse ? 'shadow-[0_0_6px_rgba(52,211,153,0.40)]' : ''}
+			{status === 'success' && pulse ? 'shadow-[0_0_10px_2px_rgba(52,211,153,0.50)] animate-pulse' : ''}
+			{status === 'warning' && pulse ? 'shadow-[0_0_8px_2px_rgba(251,191,36,0.45)] animate-pulse' : ''}
+			{status === 'error' && pulse ? 'shadow-[0_0_8px_2px_rgba(251,113,133,0.45)] animate-pulse' : ''}
+			{status === 'info' && pulse ? 'shadow-[0_0_8px_2px_rgba(88,166,255,0.45)] animate-pulse' : ''}
+		"
+	></span>
+	{#if label}
+		<span class="text-sm text-text-secondary">{label}</span>
+	{/if}
+</div>

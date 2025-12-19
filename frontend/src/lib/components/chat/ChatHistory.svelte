@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { Button } from '$lib/components/ui';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {
@@ -51,7 +52,7 @@
 
 	let sidebarWidth = $state(DEFAULT_WIDTH);
 	let isResizing = $state(false);
-	let resizeHandle: HTMLDivElement;
+	let resizeHandle: HTMLButtonElement;
 
 	onMount(() => {
 		const savedWidth = localStorage.getItem(STORAGE_KEY);
@@ -97,11 +98,11 @@
 >
 	<div class="p-4 flex items-center justify-between">
 		<span class="text-[10px] font-bold text-surface-500 uppercase tracking-wider">Sessions</span>
-		<button type="button" class="btn btn-primary btn-sm btn-icon" onclick={onNewChat}>
+		<Button variant="primary" size="icon" onclick={onNewChat}>
 			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
 			</svg>
-		</button>
+		</Button>
 	</div>
 
 	<div class="flex-1 overflow-y-auto py-2 px-2">
@@ -131,14 +132,13 @@
 	</div>
 
 	<!-- Resize Handle -->
-	<div
+	<button
+		type="button"
 		bind:this={resizeHandle}
 		onmousedown={handleMouseDown}
 		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/50 transition-colors group"
-		role="separator"
 		aria-label="Resize sidebar"
-		aria-orientation="vertical"
 	>
 		<div class="absolute top-1/2 right-0 transform -translate-y-1/2 translate-x-1/2 w-1 h-8 bg-surface-600 group-hover:bg-primary-light rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-	</div>
+	</button>
 </aside>

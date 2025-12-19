@@ -29,21 +29,16 @@ function createRenderer() {
 	const renderer = new marked.Renderer();
 
 	// Standardized image rendering - matches FormattedMessage component
-	renderer.image = (href: string, title: string | null, text: string) => {
+	renderer.image = function ({ href, title, text }) {
 		const alt = text || '';
+		const safeHref = href?.replace(/"/g, '&quot;') ?? '';
+		const safeAlt = alt.replace(/"/g, '&quot;');
 		const titleAttr = title ? `title="${title.replace(/"/g, '&quot;')}"` : '';
 
-		// Standardized image wrapper with consistent styling
 		return `
-			<div class="markdown-image-container my-4 rounded-lg overflow-hidden bg-surface-700/30">
-				<img
-					src="${href.replace(/"/g, '&quot;')}"
-					alt="${alt.replace(/"/g, '&quot;')}"
-					${titleAttr}
-					class="markdown-image w-full h-auto max-w-full transition-opacity duration-200 object-contain"
-					loading="lazy"
-				/>
-				${alt ? `<div class="image-caption text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center pt-2">${alt}</div>` : ''}
+			<div class="km-image">
+				<img src="${safeHref}" alt="${safeAlt}" ${titleAttr} loading="lazy" />
+				${alt ? `<div class="km-image-caption">${safeAlt}</div>` : ''}
 			</div>
 		`;
 	};

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { StatusIndicator, Button, IconButton } from '$lib/components';
+	import { Panel } from '$lib/components/ui';
+	import { StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
 	interface Props {
@@ -36,20 +37,31 @@
 		const secs = elapsed % 60;
 		return mins > 0 ? `${mins}m ${secs.toString().padStart(2, '0')}s` : `${secs}s`;
 	}
+
+	function toPillStatus(status: ReturnType<typeof getStatusColor>): 'success' | 'warning' | 'error' | 'inactive' | 'info' {
+		if (status === 'active') return 'success';
+		if (status === 'warning') return 'warning';
+		if (status === 'error') return 'error';
+		return 'inactive';
+	}
+
+	function formatStatusLabel(raw: string): string {
+		// known statuses: indexed, indexing, error, cancelled, pending
+		if (!raw) return 'Unknown';
+		return raw.charAt(0).toUpperCase() + raw.slice(1);
+	}
 </script>
 
-<div class="panel overflow-hidden">
-	<div class="panel-header flex items-center justify-between">
-		<div class="flex items-center gap-2">
-			<span class="text-surface-400 text-xs">&gt;</span>
-			<span class="text-sm text-surface-300">Document Sources</span>
-			<span class="text-surface-500 text-xs">({documents.length})</span>
-		</div>
+<Panel
+	title="Document Sources"
+	subtitle="({documents.length})"
+>
+	{#snippet actions()}
 		<Button variant="ghost" size="sm" onclick={onRefresh}>
 			Refresh
 		</Button>
-	</div>
-
+	{/snippet}
+	{#snippet children()}
 	{#if loading}
 		<div class="p-8 text-center text-surface-500">
 			<span class="animate-pulse">Loading...</span>
@@ -84,8 +96,11 @@
 					<div class="col-span-2 text-surface-100 truncate" title={doc.name}>{doc.name}</div>
 					<div class="col-span-1 text-surface-400 text-xs">{doc.source_type}</div>
 					<div class="col-span-1 flex items-center gap-2">
-						<StatusIndicator status={getStatusColor(doc.status)} size="sm" pulse={doc.status === 'indexing'} />
-						<span class="text-surface-300 text-xs">{doc.status}</span>
+						<StatusPill
+							status={toPillStatus(getStatusColor(doc.status))}
+							label={formatStatusLabel(doc.status)}
+							pulse={doc.status === 'indexing'}
+						/>
 					</div>
 					<div class="col-span-1 text-right text-surface-300 text-xs">
 						{doc.document_count > 0 ? doc.document_count.toLocaleString() : '—'}
@@ -99,28 +114,12 @@
 								Cancel
 							</Button>
 						{/if}
-						{#if confirmingDeleteId === doc.id}
-							<Button variant="danger-solid" size="xs" onclick={() => onConfirmDelete(doc.id, doc.name)}>
-								<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-								</svg>
-								Delete
-							</Button>
-							<Button variant="default" size="xs" onclick={onCancelDelete}>
-								Cancel
-							</Button>
-						{:else}
-							<IconButton
-								variant="danger"
-								size="sm"
-								title="Delete source"
-								onclick={() => onDeleteClick(doc.id)}
-							>
-								<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-								</svg>
-							</IconButton>
-						{/if}
+						<DeleteButton
+							size="sm"
+							itemName={doc.name}
+							onConfirm={() => onConfirmDelete(doc.id, doc.name)}
+							onCancel={onCancelDelete}
+						/>
 					</div>
 				</div>
 
@@ -161,15 +160,15 @@
 
 				<!-- Error display -->
 				{#if doc.status === 'error' && progress?.error}
-					<div class="px-4 py-2 bg-red-500/5">
-						<span class="text-xs text-red-400/80">Error: {progress.error}</span>
+					<div class="px-4 py-2 bg-error-bg">
+						<span class="text-xs text-error">Error: {progress.error}</span>
 					</div>
 				{/if}
 
 				<!-- Completed display -->
 				{#if progress?.status === 'completed' && progress.count !== undefined}
-					<div class="px-4 py-2 bg-emerald-500/5">
-						<span class="text-xs text-emerald-400/80">
+					<div class="px-4 py-2 bg-success-bg">
+						<span class="text-xs text-success">
 							Indexed {progress.count.toLocaleString()} chunks
 							{#if progress.pages} from {progress.pages} pages{/if}
 							{#if progress.elapsed_seconds} in {progress.elapsed_seconds}s{/if}
@@ -186,4 +185,5 @@
 			</div>
 		{/each}
 	{/if}
-</div>
+	{/snippet}
+</Panel>

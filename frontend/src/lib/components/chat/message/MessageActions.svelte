@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
+
 	interface Props {
 		actions: Array<{ label: string; value: string }>;
 		onActionClick: (value: string) => void;
@@ -10,13 +12,9 @@
 {#if actions.length > 0}
 	<div class="flex flex-wrap gap-2 pt-1">
 		{#each actions as action}
-			<button
-				type="button"
-				onclick={() => onActionClick(action.value)}
-				class="btn btn-ghost btn-sm"
-			>
+			<Button variant="ghost" size="sm" onclick={() => onActionClick(action.value)}>
 				{action.label}
-			</button>
+			</Button>
 		{/each}
 	</div>
 {/if}

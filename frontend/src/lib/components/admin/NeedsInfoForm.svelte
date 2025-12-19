@@ -82,7 +82,7 @@
 		<div class="space-y-4 mb-4">
 			{#each result.input_fields as field}
 				<div>
-					<label class="block text-xs font-mono text-surface-400 mb-1.5">
+					<label for={"needs-info-" + field.name} class="block text-xs font-mono text-surface-400 mb-1.5">
 						{field.label || field.name}
 						{#if field.required}
 							<span class="text-red-400">*</span>
@@ -91,6 +91,7 @@
 
 					{#if field.field_type === 'select' && field.options}
 						<select
+							id={"needs-info-" + field.name}
 							class="w-full px-3 py-2 bg-surface-800/80 border border-surface-700/50 rounded-lg text-sm font-mono text-surface-200 focus:outline-none focus:border-blue-500/50"
 							bind:value={formValues[field.name]}
 						>
@@ -101,6 +102,7 @@
 						</select>
 					{:else if field.field_type === 'number'}
 						<input
+							id={"needs-info-" + field.name}
 							type="number"
 							class="w-full px-3 py-2 bg-surface-800/80 border border-surface-700/50 rounded-lg text-sm font-mono text-surface-200 focus:outline-none focus:border-blue-500/50"
 							placeholder={field.placeholder || ''}
@@ -108,6 +110,7 @@
 						/>
 					{:else}
 						<input
+							id={"needs-info-" + field.name}
 							type="text"
 							class="w-full px-3 py-2 bg-surface-800/80 border border-surface-700/50 rounded-lg text-sm font-mono text-surface-200 focus:outline-none focus:border-blue-500/50"
 							placeholder={field.placeholder || ''}

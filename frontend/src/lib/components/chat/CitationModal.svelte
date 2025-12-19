@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Icon } from '$lib/components/ui';
 	import type { CitationObject } from '$lib/api';
 
 	interface Props {
@@ -72,9 +73,7 @@
 						onclick={onClose}
 						aria-label="Close modal"
 					>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
+						<Icon name="close" size="sm" strokeWidth={2} />
 					</button>
 				</div>
 
@@ -100,20 +99,18 @@
 
 				<!-- Footer -->
 				<div class="px-4 py-3 bg-surface-800 flex justify-end gap-2">
-					<button type="button" class="btn btn-ghost btn-sm" onclick={onClose}>
+					<Button variant="ghost" size="sm" onclick={onClose}>
 						Close
-					</button>
+					</Button>
 					{#if citation.url}
 						<a
 							href={citation.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="btn btn-primary btn-sm inline-flex items-center gap-1.5"
+							class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-primary-700 text-white hover:bg-primary-800 transition-colors"
 						>
 							<span>Open Source</span>
-							<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-							</svg>
+							<Icon name="external" size="xs" strokeWidth={2} />
 						</a>
 					{/if}
 				</div>
@@ -125,12 +122,14 @@
 <style>
 	.line-clamp-2 {
 		display: -webkit-box;
+		line-clamp: 2;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
 	.line-clamp-6 {
 		display: -webkit-box;
+		line-clamp: 6;
 		-webkit-line-clamp: 6;
 		-webkit-box-orient: vertical;
 		overflow: hidden;

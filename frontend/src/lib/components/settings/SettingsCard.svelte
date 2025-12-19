@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Badge } from '$lib/components/ui';
+	import { Card, StatusPill } from '$lib/components/ui';
 
 	interface Props {
 		title: string;
@@ -21,41 +21,34 @@
 	}: Props = $props();
 
 	const statusConfig = {
-		saved: { variant: 'default' as const, label: 'saved' },
-		connected: { variant: 'success' as const, label: 'connected' }
+		saved: { status: 'success' as const, label: 'Saved' },
+		connected: { status: 'success' as const, label: 'Connected' }
 	};
 </script>
 
-<div class="bg-surface-800 rounded-lg overflow-hidden">
-	<!-- Header -->
-	<div class="px-4 py-3 flex items-center justify-between">
-		<div class="flex items-center gap-2.5">
-			{#if icon}
-				<span class="text-surface-400">
-					{@render icon()}
-				</span>
-			{/if}
-			<span class="text-sm font-medium text-surface-200">{title}</span>
-			{#if status}
-				<Badge variant={statusConfig[status].variant} size="sm">
-					{statusConfig[status].label}
-				</Badge>
+<Card padding="md" footer={footer}>
+	{#snippet header()}
+		<div class="flex items-center justify-between gap-4">
+			<div class="flex items-center gap-2.5 min-w-0">
+				{#if icon}
+					<span class="text-text-tertiary shrink-0">
+						{@render icon()}
+					</span>
+				{/if}
+				<span class="text-sm font-medium text-text truncate">{title}</span>
+				{#if status}
+					<StatusPill status={statusConfig[status].status} label={statusConfig[status].label} size="sm" />
+				{/if}
+			</div>
+			{#if headerAction}
+				<div class="shrink-0">
+					{@render headerAction()}
+				</div>
 			{/if}
 		</div>
-		{#if headerAction}
-			{@render headerAction()}
-		{/if}
-	</div>
+	{/snippet}
 
-	<!-- Content -->
-	<div class="p-4">
+	{#snippet children()}
 		{@render children()}
-	</div>
-
-	<!-- Footer (optional) -->
-	{#if footer}
-		<div class="px-4 py-3 flex justify-end">
-			{@render footer()}
-		</div>
-	{/if}
-</div>
+	{/snippet}
+</Card>

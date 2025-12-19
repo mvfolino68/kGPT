@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Icon } from '$lib/components/ui';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,
@@ -63,14 +64,15 @@
 			</div>
 			<div class="flex items-center gap-1">
 				{#if isViewingHistory}
-					<button
-						type="button"
+					<Button
+						variant="link"
+						size="xs"
 						onclick={handleClearSelection}
-						class="btn btn-link btn-xs text-violet-400"
-						aria-label="Show live trace"
+						class="text-primary-400"
+						ariaLabel="Show live trace"
 					>
 						Live
-					</button>
+					</Button>
 				{/if}
 				<button
 					type="button"
@@ -78,9 +80,7 @@
 					class="btn-action btn-action-default"
 					aria-label="Close agent activity"
 				>
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-					</svg>
+					<Icon name="close" size="sm" strokeWidth={2} />
 				</button>
 			</div>
 		</div>

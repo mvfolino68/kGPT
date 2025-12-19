@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { AgentGraphInfo, AgentGraphNode } from '$lib/api';
+	import { Card } from '$lib/components';
 	import type { ExecutionPath } from './types';
 	import { nodeInfo, getPathColor } from './types';
 	import AgentNode from './AgentNode.svelte';
@@ -28,22 +29,21 @@
 	}
 </script>
 
-<div class="bg-surface-800 rounded-lg overflow-hidden">
-	<div class="px-6 py-4">
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-3">
-				<div class="w-2 h-2 rounded-full {getPathColor(selectedPath.color, 'bg')} animate-pulse"></div>
-				<span class="text-sm text-surface-200">Query Flow</span>
-			</div>
-			<span class="text-xs text-surface-500">Click any agent for details</span>
+<Card
+	title="Query flow"
+	subtitle="Click any agent to see what it does"
+	padding="none"
+>
+	<div class="p-4 sm:p-6">
+		<div class="flex items-center justify-center gap-3 mb-6">
+			<div class="w-2 h-2 rounded-full {getPathColor(selectedPath.color, 'bg')} animate-pulse"></div>
+			<span class="text-xs text-text-tertiary">Selected path: <span class="{getPathColor(selectedPath.color, 'text')} font-medium">{selectedPath.shortName}</span></span>
 		</div>
-	</div>
 
-	<div class="p-8">
 		<!-- Vertical Flow -->
 		<div class="flex flex-col items-center gap-2">
 			<!-- START -->
-			<div class="px-5 py-2 bg-surface-700/50 rounded-lg text-sm text-surface-400">
+			<div class="px-4 py-1.5 bg-bg-elevated rounded-lg text-xs font-medium text-text-tertiary">
 				START
 			</div>
 
@@ -89,14 +89,14 @@
 			<FlowArrow pathColor={selectedPath.color} />
 
 			<!-- END -->
-			<div class="px-5 py-2 rounded-lg text-sm {getPathColor(selectedPath.color, 'bg')} {getPathColor(selectedPath.color, 'text')} border {getPathColor(selectedPath.color, 'border')}">
+			<div class="px-4 py-1.5 rounded-lg text-xs font-medium {getPathColor(selectedPath.color, 'bg')} {getPathColor(selectedPath.color, 'text')} border {getPathColor(selectedPath.color, 'border')}">
 				END
 			</div>
 		</div>
 
 		<!-- Hint -->
 		<div class="mt-8 text-center">
-			<p class="text-xs text-surface-500">{selectedPath.hint}</p>
+			<p class="text-xs text-text-tertiary">{selectedPath.hint}</p>
 		</div>
 	</div>
-</div>
+</Card>

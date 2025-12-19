@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
 	import type { KafkaCluster } from '$lib/api';
 
 	interface Props {
@@ -21,14 +22,15 @@
 					<div class="text-surface-200">{cluster.name}</div>
 					<div class="text-surface-500 text-xs">{cluster.bootstrap_servers}</div>
 				</div>
-				<button
-					type="button"
-					class="btn btn-primary btn-sm"
+				<Button
+					variant="primary"
+					size="sm"
 					onclick={() => onConnect(cluster)}
 					disabled={connecting}
+					loading={connecting}
 				>
 					Connect
-				</button>
+				</Button>
 			</div>
 		{/each}
 	</div>

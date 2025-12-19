@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { AdminOperationResult } from '$lib/stores/chat';
 	import { executeAdminOperation } from '$lib/api';
-	import { isPartitionDetailList } from './types';
+	import { Card } from '$lib/components/ui';
+	import type { TopicInfo, GroupInfo, BrokerInfo, OffsetInfo, MemberInfo, CoordinatorInfo, ConfigEntry, PartitionDetail } from './types';
 
 	import PendingConfirmation from './PendingConfirmation.svelte';
 	import NeedsInfoForm from './NeedsInfoForm.svelte';
@@ -24,8 +25,8 @@
 	let { result, onOperationComplete }: Props = $props();
 
 	let isExecuting = $state(false);
-	let executionError = $state<string | null>(null);
-	let executionResult = $state<AdminOperationResult | null>(null);
+	let executionError: string | null = $state(null);
+	let executionResult: AdminOperationResult | null = $state(null);
 
 	async function handleConfirm() {
 		if (!result.operation || !result.params) return;
@@ -52,86 +53,153 @@
 		onOperationComplete?.({ success: false, error: 'Operation cancelled by user' });
 	}
 
-	const displayResult = $derived(executionResult || result);
+	const displayResult: AdminOperationResult = $derived(executionResult || result);
 	const isPending = $derived(result.pending && !executionResult);
 	const needsInfo = $derived(result.needs_info && !executionResult);
 	const isUnclear = $derived(result.unclear && !executionResult);
 
 	// Data extraction
-	const data = $derived(displayResult.data || {});
-	const topics = $derived(data.topics || []);
-	const groups = $derived(data.groups || []);
-	const brokers = $derived(data.brokers || []);
-	const offsets = $derived(data.offsets || []);
-	const partitions = $derived(data.partitions || displayResult.partitions);
-	const config = $derived(data.configuration || displayResult.configuration || {});
+	type DataRecord = Record<string, unknown>;
+
+	function isRecord(value: unknown): value is Record<string, unknown> {
+		return typeof value === 'object' && value !== null && !Array.isArray(value);
+	}
+
+	function asRecord(value: unknown): DataRecord {
+		return isRecord(value) ? (value as DataRecord) : {};
+	}
+
+	function asString(value: unknown): string | undefined {
+		return typeof value === 'string' ? value : undefined;
+	}
+
+	function asNumber(value: unknown): number | undefined {
+		return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+	}
+
+	function asArray<T>(value: unknown): T[] {
+		return Array.isArray(value) ? (value as T[]) : [];
+	}
+
+	function asCoordinator(value: unknown): CoordinatorInfo | undefined {
+		if (!isRecord(value)) return undefined;
+		const host = asString(value.host);
+		const port = asNumber(value.port);
+		if (!host) return undefined;
+		return { host, port: port ?? 0 };
+	}
+
+	function asConfigRecord(value: unknown): Record<string, ConfigEntry> | undefined {
+		if (!isRecord(value)) return undefined;
+		const rec = value as Record<string, ConfigEntry>;
+		return Object.keys(rec).length > 0 ? rec : undefined;
+	}
+
+	const data: DataRecord = $derived(asRecord(displayResult.data));
+
+	const totalCount: number | undefined = $derived(asNumber(data['total_count']));
+	const topics: (string | TopicInfo)[] = $derived(asArray<string | TopicInfo>(data['topics']));
+	const groups: (string | GroupInfo)[] = $derived(asArray<string | GroupInfo>(data['groups']));
+	const brokers: BrokerInfo[] = $derived(asArray<BrokerInfo>(data['brokers']));
+	const offsets: OffsetInfo[] = $derived(asArray<OffsetInfo>(data['offsets']));
+
+	const topic: string = $derived(asString(data['topic']) ?? asString((displayResult as unknown as DataRecord)['topic']) ?? '');
+	const partitionCount: number | undefined = $derived(
+		asNumber(data['partition_count']) ?? asNumber((displayResult as unknown as DataRecord)['partition_count'])
+	);
+	const replicationFactor: number | undefined = $derived(
+		asNumber(data['replication_factor']) ?? asNumber((displayResult as unknown as DataRecord)['replication_factor'])
+	);
+
+	const partitions: number | PartitionDetail[] | undefined = $derived(
+		(data['partitions'] ?? (displayResult as unknown as DataRecord)['partitions']) as
+			| number
+			| PartitionDetail[]
+			| undefined
+	);
+	const config: Record<string, ConfigEntry> | undefined = $derived(
+		asConfigRecord(data['configuration']) ?? asConfigRecord((displayResult as unknown as DataRecord)['configuration'])
+	);
+
+	const clusterId: string | undefined = $derived(asString(data['cluster_id']));
+	const controllerId: number | undefined = $derived(asNumber(data['controller_id']));
+	const brokerCount: number | undefined = $derived(asNumber(data['broker_count']));
+	const topicCount: number | undefined = $derived(asNumber(data['topic_count']));
+
+	const groupId: string = $derived(asString(data['group_id']) ?? '');
+	const groupState: string | undefined = $derived(asString(data['state']));
+	const protocol: string | undefined = $derived(asString(data['protocol']));
+	const coordinator: CoordinatorInfo | undefined = $derived(asCoordinator(data['coordinator']));
+	const members: MemberInfo[] = $derived(asArray<MemberInfo>(data['members']));
 
 	const codeToShow = $derived(displayResult.code_executed || displayResult.code_preview);
 </script>
 
-<div class="admin-result-card">
-	{#if isPending}
-		<PendingConfirmation
-			{result}
-			{isExecuting}
-			{executionError}
-			onConfirm={handleConfirm}
-			onCancel={handleCancel}
-		/>
+<Card padding="none">
+	{#snippet children()}
+		{#if isPending}
+			<PendingConfirmation
+				{result}
+				{isExecuting}
+				{executionError}
+				onConfirm={handleConfirm}
+				onCancel={handleCancel}
+			/>
 
-	{:else if needsInfo}
-		<NeedsInfoForm {result} onComplete={onOperationComplete} />
+		{:else if needsInfo}
+			<NeedsInfoForm {result} onComplete={onOperationComplete} />
 
-	{:else if isUnclear}
-		<UnclearOperation {result} />
+		{:else if isUnclear}
+			<UnclearOperation {result} />
 
-	{:else if displayResult.operation === 'list_topics' && (displayResult.success || displayResult.executed)}
-		<TopicsTable {topics} totalCount={data.total_count} />
+		{:else if displayResult.operation === 'list_topics' && (displayResult.success || displayResult.executed)}
+			<TopicsTable {topics} {totalCount} />
 
-	{:else if displayResult.operation === 'describe_topic' && (displayResult.success || displayResult.executed)}
-		<TopicDetails
-			topic={data.topic || displayResult.topic || ''}
-			partitionCount={data.partition_count || displayResult.partition_count}
-			replicationFactor={data.replication_factor || displayResult.replication_factor}
-			{partitions}
-			{config}
-		/>
+		{:else if displayResult.operation === 'describe_topic' && (displayResult.success || displayResult.executed)}
+			<TopicDetails
+				{topic}
+				{partitionCount}
+				{replicationFactor}
+				{partitions}
+				{config}
+			/>
 
-	{:else if displayResult.operation === 'list_consumer_groups' && (displayResult.success || displayResult.executed)}
-		<ConsumerGroupsTable {groups} totalCount={data.total_count} />
+		{:else if displayResult.operation === 'list_consumer_groups' && (displayResult.success || displayResult.executed)}
+			<ConsumerGroupsTable {groups} {totalCount} />
 
-	{:else if displayResult.operation === 'describe_cluster' && (displayResult.success || displayResult.executed)}
-		<ClusterOverview
-			clusterId={data.cluster_id}
-			controllerId={data.controller_id}
-			brokerCount={data.broker_count}
-			topicCount={data.topic_count}
-			{brokers}
-		/>
+		{:else if displayResult.operation === 'describe_cluster' && (displayResult.success || displayResult.executed)}
+			<ClusterOverview
+				{clusterId}
+				{controllerId}
+				{brokerCount}
+				{topicCount}
+				{brokers}
+			/>
 
-	{:else if displayResult.operation === 'describe_consumer_group' && (displayResult.success || displayResult.executed)}
-		<ConsumerGroupDetails
-			groupId={data.group_id || ''}
-			state={data.state}
-			protocol={data.protocol}
-			coordinator={data.coordinator}
-			members={data.members}
-		/>
+		{:else if displayResult.operation === 'describe_consumer_group' && (displayResult.success || displayResult.executed)}
+			<ConsumerGroupDetails
+				{groupId}
+				state={groupState}
+				{protocol}
+				{coordinator}
+				{members}
+			/>
 
-	{:else if displayResult.operation === 'get_consumer_group_offsets' && (displayResult.success || displayResult.executed)}
-		<OffsetsTable groupId={data.group_id || ''} {offsets} />
+		{:else if displayResult.operation === 'get_consumer_group_offsets' && (displayResult.success || displayResult.executed)}
+			<OffsetsTable groupId={groupId} {offsets} />
 
-	{:else if displayResult.executed && displayResult.success}
-		<OperationSuccess result={displayResult} />
+		{:else if displayResult.executed && displayResult.success}
+			<OperationSuccess result={displayResult} />
 
-	{:else if displayResult.success && !displayResult.pending && !displayResult.needs_info && !displayResult.unclear}
-		<OperationSuccess result={displayResult} />
+		{:else if displayResult.success && !displayResult.pending && !displayResult.needs_info && !displayResult.unclear}
+			<OperationSuccess result={displayResult} />
 
-	{:else if displayResult.error}
-		<OperationError error={displayResult.error} />
-	{/if}
+		{:else if displayResult.error}
+			<OperationError error={displayResult.error} />
+		{/if}
 
-	{#if !isPending && codeToShow}
-		<CodePreview code={codeToShow} />
-	{/if}
-</div>
+		{#if !isPending && codeToShow}
+			<CodePreview code={codeToShow} />
+		{/if}
+	{/snippet}
+</Card>

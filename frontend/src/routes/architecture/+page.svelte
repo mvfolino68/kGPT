@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, StatusDot, Icon, Card } from '$lib/components';
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, HeaderStatus } from '$lib/components';
@@ -41,14 +42,14 @@
 	<title>Agent Architecture - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-surface-900">
+<div class="flex flex-col h-full bg-bg">
 	<Header title="Agent Architecture" subtitle="Multi-agent RAG orchestration">
 		{#snippet actions()}
 			<div class="flex items-center gap-4">
 				<HeaderStatus status="active" label="LangGraph" pulse />
-				<button type="button" class="btn btn-ghost btn-sm" onclick={loadGraph} disabled={loading}>
-					{loading ? 'Loading...' : 'Refresh'}
-				</button>
+				<Button variant="ghost" size="sm" onclick={loadGraph} disabled={loading} loading={loading}>
+					Refresh
+				</Button>
 			</div>
 		{/snippet}
 	</Header>
@@ -56,25 +57,27 @@
 	<div class="flex-1 overflow-y-auto p-6">
 		<div class="max-w-5xl mx-auto space-y-8">
 			{#if error}
-				<div class="bg-red-500/5 rounded-lg p-4 flex items-center gap-3">
-					<StatusIndicator status="error" />
-					<span class="text-sm text-red-400">{error}</span>
-					<button type="button" class="btn btn-ghost btn-sm" onclick={loadGraph}>Retry</button>
-				</div>
+				<Card variant="error" padding="sm">
+					<div class="flex items-center gap-2 text-sm">
+						<StatusDot status="error" />
+						<span class="text-error flex-1">{error}</span>
+						<Button variant="ghost" size="sm" onclick={loadGraph}>Retry</Button>
+					</div>
+				</Card>
 			{:else if loading}
 				<div class="flex items-center justify-center py-20">
 					<div class="text-center space-y-4">
-						<div class="w-12 h-12 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-						<p class="text-surface-400">Loading agent graph...</p>
+						<Icon name="spinner" size="xl" class="mx-auto text-primary animate-spin" />
+						<p class="text-text-secondary">Loading agent graph...</p>
 					</div>
 				</div>
 			{:else if agentGraph}
 				<!-- Hero -->
 				<section class="text-center py-6">
-					<h1 class="text-3xl font-bold text-surface-100 mb-3">
+					<h1 class="text-3xl font-bold text-text mb-3">
 						Multi-Agent Orchestration
 					</h1>
-					<p class="text-surface-400 text-sm max-w-2xl mx-auto">
+					<p class="text-text-secondary text-sm max-w-2xl mx-auto">
 						Your question flows through specialized AI agents. Select a path below to see how
 						different queries are handled.
 					</p>
@@ -104,9 +107,7 @@
 				<TechnologyStack />
 
 				<!-- Graph Stats -->
-				<div class="bg-surface-800 rounded-lg overflow-hidden">
-					<GraphStats agents={agentGraph.nodes.length + 1} edges={agentGraph.edges.length} />
-				</div>
+				<GraphStats agents={agentGraph.nodes.length + 1} edges={agentGraph.edges.length} />
 
 				<!-- CTA -->
 				<CallToAction />

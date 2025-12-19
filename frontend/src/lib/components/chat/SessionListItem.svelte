@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ListItem, Button, IconButton } from '$lib/components/ui';
+	import { ListItem, Button, IconButton, Icon } from '$lib/components/ui';
 
 	interface Props {
 		session: { id: string; title: string; updated_at: string };
@@ -58,7 +58,7 @@
 			oninput={(e) => onEditInput(e.currentTarget.value)}
 			onblur={onSaveEdit}
 			onkeydown={onEditKeydown}
-			class="w-full input text-xs px-2 py-1"
+			class="w-full bg-surface-700/50 border-none rounded-md px-2 py-1 text-xs text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 		/>
 	{:else}
 		<div class="flex items-center justify-between">
@@ -68,9 +68,7 @@
 			{#if isConfirmingDelete}
 				<div class="flex gap-1">
 					<Button variant="danger-solid" size="xs" onclick={onConfirmDelete}>
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-						</svg>
+						<Icon name="trash" size="xs" strokeWidth={2} />
 						delete
 					</Button>
 					<Button variant="default" size="xs" onclick={onCancelDelete}>
@@ -80,14 +78,10 @@
 			{:else}
 				<div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
 					<IconButton variant="primary" size="xs" title="Edit" onclick={onEdit}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-						</svg>
+						<Icon name="edit" size="sm" strokeWidth={2} />
 					</IconButton>
 					<IconButton variant="danger" size="xs" title="Delete" onclick={onDelete}>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-						</svg>
+						<Icon name="trash" size="sm" strokeWidth={2} />
 					</IconButton>
 				</div>
 			{/if}

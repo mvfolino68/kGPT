@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { AgentActivity } from '$lib/stores/chat';
-	import { agentConfig, getStatusColor, formatDuration } from './types';
+	import { agentConfig, getTraceStatusColor, formatDuration } from './types';
 
 	interface Props {
 		activity: AgentActivity;
@@ -12,7 +12,7 @@
 	let { activity, expanded, onToggle, compact = false }: Props = $props();
 
 	const config = $derived(agentConfig[activity.agent] || agentConfig.error);
-	const statusColor = $derived(getStatusColor(activity.status));
+	const statusColor = $derived(getTraceStatusColor(activity.status));
 	const duration = $derived(formatDuration(activity.duration_ms));
 	const hasResult = $derived(!!activity.result);
 </script>

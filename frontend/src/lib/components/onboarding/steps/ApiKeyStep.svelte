@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
 	import WizardStep from '../WizardStep.svelte';
 	import { validateApiKey, updateSettings } from '$lib/api';
 	import { StatusIndicator } from '$lib/components';
@@ -76,7 +77,7 @@
 					bind:value={apiKey}
 					placeholder="sk-..."
 					disabled={models.length > 0}
-					class="w-full input"
+					class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 				/>
 				<a
 					href="https://platform.openai.com/api-keys"
@@ -98,22 +99,15 @@
 
 			<!-- Validate Button -->
 			{#if models.length === 0}
-				<button
-					type="button"
-					class="btn btn-primary w-full"
+				<Button
+					variant="primary"
+					class="w-full"
 					onclick={handleValidate}
 					disabled={validating || !apiKey.trim()}
+					loading={validating}
 				>
-					{#if validating}
-						<svg class="w-4 h-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
-							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-						</svg>
-						Validating...
-					{:else}
-						Validate Key
-					{/if}
-				</button>
+					Validate Key
+				</Button>
 			{:else}
 				<!-- Model Selection -->
 				<div class="space-y-4 pt-4 border-t border-surface-700/50">
@@ -139,21 +133,18 @@
 
 	{#snippet actions()}
 		<div class="flex justify-between">
-			<button type="button" class="btn btn-ghost" onclick={onBack}>
+			<Button variant="ghost" onclick={onBack}>
 				Back
-			</button>
-			<button
-				type="button"
-				class="btn btn-primary px-6"
+			</Button>
+			<Button
+				variant="primary"
+				class="px-6"
 				onclick={handleSaveAndContinue}
 				disabled={saving || models.length === 0 || !selectedModel}
+				loading={saving}
 			>
-				{#if saving}
-					Saving...
-				{:else}
-					Continue
-				{/if}
-			</button>
+				Continue
+			</Button>
 		</div>
 	{/snippet}
 </WizardStep>

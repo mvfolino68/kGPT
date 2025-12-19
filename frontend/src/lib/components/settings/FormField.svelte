@@ -5,6 +5,7 @@
 		label: string;
 		id?: string;
 		hint?: string;
+		error?: string;
 		children: Snippet;
 	}
 
@@ -12,16 +13,19 @@
 		label,
 		id,
 		hint,
+		error,
 		children
 	}: Props = $props();
 </script>
 
 <div class="space-y-1.5">
-	<label for={id} class="block text-[11px] font-medium uppercase tracking-wider text-surface-500">
+	<label for={id} class="label block">
 		{label}
 	</label>
 	{@render children()}
-	{#if hint}
-		<p class="text-xs text-surface-500">{hint}</p>
+	{#if error}
+		<p class="text-xs text-error">{error}</p>
+	{:else if hint}
+		<p class="text-xs text-text-tertiary">{hint}</p>
 	{/if}
 </div>

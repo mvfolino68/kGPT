@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
 	import WizardStep from '../WizardStep.svelte';
 	import kgptLogo from '$lib/assets/kgpt-logo.svg';
 
@@ -66,9 +67,9 @@
 
 	{#snippet actions()}
 		<div class="flex justify-center">
-			<button type="button" class="btn btn-primary px-8" onclick={onNext}>
+			<Button variant="primary" class="px-8" onclick={onNext}>
 				Get Started
-			</button>
+			</Button>
 		</div>
 	{/snippet}
 </WizardStep>

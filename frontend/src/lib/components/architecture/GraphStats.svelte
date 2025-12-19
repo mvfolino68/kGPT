@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Card } from '$lib/components';
+
 	interface Props {
 		agents: number;
 		edges: number;
@@ -7,23 +9,23 @@
 	let { agents, edges }: Props = $props();
 </script>
 
-<div class="px-6 py-4 bg-surface-800">
-	<div class="flex items-center justify-center gap-8 text-xs">
+<Card padding="md" title="Graph stats" subtitle="Quick snapshot of the orchestration graph">
+	<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
 		<div class="text-center">
-			<div class="text-primary-light text-lg font-bold">{agents}</div>
-			<div class="text-surface-500">Agents</div>
+			<div class="text-primary text-lg font-bold leading-none">{agents}</div>
+			<div class="text-text-tertiary mt-1">Agents</div>
 		</div>
 		<div class="text-center">
-			<div class="text-emerald-400 text-lg font-bold">{edges}</div>
-			<div class="text-surface-500">Connections</div>
+			<div class="text-emerald-400 text-lg font-bold leading-none">{edges}</div>
+			<div class="text-text-tertiary mt-1">Connections</div>
 		</div>
 		<div class="text-center">
-			<div class="text-violet-400 text-lg font-bold">4</div>
-			<div class="text-surface-500">Paths</div>
+			<div class="text-violet-400 text-lg font-bold leading-none">4</div>
+			<div class="text-text-tertiary mt-1">Paths</div>
 		</div>
 		<div class="text-center">
-			<div class="text-amber-400 text-lg font-bold">12+</div>
-			<div class="text-surface-500">Technologies</div>
+			<div class="text-amber-400 text-lg font-bold leading-none">12+</div>
+			<div class="text-text-tertiary mt-1">Technologies</div>
 		</div>
 	</div>
-</div>
+</Card>

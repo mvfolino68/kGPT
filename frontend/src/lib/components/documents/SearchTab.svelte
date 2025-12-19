@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { StatusIndicator } from '$lib/components';
+	import { Button, Panel } from '$lib/components/ui';
+	import { StatusPill } from '$lib/components';
 	import { getSimilarityColor, type VectorSearchResponse, type ChunkResult } from './types';
 
 	interface Props {
@@ -27,52 +28,56 @@
 
 <div class="space-y-4">
 	<!-- Search interface -->
-	<div class="panel overflow-hidden">
-		<div class="panel-header flex items-center gap-2">
-			<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-			</svg>
-			<span class="text-sm text-surface-300">Semantic Vector Search</span>
-		</div>
-
-		<div class="p-4 space-y-4">
-			<div class="p-3 bg-surface-900/50 rounded text-xs text-surface-400">
-				<span class="text-surface-300">How it works:</span> Your query is converted to an embedding vector, then compared against all stored document chunks using cosine similarity.
+	<Panel padding="none" class="overflow-hidden">
+		{#snippet children()}
+			<div class="px-4 py-3 flex items-center gap-2">
+				<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+				</svg>
+				<span class="text-sm text-surface-300">Semantic Vector Search</span>
 			</div>
 
-			<form onsubmit={(e) => { e.preventDefault(); onSearch(); }} class="flex gap-3 items-center">
-				<input
-					type="text"
-					value={searchQuery}
-					oninput={(e) => onQueryChange(e.currentTarget.value)}
-					placeholder="Search for anything..."
-					class="flex-1 min-w-0 input"
-				/>
-				<select
-					value={searchK}
-					onchange={(e) => onKChange(parseInt(e.currentTarget.value))}
-					class="input w-auto"
-				>
-					<option value={5}>Top 5</option>
-					<option value={10}>Top 10</option>
-					<option value={20}>Top 20</option>
-				</select>
-				<button
-					type="submit"
-					disabled={searchLoading || !searchQuery.trim()}
-					class="btn btn-primary"
-				>
-					{searchLoading ? 'Searching...' : 'Search'}
-				</button>
-			</form>
-		</div>
-	</div>
+			<div class="p-4 space-y-4">
+				<div class="p-3 bg-surface-900/50 rounded text-xs text-surface-400">
+					<span class="text-surface-300">How it works:</span> Your query is converted to an embedding vector, then compared against all stored document chunks using cosine similarity.
+				</div>
+
+				<form onsubmit={(e) => { e.preventDefault(); onSearch(); }} class="flex gap-3 items-center">
+					<input
+						type="text"
+						value={searchQuery}
+						oninput={(e) => onQueryChange(e.currentTarget.value)}
+						placeholder="Search for anything..."
+						class="flex-1 min-w-0 bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
+					/>
+					<select
+						value={searchK}
+						onchange={(e) => onKChange(parseInt(e.currentTarget.value))}
+						class="w-auto bg-surface-700/50 border-none rounded-md px-2 py-1 text-xs text-foreground transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
+					>
+						<option value={5}>Top 5</option>
+						<option value={10}>Top 10</option>
+						<option value={20}>Top 20</option>
+					</select>
+					<Button
+						type="submit"
+						variant="primary"
+						disabled={searchLoading || !searchQuery.trim()}
+						loading={searchLoading}
+					>
+						Search
+					</Button>
+				</form>
+			</div>
+		{/snippet}
+	</Panel>
 
 	<!-- Search results -->
 	{#if searchResults}
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center gap-2">
-				<StatusIndicator status="active" size="sm" />
+	<Panel>
+		{#snippet children()}
+			<div class="flex items-center gap-2 mb-4">
+				<StatusPill status="success" label="Results" size="sm" />
 				<span class="text-sm text-surface-300">
 					{searchResults.total} results for "{searchResults.query}"
 				</span>
@@ -89,12 +94,13 @@
 								</span>
 								<span class="text-surface-500 text-xs">from: {chunk.source_name}</span>
 							</div>
-							<button
+							<Button
+								variant="link"
+								size="xs"
 								onclick={() => selectedChunk = selectedChunk === chunk ? null : chunk}
-								class="btn btn-link btn-xs"
 							>
 								{selectedChunk === chunk ? 'Hide' : 'Details'}
-							</button>
+							</Button>
 						</div>
 
 						<p class="text-sm text-surface-300 leading-relaxed">{chunk.content_preview}</p>
@@ -120,6 +126,7 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		{/snippet}
+	</Panel>
 	{/if}
 </div>

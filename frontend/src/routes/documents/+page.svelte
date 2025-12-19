@@ -44,6 +44,7 @@
 		type SyncStatusResponse,
 		type ChunkAnalytics
 	} from '$lib/components/documents';
+	import { Card, Icon, IconButton, StatusDot } from '$lib/components/ui';
 
 	// =========================================================================
 	// Tab Navigation
@@ -461,7 +462,7 @@
 	<title>Vector Store - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-surface-900">
+<div class="flex flex-col h-full bg-bg">
 	<!-- Header -->
 	<Header title="Vector Store" subtitle="RAG Document & Embedding Management">
 		{#snippet actions()}
@@ -476,7 +477,7 @@
 	</Header>
 
 	<!-- Tab navigation -->
-	<nav class="px-6 border-b border-surface-800 bg-surface-900 flex gap-1">
+	<nav class="px-6 border-b border-white/5 bg-bg-elevated flex gap-1">
 		{#each [
 			{ id: 'sources' as Tab, label: 'Sources' },
 			{ id: 'search' as Tab, label: 'Search' },
@@ -493,32 +494,41 @@
 	</nav>
 
 	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-6xl mx-auto space-y-4">
+		<div class="max-w-6xl mx-auto space-y-6">
 			<!-- Error display -->
 			{#if error}
-				<div class="bg-red-500/10 rounded-lg p-3 text-sm text-red-400/80 flex items-center justify-between">
-					<span>{error}</span>
-					<button onclick={() => error = null} class="btn-action btn-action-danger">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
-				</div>
+				<Card variant="error" padding="sm">
+					<div class="flex items-center gap-2 text-sm">
+						<StatusDot status="error" size="sm" />
+						<span class="text-error flex-1">{error}</span>
+						<IconButton
+							variant="danger"
+							size="sm"
+							title="Dismiss error"
+							onclick={() => error = null}
+						>
+							<Icon name="x" size="sm" />
+						</IconButton>
+					</div>
+				</Card>
 			{/if}
 
 			<!-- Success message for destructive operations -->
 			{#if lastDestructiveResult}
-				<div class="bg-emerald-500/10 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<StatusIndicator status="active" size="sm" />
-						{lastDestructiveResult.message}
+				<Card variant="success" padding="sm">
+					<div class="flex items-center gap-2 text-sm">
+						<StatusDot status="success" size="sm" />
+						<span class="text-success flex-1">{lastDestructiveResult.message}</span>
+						<IconButton
+							variant="ghost"
+							size="sm"
+							title="Dismiss message"
+							onclick={() => lastDestructiveResult = null}
+						>
+							<Icon name="x" size="sm" />
+						</IconButton>
 					</div>
-					<button onclick={() => lastDestructiveResult = null} class="btn-action btn-action-success">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Tab Content -->

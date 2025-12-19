@@ -75,9 +75,9 @@
 	<div class="flex justify-end animate-fade-in">
 		<div class="max-w-[75%] bg-surface-800 rounded-lg px-4 py-3">
 			<div class="flex items-center gap-2 mb-2">
-				<span class="text-[10px] font-bold uppercase tracking-wider text-surface-400">USER</span>
+				<span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">USER</span>
 			</div>
-			<p class="text-surface-100 text-sm leading-relaxed">{message.content}</p>
+			<p class="text-foreground text-sm leading-relaxed">{message.content}</p>
 		</div>
 	</div>
 {:else}
@@ -91,14 +91,14 @@
 
 			<!-- Message content -->
 			{#if message.content}
-				<div class="bg-surface-800 rounded-lg {isSelected ? 'ring-1 ring-violet-500/50' : ''}">
+				<div class="bg-surface-800 rounded-lg {isSelected ? 'ring-1 ring-primary-500/50' : ''}">
 					<div class="px-4 py-3">
 						<!-- Header -->
 						<div class="flex items-center gap-2 mb-3">
-							<span class="text-[10px] font-bold uppercase tracking-wider text-primary-light">kGPT</span>
+							<span class="text-[10px] font-bold uppercase tracking-wider text-primary-400">kGPT</span>
 							<StatusIndicator status="active" size="sm" />
 							{#if message.isStreaming}
-								<span class="text-[9px] text-surface-500 animate-pulse">streaming...</span>
+								<span class="text-[9px] text-muted animate-pulse">streaming...</span>
 							{/if}
 							{#if hasTrace && !message.isStreaming}
 								<button
@@ -106,8 +106,8 @@
 									onclick={handleTraceClick}
 									class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors
 										{isSelected
-											? 'bg-surface-700/60 text-surface-200'
-											: 'text-surface-500 hover:text-surface-300 hover:bg-surface-700/40'}"
+											? 'bg-surface-700/60 text-foreground-muted'
+											: 'text-muted hover:text-foreground-muted hover:bg-surface-700/40'}"
 									title="View agent pipeline trace"
 								>
 									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -155,7 +155,7 @@
 	/* Prose styling for markdown content */
 	:global(.message-content p) {
 		margin: 0.5rem 0;
-		color: rgb(var(--color-surface-200));
+		color: rgb(var(--color-foreground-muted));
 	}
 	:global(.message-content p:first-child) { margin-top: 0; }
 	:global(.message-content p:last-child) { margin-bottom: 0; }
@@ -167,15 +167,15 @@
 	:global(.message-content li) { margin: 0.25rem 0; }
 
 	:global(.message-content code) {
-		background: rgba(var(--color-surface-700), 0.5);
+		background: rgb(var(--color-surface-700) / 0.5);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-size: 0.875em;
-		color: rgb(var(--color-surface-200));
+		color: rgb(var(--color-foreground-muted));
 	}
 
 	:global(.message-content pre) {
-		background: rgb(var(--color-surface-900));
+		background: rgb(var(--color-base-900));
 		border-radius: 0.5rem;
 		padding: 1rem;
 		overflow-x: auto;
@@ -193,19 +193,19 @@
 		margin-top: 1rem;
 		margin-bottom: 0.5rem;
 		font-weight: 600;
-		color: rgb(var(--color-primary-light));
+		color: rgb(var(--color-primary-400));
 	}
 
 	:global(.message-content a) {
-		color: rgb(var(--color-accent));
+		color: rgb(var(--color-accent-400));
 		text-decoration: underline;
 	}
 
 	:global(.message-content blockquote) {
-		border-left: 3px solid rgba(var(--color-surface-600), 0.5);
+		border-left: 3px solid rgb(var(--color-surface-600) / 0.5);
 		padding-left: 1rem;
 		margin: 0.75rem 0;
-		color: rgb(var(--color-surface-400));
+		color: rgb(var(--color-muted-foreground));
 	}
 
 	/* Citation references */
@@ -219,8 +219,8 @@
 		margin: 0 0.125rem;
 		font-size: 0.65em;
 		font-weight: 700;
-		color: rgb(var(--color-accent));
-		background: rgba(var(--color-accent), 0.15);
+		color: rgb(var(--color-accent-400));
+		background: rgb(var(--color-accent-400) / 0.15);
 		border-radius: 0.25rem;
 		cursor: pointer;
 		vertical-align: super;
@@ -228,7 +228,7 @@
 		transition: all 0.15s ease;
 	}
 	:global(.citation-ref:hover) {
-		background: rgba(var(--color-accent), 0.3);
+		background: rgb(var(--color-accent-400) / 0.3);
 		transform: scale(1.1);
 	}
 
@@ -238,7 +238,7 @@
 		user-select: text;
 	}
 	:global(.message-content ::selection) {
-		background: rgba(255, 235, 59, 0.65);
+		background: rgb(var(--color-primary-600) / 0.3);
 		color: inherit;
 	}
 
@@ -248,7 +248,7 @@
 		margin: 1rem 0;
 		border-radius: 0.5rem;
 		overflow: hidden;
-		background: rgb(var(--color-surface-900) / 0.3);
+		background: rgb(var(--color-base-900) / 0.3);
 	}
 	:global(.message-content .markdown-image) {
 		width: 100%;

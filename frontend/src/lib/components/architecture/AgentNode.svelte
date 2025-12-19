@@ -19,17 +19,23 @@
 <button
 	type="button"
 	onclick={onToggle}
-	class="w-full max-w-md p-4 rounded-xl border-2 transition-all duration-300 {isActive
-		? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'border')} shadow-lg ${getPathColor(pathColor, 'glow')}`
-		: 'bg-surface-900 border-surface-700 opacity-40'}"
+	class="
+		w-full max-w-md p-4 rounded-xl border
+		transition-all duration-150 ease-out
+		focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+		{isActive
+			? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'border')} shadow-lg ${getPathColor(pathColor, 'glow')}`
+			: 'bg-bg-elevated border-white/5 hover:border-white/10'}
+		{isSelected ? 'ring-1 ring-white/10' : ''}
+	"
 >
 	<div class="flex items-center gap-4">
 		<!-- Icon -->
 		<div
-			class="w-12 h-12 rounded-xl flex items-center justify-center {isActive ? getPathColor(pathColor, 'bg') : 'bg-surface-800'}"
+			class="w-12 h-12 rounded-xl flex items-center justify-center {isActive ? getPathColor(pathColor, 'bg') : 'bg-bg-elevated'}"
 		>
 			<svg
-				class="w-6 h-6 {isActive ? getPathColor(pathColor, 'text') : 'text-surface-500'}"
+				class="w-6 h-6 {isActive ? getPathColor(pathColor, 'text') : 'text-text-tertiary'}"
 				fill="none"
 				stroke="currentColor"
 				viewBox="0 0 24 24"
@@ -41,17 +47,17 @@
 
 		<!-- Info -->
 		<div class="flex-1 text-left">
-			<div class="text-sm font-bold {isActive ? getPathColor(pathColor, 'text') : 'text-surface-500'}">
+			<div class="text-sm font-semibold {isActive ? getPathColor(pathColor, 'text') : 'text-text-secondary'}">
 				{node.label}
 			</div>
-			<div class="text-xs text-surface-400 mt-0.5">
+			<div class="text-xs text-text-tertiary mt-0.5">
 				{info?.role || node.description}
 			</div>
 		</div>
 
 		<!-- Step number -->
 		<div
-			class="w-8 h-8 rounded-full flex items-center justify-center text-sm {isActive ? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'text')}` : 'bg-surface-800 text-surface-500'}"
+			class="w-8 h-8 rounded-full flex items-center justify-center text-sm {isActive ? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'text')}` : 'bg-bg-elevated text-text-tertiary'}"
 		>
 			{stepNumber}
 		</div>
@@ -59,12 +65,12 @@
 
 	<!-- Expanded details -->
 	{#if isSelected && info}
-		<div class="mt-4 pt-4 border-t {isActive ? 'border-current/20' : 'border-surface-700'}">
+		<div class="mt-4 pt-4 border-t {isActive ? 'border-current/20' : 'border-white/5'}">
 			<div class="grid grid-cols-3 gap-2">
 				{#each info.details as detail}
-					<div class="text-xs text-left p-2 rounded-lg {isActive ? 'bg-surface-900/50' : 'bg-surface-800'}">
-						<span class="{isActive ? getPathColor(pathColor, 'text') : 'text-surface-500'}">*</span>
-						<span class="text-surface-300 ml-1">{detail}</span>
+					<div class="text-xs text-left p-2 rounded-lg {isActive ? 'bg-bg-elevated/60' : 'bg-bg-elevated'}">
+						<span class="{isActive ? getPathColor(pathColor, 'text') : 'text-text-tertiary'}">*</span>
+						<span class="text-text-secondary ml-1">{detail}</span>
 					</div>
 				{/each}
 			</div>

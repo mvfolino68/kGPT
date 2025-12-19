@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
+
 	const operations = [
 		{ label: 'create topic', icon: 'M12 4v16m8-8H4', color: 'text-emerald-400' },
 		{ label: 'delete topic', icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', color: 'text-red-400' },
@@ -16,12 +18,12 @@
 	</div>
 	<div class="grid grid-cols-2 gap-2">
 		{#each operations as op}
-			<a href="/" class="btn btn-ghost flex items-center gap-2 px-3 py-2 text-xs justify-start">
+			<Button variant="ghost" size="sm" class="justify-start">
 				<svg class="w-4 h-4 {op.color}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 					<path stroke-linecap="round" stroke-linejoin="round" d={op.icon} />
 				</svg>
 				<span>{op.label}</span>
-			</a>
+			</Button>
 		{/each}
 	</div>
 	<div class="mt-3 px-3 py-2 bg-surface-800/50 border border-surface-700/50 rounded-lg">

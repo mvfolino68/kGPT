@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Input, Select, Icon } from '$lib/components/ui';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import type { KafkaCluster, ClusterInfo } from '$lib/api';
 
@@ -41,6 +42,21 @@
 		onformbootstrapchange,
 		onformprotocolchange
 	}: Props = $props();
+
+	let nameValue = $state('');
+	let bootstrapValue = $state('');
+	let protocolValue = $state('PLAINTEXT');
+
+	$effect(() => { nameValue = formName; });
+	$effect(() => { bootstrapValue = formBootstrap; });
+	$effect(() => { protocolValue = formProtocol; });
+
+	const protocolOptions = [
+		{ value: 'PLAINTEXT', label: 'PLAINTEXT' },
+		{ value: 'SSL', label: 'SSL' },
+		{ value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT' },
+		{ value: 'SASL_SSL', label: 'SASL_SSL' }
+	];
 </script>
 
 <SettingsCard
@@ -48,18 +64,16 @@
 	status={clusterInfo.connected ? 'connected' : null}
 >
 	{#snippet icon()}
-		<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-			<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" />
-		</svg>
+		<Icon name="server" size="sm" class="text-text-tertiary" />
 	{/snippet}
 
 	{#snippet headerAction()}
 		{#if loading}
-			<span class="text-xs text-surface-500">Loading...</span>
+			<span class="text-xs text-text-tertiary">Loading...</span>
 		{:else if clusterInfo.connected}
 			<button
 				type="button"
-				class="text-xs text-primary-light hover:text-primary transition-colors"
+				class="text-xs text-primary hover:text-primary-hover transition-colors"
 				onclick={ondisconnect}
 			>
 				Disconnect
@@ -69,18 +83,16 @@
 
 	<div class="space-y-4">
 		{#if error}
-			<div class="flex items-center gap-2 text-sm text-red-400/80 bg-red-500/5 rounded-lg px-3 py-2">
-				<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-				</svg>
+			<div class="flex items-center gap-2 text-sm text-error bg-error-bg rounded-lg px-3 py-2">
+				<Icon name="error" size="sm" />
 				<span>{error}</span>
 			</div>
 		{/if}
 
 		{#if clusterInfo.connected}
 			<div>
-				<p class="text-sm font-medium text-surface-100">{clusterInfo.cluster_id || 'Connected Cluster'}</p>
-				<p class="text-xs text-surface-500 mt-0.5">
+				<p class="text-sm font-medium text-text">{clusterInfo.cluster_id || 'Connected Cluster'}</p>
+				<p class="text-xs text-text-tertiary mt-0.5">
 					{clusterInfo.brokers || 0} broker(s) | {clusterInfo.topics?.length || 0} topics
 				</p>
 			</div>
@@ -88,114 +100,98 @@
 			<form onsubmit={(e) => { e.preventDefault(); onconnect(); }} class="space-y-4">
 				<div class="grid grid-cols-2 gap-3">
 					<FormField label="Name" id="cluster-name">
-						<input
+						<Input
 							id="cluster-name"
 							type="text"
-							value={formName}
-							oninput={(e) => onformnamechange(e.currentTarget.value)}
+							bind:value={nameValue}
+							oninput={() => onformnamechange(nameValue)}
 							placeholder="my-cluster"
-							class="w-full input"
 						/>
 					</FormField>
 					<FormField label="Protocol" id="cluster-protocol">
-						<select
+						<Select
 							id="cluster-protocol"
-							value={formProtocol}
-							onchange={(e) => onformprotocolchange(e.currentTarget.value)}
-							class="w-full input"
-						>
-							<option value="PLAINTEXT">PLAINTEXT</option>
-							<option value="SSL">SSL</option>
-							<option value="SASL_PLAINTEXT">SASL_PLAINTEXT</option>
-							<option value="SASL_SSL">SASL_SSL</option>
-						</select>
+							bind:value={protocolValue}
+							options={protocolOptions}
+							onchange={() => onformprotocolchange(protocolValue)}
+						/>
 					</FormField>
 				</div>
 				<FormField label="Bootstrap Servers" id="cluster-bootstrap">
-					<input
+					<Input
 						id="cluster-bootstrap"
 						type="text"
-						value={formBootstrap}
-						oninput={(e) => onformbootstrapchange(e.currentTarget.value)}
+						bind:value={bootstrapValue}
+						oninput={() => onformbootstrapchange(bootstrapValue)}
 						placeholder="localhost:9092"
-						class="w-full input"
 					/>
 				</FormField>
 				<div class="flex gap-2 justify-end pt-2">
-					<button type="button" class="btn btn-ghost" onclick={onhideform}>
+					<Button type="button" variant="ghost" onclick={onhideform}>
 						Cancel
-					</button>
-					<button
+					</Button>
+					<Button
 						type="submit"
-						class="btn btn-primary"
-						disabled={connecting || !formName.trim() || !formBootstrap.trim()}
+						variant="primary"
+						disabled={connecting || !nameValue.trim() || !bootstrapValue.trim()}
+						loading={connecting}
 					>
-						{connecting ? 'Connecting...' : 'Connect'}
-					</button>
+						Connect
+					</Button>
 				</div>
 			</form>
 		{:else}
 			<div class="space-y-2">
 				<button
 					type="button"
-					class="w-full p-3 rounded-lg bg-surface-700/50 hover:bg-surface-700/70 transition-all text-left group"
+					class="w-full p-3 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
 					onclick={onconnectdemo}
 				>
 					<div class="flex items-center gap-3">
-						<div class="w-8 h-8 rounded-lg bg-surface-700/50 flex items-center justify-center">
-							<svg class="w-4 h-4 text-surface-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-							</svg>
+						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center">
+							<Icon name="play" size="sm" class="text-text-secondary" />
 						</div>
 						<div class="flex-1">
-							<span class="text-sm font-medium text-surface-100 group-hover:text-surface-50 transition-colors">Demo Cluster</span>
-							<p class="text-xs text-surface-500">localhost:9094</p>
+							<span class="text-sm font-medium text-text group-hover:text-text transition-colors">Demo Cluster</span>
+							<p class="text-xs text-text-tertiary">localhost:9094</p>
 						</div>
-						<svg class="w-4 h-4 text-surface-600 group-hover:text-surface-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-						</svg>
+						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 					</div>
 				</button>
 				<button
 					type="button"
-					class="w-full p-3 rounded-lg bg-surface-700/50 hover:bg-surface-700/70 transition-all text-left group"
+					class="w-full p-3 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
 					onclick={onshowform}
 				>
 					<div class="flex items-center gap-3">
-						<div class="w-8 h-8 rounded-lg bg-surface-700/50 flex items-center justify-center">
-							<svg class="w-4 h-4 text-surface-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-							</svg>
+						<div class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center">
+							<Icon name="plus" size="sm" class="text-text-secondary" />
 						</div>
 						<div class="flex-1">
-							<span class="text-sm font-medium text-surface-100 group-hover:text-surface-50 transition-colors">Custom Cluster</span>
-							<p class="text-xs text-surface-500">Enter connection details</p>
+							<span class="text-sm font-medium text-text group-hover:text-text transition-colors">Custom Cluster</span>
+							<p class="text-xs text-text-tertiary">Enter connection details</p>
 						</div>
-						<svg class="w-4 h-4 text-surface-600 group-hover:text-surface-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-						</svg>
+						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 					</div>
 				</button>
 
 				{#if clusters.length > 0}
 					<div class="pt-3 mt-2">
-						<p class="text-[11px] font-medium uppercase tracking-wider text-surface-500 mb-2">Saved Clusters</p>
+						<p class="label mb-2">Saved Clusters</p>
 						<div class="space-y-1.5">
 							{#each clusters as cluster}
 								<button
 									type="button"
-									class="w-full p-2.5 rounded-lg bg-surface-700/40 hover:bg-surface-700/60 transition-all text-left group"
+									class="w-full p-2.5 rounded-lg bg-surface hover:bg-surface-hover transition-colors text-left group"
 									onclick={() => onconnect(cluster)}
 									disabled={connecting}
 								>
 									<div class="flex items-center justify-between">
 										<div>
-											<span class="text-sm text-surface-200 group-hover:text-surface-100 transition-colors">{cluster.name}</span>
-											<p class="text-xs text-surface-500">{cluster.bootstrap_servers}</p>
+											<span class="text-sm text-text-secondary group-hover:text-text transition-colors">{cluster.name}</span>
+											<p class="text-xs text-text-tertiary">{cluster.bootstrap_servers}</p>
 										</div>
-										<svg class="w-4 h-4 text-surface-600 group-hover:text-surface-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-										</svg>
+										<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 									</div>
 								</button>
 							{/each}

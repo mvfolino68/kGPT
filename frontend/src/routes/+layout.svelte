@@ -11,12 +11,17 @@
 	let ready = $state(false);
 	let onboardingState = getOnboardingState();
 
-	onMount(async () => {
-		// Check onboarding status
-		await checkOnboarding();
+	onMount(() => {
+		(async () => {
+			// Check onboarding status
+			await checkOnboarding();
 
-		// Quick fade-in after check
-		setTimeout(() => { ready = true; }, 100);
+			// Quick fade-in after check
+			setTimeout(() => { ready = true; }, 100);
+		})().catch(() => {
+			// Even if onboarding check fails, don't block the UI
+			setTimeout(() => { ready = true; }, 100);
+		});
 
 		refreshHealth();
 		const interval = setInterval(refreshHealth, 30000);
@@ -33,7 +38,7 @@
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </svelte:head>
 
-<div class="flex h-screen bg-surface-900 {ready ? 'opacity-100' : 'opacity-0'}" style="transition: opacity 150ms ease">
+<div class="flex h-screen bg-bg {ready ? 'opacity-100' : 'opacity-0'}" style="transition: opacity 150ms ease">
 	<Sidebar />
 
 	<main class="flex-1 overflow-hidden">

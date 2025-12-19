@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import Button from './Button.svelte';
 
-	type IconButtonVariant = 'default' | 'primary' | 'danger' | 'warning' | 'success';
+	type IconButtonVariant = 'default' | 'ghost' | 'primary' | 'danger' | 'warning' | 'success';
 	type IconButtonSize = 'xs' | 'sm' | 'md';
 
 	interface Props {
@@ -26,33 +27,28 @@
 		onclick
 	}: Props = $props();
 
-	const variantClasses: Record<IconButtonVariant, string> = {
-		default: 'btn-action btn-action-default',
-		primary: 'btn-action btn-action-primary',
-		danger: 'btn-action btn-action-danger',
-		warning: 'btn-action btn-action-warning',
-		success: 'btn-action btn-action-success'
-	};
-
-	const sizeClasses: Record<IconButtonSize, string> = {
-		xs: 'p-1',
-		sm: 'p-1.5',
-		md: 'p-2'
-	};
-
-	const iconSizes: Record<IconButtonSize, string> = {
-		xs: '[&>svg]:w-3 [&>svg]:h-3',
-		sm: '[&>svg]:w-4 [&>svg]:h-4',
-		md: '[&>svg]:w-5 [&>svg]:h-5'
-	};
+	const buttonSize = $derived(size === 'xs' ? 'icon-sm' : size === 'sm' ? 'icon-md' : 'icon-lg');
+	const variantClass = $derived(
+		variant === 'default' || variant === 'ghost'
+			? 'text-text-secondary hover:text-text hover:bg-surface-hover active:bg-surface-active'
+			: variant === 'primary'
+				? 'text-primary hover:text-primary-hover hover:bg-primary-bg active:bg-primary/20'
+				: variant === 'danger'
+					? 'text-error hover:bg-error-bg hover:text-error active:bg-error/20'
+					: variant === 'warning'
+						? 'text-warning hover:bg-warning-bg active:bg-warning/20'
+						: 'text-success hover:bg-success-bg active:bg-success/20'
+	);
 </script>
 
-<button
+<Button
 	{type}
-	class="{variantClasses[variant]} {sizeClasses[size]} {iconSizes[size]} {className}"
-	{disabled}
-	{title}
-	{onclick}
+	variant="ghost"
+	size={buttonSize}
+	disabled={disabled}
+	title={title}
+	onclick={onclick}
+	class="rounded-md {variantClass} {className}"
 >
 	{@render children()}
-</button>
+</Button>

@@ -5,7 +5,7 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot, ClickableCard } from '$lib/components';
+	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon } from '$lib/components';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -41,6 +41,13 @@
 
 	// Auto-refresh interval
 	let refreshInterval: ReturnType<typeof setInterval> | null = null;
+
+	const protocolOptions = [
+		{ value: 'PLAINTEXT', label: 'PLAINTEXT' },
+		{ value: 'SSL', label: 'SSL' },
+		{ value: 'SASL_PLAINTEXT', label: 'SASL_PLAINTEXT' },
+		{ value: 'SASL_SSL', label: 'SASL_SSL' }
+	];
 
 	async function loadClusterData() {
 		loading = true;
@@ -126,7 +133,6 @@
 
 	onMount(() => {
 		loadClusterData();
-		// Refresh every 15 seconds for more real-time feel
 		refreshInterval = setInterval(loadClusterData, 15000);
 		return () => {
 			if (refreshInterval) clearInterval(refreshInterval);
@@ -138,7 +144,7 @@
 	<title>Dashboard - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-surface-900">
+<div class="flex flex-col h-full bg-bg">
 	<Header
 		title="Kafka Dashboard"
 		subtitle={clusterDetails.connected
@@ -189,26 +195,8 @@
 			{#if loading && !clusterDetails.connected}
 				<div class="flex items-center justify-center py-16">
 					<div class="text-center">
-						<svg
-							class="w-8 h-8 mx-auto text-primary animate-spin mb-4"
-							fill="none"
-							viewBox="0 0 24 24"
-						>
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle>
-							<path
-								class="opacity-75"
-								fill="currentColor"
-								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-							></path>
-						</svg>
-						<p class="text-surface-400">Loading cluster information...</p>
+						<Icon name="spinner" size="xl" class="mx-auto text-primary animate-spin mb-4" />
+						<p class="text-text-secondary">Loading cluster information...</p>
 					</div>
 				</div>
 			{:else if clusterDetails.connected}
@@ -246,21 +234,9 @@
 				<!-- Not connected: Show connection options -->
 				<Card class="py-8">
 					<div class="text-center mb-8">
-						<svg
-							class="w-16 h-16 mx-auto text-surface-600 mb-4"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-							stroke-width="1"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7"
-							/>
-						</svg>
-						<h3 class="text-lg font-semibold text-surface-200 mb-2">Connect to Kafka</h3>
-						<p class="text-surface-500 max-w-md mx-auto text-sm">
+						<Icon name="server" size="xl" class="mx-auto text-text-tertiary mb-4 w-16 h-16" />
+						<h3 class="text-lg font-semibold text-text-secondary mb-2">Connect to Kafka</h3>
+						<p class="text-text-tertiary max-w-md mx-auto text-sm">
 							Connect to a cluster to view brokers, topics, consumer groups, and manage your
 							streaming infrastructure.
 						</p>
@@ -268,119 +244,55 @@
 
 					{#if !showConnectForm}
 						<div class="max-w-md mx-auto space-y-3">
-							<ClickableCard
-								variant="subtle"
-								class="group"
+							<button
+								type="button"
+								class="w-full p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
 								onclick={connectDemo}
 								disabled={connecting}
 							>
 								<div class="flex items-center gap-4">
-									<div
-										class="w-12 h-12 rounded-xl bg-surface-700/50 flex items-center justify-center"
-									>
-										<svg
-											class="w-6 h-6 text-surface-300"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-											/>
-										</svg>
+									<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+										<Icon name="play" size="lg" class="text-primary" />
 									</div>
 									<div class="flex-1">
-										<h4 class="text-sm font-medium text-surface-100 group-hover:text-surface-50">
+										<h4 class="text-sm font-medium text-text group-hover:text-text">
 											Use Demo Cluster
 										</h4>
-										<p class="text-xs text-surface-500 mt-0.5">
+										<p class="text-xs text-text-tertiary mt-0.5">
 											Connect to the local development cluster at localhost:9094
 										</p>
 									</div>
 									{#if connecting}
-										<svg class="w-5 h-5 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
-											<circle
-												class="opacity-25"
-												cx="12"
-												cy="12"
-												r="10"
-												stroke="currentColor"
-												stroke-width="4"
-											></circle>
-											<path
-												class="opacity-75"
-												fill="currentColor"
-												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-											></path>
-										</svg>
+										<Icon name="spinner" size="md" class="text-primary animate-spin" />
 									{:else}
-										<svg
-											class="w-5 h-5 text-surface-600 group-hover:text-surface-400"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M8.25 4.5l7.5 7.5-7.5 7.5"
-											/>
-										</svg>
+										<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
 									{/if}
 								</div>
-							</ClickableCard>
+							</button>
 
-							<ClickableCard
-								variant="subtle"
-								class="group"
+							<button
+								type="button"
+								class="w-full p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
 								onclick={() => (showConnectForm = true)}
 							>
 								<div class="flex items-center gap-4">
-									<div
-										class="w-12 h-12 rounded-xl bg-surface-700/50 flex items-center justify-center"
-									>
-										<svg
-											class="w-6 h-6 text-surface-300"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-										>
-											<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-										</svg>
+									<div class="w-12 h-12 rounded-xl bg-surface-active flex items-center justify-center">
+										<Icon name="plus" size="lg" class="text-text-secondary" />
 									</div>
 									<div class="flex-1">
-										<h4 class="text-sm font-medium text-surface-100 group-hover:text-surface-50">
+										<h4 class="text-sm font-medium text-text group-hover:text-text">
 											Connect Custom Cluster
 										</h4>
-										<p class="text-xs text-surface-500 mt-0.5">
+										<p class="text-xs text-text-tertiary mt-0.5">
 											Enter your own cluster connection details
 										</p>
 									</div>
-									<svg
-										class="w-5 h-5 text-surface-600 group-hover:text-surface-400"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-										stroke-width="1.5"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M8.25 4.5l7.5 7.5-7.5 7.5"
-										/>
-									</svg>
+									<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
 								</div>
-							</ClickableCard>
+							</button>
 
-							<p class="text-xs text-surface-500 text-center pt-2">
-								Manage saved clusters in <a href="/settings" class="text-surface-300 hover:underline"
-									>Settings</a
-								>
+							<p class="text-xs text-text-tertiary text-center pt-2">
+								Manage saved clusters in <a href="/settings" class="text-text-secondary hover:underline">Settings</a>
 							</p>
 						</div>
 					{:else}
@@ -394,45 +306,30 @@
 						>
 							<div class="grid grid-cols-2 gap-3">
 								<div>
-									<label
-										for="dash-cluster-name"
-										class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5"
-										>Name</label
-									>
-									<input
+									<label for="dash-cluster-name" class="label block mb-1.5">Name</label>
+									<Input
 										id="dash-cluster-name"
 										type="text"
 										bind:value={formName}
 										placeholder="my-cluster"
-										class="w-full input"
 									/>
 								</div>
 								<div>
-									<label
-										for="dash-protocol"
-										class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5"
-										>Protocol</label
-									>
-									<select id="dash-protocol" bind:value={formProtocol} class="w-full input">
-										<option value="PLAINTEXT">PLAINTEXT</option>
-										<option value="SSL">SSL</option>
-										<option value="SASL_PLAINTEXT">SASL_PLAINTEXT</option>
-										<option value="SASL_SSL">SASL_SSL</option>
-									</select>
+									<label for="dash-protocol" class="label block mb-1.5">Protocol</label>
+									<Select
+										id="dash-protocol"
+										bind:value={formProtocol}
+										options={protocolOptions}
+									/>
 								</div>
 							</div>
 							<div>
-								<label
-									for="dash-bootstrap"
-									class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5"
-									>Bootstrap Servers</label
-								>
-								<input
+								<label for="dash-bootstrap" class="label block mb-1.5">Bootstrap Servers</label>
+								<Input
 									id="dash-bootstrap"
 									type="text"
 									bind:value={formBootstrap}
 									placeholder="localhost:9092"
-									class="w-full input"
 								/>
 							</div>
 							<div class="flex gap-2">
@@ -440,8 +337,9 @@
 									type="submit"
 									variant="primary"
 									disabled={connecting || !formName.trim() || !formBootstrap.trim()}
+									loading={connecting}
 								>
-									{connecting ? 'Connecting...' : 'Connect'}
+									Connect
 								</Button>
 								<Button type="button" variant="ghost" onclick={() => (showConnectForm = false)}>
 									Cancel

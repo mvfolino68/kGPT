@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Panel } from '$lib/components/ui';
 	import { sourceTypeOptions, type SourceType } from './types';
 
 	interface Props {
@@ -44,15 +45,9 @@
 	);
 </script>
 
-<div class="panel overflow-hidden">
-	<div class="panel-header flex items-center justify-between">
-		<div class="flex items-center gap-2">
-			<span class="text-surface-400 text-xs">+</span>
-			<span class="text-sm text-surface-300">Add Internal Docs</span>
-		</div>
-	</div>
-
-	<div class="p-4 space-y-4">
+<Panel title="Add Internal Docs">
+	{#snippet children()}
+	<div class="space-y-4">
 		<!-- Source type selection -->
 		<div class="flex gap-2">
 			{#each sourceTypeOptions as option}
@@ -74,16 +69,17 @@
 		<form onsubmit={(e) => { e.preventDefault(); onSubmit(); }} class="space-y-4">
 			{#if sourceType === 'text'}
 				<div>
-					<label class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
+					<label for="ingestion-raw-text" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
 						Raw Text Content
 					</label>
 					<div class="relative">
 						<textarea
+							id="ingestion-raw-text"
 							value={rawTextContent}
 							oninput={(e) => onTextContentInput(e.currentTarget.value)}
 							placeholder="Paste your raw text content here..."
 							rows="10"
-							class="w-full input text-sm"
+							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 						></textarea>
 						{#if fetchingName}
 							<div class="absolute right-3 top-3">
@@ -97,16 +93,17 @@
 				</div>
 			{:else}
 				<div>
-					<label class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
+					<label for="ingestion-source-url" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1.5">
 						{sourceType === 'github' ? 'Repository URL' : 'File Path'}
 					</label>
 					<div class="relative">
 						<input
+							id="ingestion-source-url"
 							type="text"
 							value={sourceUrl}
 							oninput={(e) => onUrlInput(e.currentTarget.value)}
 							placeholder={sourceType === 'github' ? 'https://github.com/org/repo' : '/path/to/file.pdf or file name'}
-							class="w-full input pr-10"
+							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 						/>
 						{#if fetchingName}
 							<div class="absolute right-3 top-1/2 -translate-y-1/2">
@@ -122,7 +119,7 @@
 
 			<div>
 				<div class="flex items-center justify-between mb-1.5">
-					<label class="text-[10px] font-bold uppercase tracking-wider text-surface-500">Name</label>
+					<label for="ingestion-source-name" class="text-[10px] font-bold uppercase tracking-wider text-surface-500">Name</label>
 					<label class="flex items-center gap-1.5 text-xs text-surface-500 cursor-pointer">
 						<input
 							type="checkbox"
@@ -134,6 +131,7 @@
 					</label>
 				</div>
 				<input
+					id="ingestion-source-name"
 					type="text"
 					value={sourceName}
 					oninput={(e) => onSourceNameChange(e.currentTarget.value)}
@@ -144,13 +142,13 @@
 				{#if nameSuggestions.length > 0 && !sourceName}
 					<div class="flex flex-wrap gap-1.5 mt-2">
 						{#each nameSuggestions as suggestion}
-							<button
-								type="button"
+							<Button
+								variant="ghost"
+								size="xs"
 								onclick={() => onSelectSuggestion(suggestion)}
-								class="btn btn-ghost btn-xs"
 							>
 								{suggestion}
-							</button>
+							</Button>
 						{/each}
 					</div>
 				{/if}
@@ -166,14 +164,16 @@
 						Name will be auto-generated
 					{/if}
 				</div>
-				<button
+				<Button
 					type="submit"
+					variant="primary"
 					disabled={!canSubmit}
-					class="btn btn-primary"
+					loading={ingesting}
 				>
-					{ingesting ? 'Indexing...' : 'Add to Knowledge Base'}
-				</button>
+					Add to Knowledge Base
+				</Button>
 			</div>
 		</form>
 	</div>
-</div>
+	{/snippet}
+</Panel>

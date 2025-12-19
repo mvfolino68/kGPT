@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Panel } from '$lib/components/ui';
 	import { getSimilarityColor, type RAGPipelineInfo, type RAGDemoResponse, type ChunkAnalytics } from './types';
 
 	interface Props {
@@ -49,13 +50,8 @@
 		</div>
 	{:else if pipelineInfo}
 		<!-- RAG Overview -->
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center gap-2">
-				<svg class="w-4 h-4 text-amber-400/80" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-				</svg>
-				<span class="text-sm text-surface-300">RAG Pipeline Configuration</span>
-			</div>
+		<Panel title="RAG Pipeline Configuration">
+			{#snippet children()}
 
 			<div class="p-4">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -108,17 +104,12 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		{/snippet}
+	</Panel>
 
 		<!-- Pipeline Stages -->
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center gap-2">
-				<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-				</svg>
-				<span class="text-sm text-surface-300">Pipeline Stages</span>
-			</div>
-			<div class="p-4">
+		<Panel title="Pipeline Stages">
+			{#snippet children()}
 				<div class="space-y-3">
 					{#each pipelineInfo.pipeline_stages as stage, i}
 						<div class="flex gap-4 items-start">
@@ -137,34 +128,28 @@
 						</div>
 					{/each}
 				</div>
-			</div>
-		</div>
+		{/snippet}
+	</Panel>
 
 		<!-- Interactive Demo -->
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center gap-2">
-				<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-				</svg>
-				<span class="text-sm text-surface-300">Interactive RAG Demo</span>
-			</div>
-
-			<div class="p-4 space-y-4">
+		<Panel title="Interactive RAG Demo">
+			{#snippet children()}
 				<form onsubmit={(e) => { e.preventDefault(); onRunDemo(); }} class="flex gap-3 items-center">
 					<input
 						type="text"
 						value={demoQuery}
 						oninput={(e) => onDemoQueryChange(e.currentTarget.value)}
 						placeholder="Enter a query to see the RAG pipeline in action..."
-						class="flex-1 min-w-0 input"
+						class="flex-1 min-w-0 bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 					/>
-					<button
+					<Button
 						type="submit"
+						variant="primary"
 						disabled={demoLoading || !demoQuery.trim()}
-						class="btn btn-primary"
+						loading={demoLoading}
 					>
-						{demoLoading ? 'Running...' : 'Run Demo'}
-					</button>
+						Run Demo
+					</Button>
 				</form>
 
 				{#if demoResult}
@@ -192,29 +177,25 @@
 						{/each}
 					</div>
 				{/if}
-			</div>
-		</div>
+		{/snippet}
+	</Panel>
 
 		<!-- Chunk Analytics -->
 		{#if chunkAnalytics}
-			<div class="panel overflow-hidden">
-				<div class="panel-header flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-						</svg>
-						<span class="text-sm text-surface-300">Chunk Analytics</span>
-					</div>
-					<button
+			<Panel title="Chunk Analytics" padding="none" class="overflow-hidden">
+				{#snippet actions()}
+					<Button
+						variant="ghost"
+						size="sm"
 						onclick={onLoadAnalytics}
 						disabled={analyticsLoading}
-						class="btn btn-ghost btn-sm"
+						loading={analyticsLoading}
 					>
-						{analyticsLoading ? 'Loading...' : 'Refresh'}
-					</button>
-				</div>
-
-				<div class="p-4">
+						Refresh
+					</Button>
+				{/snippet}
+				{#snippet children()}
+					<div class="p-4">
 					<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
 						<div class="inner-card p-3">
 							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Total Vectors</div>
@@ -275,8 +256,9 @@
 							{/each}
 						</div>
 					</div>
-				</div>
-			</div>
+					</div>
+				{/snippet}
+			</Panel>
 		{:else if analyticsLoading}
 			<div class="panel p-8 text-center">
 				<span class="text-surface-500 animate-pulse">Loading analytics...</span>
@@ -284,49 +266,53 @@
 		{/if}
 
 		<!-- Embedding Comparison Tool -->
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center gap-2">
-				<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-				</svg>
-				<span class="text-sm text-surface-300">Embedding Similarity Comparison</span>
-			</div>
+		<Panel padding="none" class="overflow-hidden">
+			{#snippet children()}
+				<div class="px-4 py-3 flex items-center gap-2">
+					<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+					</svg>
+					<span class="text-sm text-surface-300">Embedding Similarity Comparison</span>
+				</div>
 
-			<div class="p-4 space-y-4">
+				<div class="p-4 space-y-4">
 				<p class="text-xs text-surface-400">
 					See how similar two texts are by comparing their embedding vectors.
 				</p>
 
 				<div class="grid grid-cols-2 gap-4">
 					<div>
-						<label class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 1</label>
+							<label for="pipeline-embed-text-1" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 1</label>
 						<textarea
+								id="pipeline-embed-text-1"
 							value={embedText1}
 							oninput={(e) => onEmbedText1Change(e.currentTarget.value)}
 							placeholder="Enter first text..."
 							rows="3"
-							class="w-full input text-sm"
+							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 						></textarea>
 					</div>
 					<div>
-						<label class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 2</label>
+							<label for="pipeline-embed-text-2" class="block text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Text 2</label>
 						<textarea
+								id="pipeline-embed-text-2"
 							value={embedText2}
 							oninput={(e) => onEmbedText2Change(e.currentTarget.value)}
 							placeholder="Enter second text..."
 							rows="3"
-							class="w-full input text-sm"
+							class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 						></textarea>
 					</div>
 				</div>
 
-				<button
+				<Button
+					variant="primary"
 					onclick={onEmbedCompare}
 					disabled={embedLoading || !embedText1.trim() || !embedText2.trim()}
-					class="btn btn-primary"
+					loading={embedLoading}
 				>
-					{embedLoading ? 'Comparing...' : 'Compare Embeddings'}
-				</button>
+					Compare Embeddings
+				</Button>
 
 				{#if embedCompareResult}
 					<div class="inner-card p-4 flex items-center gap-6">
@@ -351,6 +337,7 @@
 					</div>
 				{/if}
 			</div>
-		</div>
+			{/snippet}
+		</Panel>
 	{/if}
 </div>

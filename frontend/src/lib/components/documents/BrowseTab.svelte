@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button, Panel } from '$lib/components/ui';
 	import type { VectorBrowseResponse } from './types';
 
 	interface Props {
@@ -24,14 +25,8 @@
 
 <div class="space-y-4">
 	<!-- Browse controls -->
-	<div class="panel overflow-hidden">
-		<div class="panel-header flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-				</svg>
-				<span class="text-sm text-surface-300">Vector Browser</span>
-			</div>
+	<Panel title="Vector Browser">
+		{#snippet children()}
 			<div class="flex items-center gap-3">
 				<label class="flex items-center gap-2 text-xs text-surface-400 cursor-pointer">
 					<input
@@ -42,47 +37,48 @@
 					/>
 					Show vectors
 				</label>
-				<button
-					onclick={() => onLoadVectors()}
-					class="btn btn-link btn-xs"
-				>
+				<Button variant="link" size="xs" onclick={() => onLoadVectors()}>
 					Refresh
-				</button>
+				</Button>
 			</div>
-		</div>
 
-		<div class="p-3 bg-surface-900/50 text-xs text-surface-400">
-			<span class="text-surface-300">Browse:</span> Explore the raw vectors stored in Qdrant. Each point represents a document chunk with its embedding.
-		</div>
-	</div>
+			<div class="p-3 bg-surface-900/50 text-xs text-surface-400 mt-4">
+				<span class="text-surface-300">Browse:</span> Explore the raw vectors stored in Qdrant. Each point represents a document chunk with its embedding.
+			</div>
+		{/snippet}
+	</Panel>
 
 	<!-- Vector list -->
 	{#if browseLoading}
-		<div class="panel p-8 text-center">
-			<span class="text-surface-500 animate-pulse">Loading vectors...</span>
-		</div>
-	{:else if browseResults}
-		<div class="panel overflow-hidden">
-			<div class="panel-header flex items-center justify-between">
-				<span class="text-sm text-surface-300">
-					{browseResults.total_count} vectors in {browseResults.collection}
-				</span>
-				<div class="flex gap-2">
-					{#if browseHistory.length > 0}
-						<button onclick={onGoBack} class="btn btn-ghost btn-sm">Back</button>
-					{/if}
-					{#if browseResults.next_offset}
-						<button
-							onclick={() => onLoadVectors(browseResults?.next_offset ?? undefined)}
-							class="btn btn-ghost btn-sm"
-						>
-							Next
-						</button>
-					{/if}
-				</div>
+		<Panel padding="lg">
+			<div class="text-center">
+				<span class="text-muted animate-pulse">Loading vectors...</span>
 			</div>
+		</Panel>
+	{:else if browseResults}
+		<Panel>
+			{#snippet children()}
+				<div class="flex items-center justify-between mb-4">
+					<span class="text-sm text-surface-300">
+						{browseResults.total_count} vectors in {browseResults.collection}
+					</span>
+					<div class="flex gap-2">
+						{#if browseHistory.length > 0}
+							<Button variant="ghost" size="sm" onclick={onGoBack}>Back</Button>
+						{/if}
+						{#if browseResults.next_offset}
+							<Button
+								variant="ghost"
+								size="sm"
+								onclick={() => onLoadVectors(browseResults?.next_offset ?? undefined)}
+							>
+								Next
+							</Button>
+						{/if}
+					</div>
+				</div>
 
-			<div class="space-y-1">
+				<div class="space-y-1">
 				{#each browseResults.points as point}
 					<div class="p-4 hover:bg-surface-800/30 transition-colors rounded">
 						<div class="flex items-start justify-between mb-2">
@@ -124,6 +120,7 @@
 					</div>
 				{/each}
 			</div>
-		</div>
+		{/snippet}
+	</Panel>
 	{/if}
 </div>

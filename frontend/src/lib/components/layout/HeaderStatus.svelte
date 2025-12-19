@@ -1,20 +1,29 @@
 <script lang="ts">
-	import StatusIndicator from '../StatusIndicator.svelte';
+	import { StatusPill } from '$lib/components/ui';
+
+	type Status = 'active' | 'inactive' | 'warning' | 'error' | 'info';
 
 	interface Props {
-		status: 'active' | 'inactive' | 'warning' | 'error' | 'info';
+		status: Status;
 		label: string;
 		sublabel?: string;
 		pulse?: boolean;
 	}
 
 	let { status, label, sublabel, pulse = false }: Props = $props();
+
+	const statusMap = {
+		active: 'success',
+		inactive: 'inactive',
+		warning: 'warning',
+		error: 'error',
+		info: 'info'
+	} as const;
 </script>
 
-<div class="flex items-center gap-2 text-xs">
-	<StatusIndicator {status} size="sm" {pulse} />
-	<span class="text-surface-400">{label}</span>
-	{#if sublabel}
-		<span class="text-surface-200 font-medium">{sublabel}</span>
-	{/if}
-</div>
+<StatusPill
+	status={statusMap[status]}
+	label={label}
+	sublabel={sublabel}
+	pulse={pulse}
+/>

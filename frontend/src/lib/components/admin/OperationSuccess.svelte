@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { Card } from '$lib/components/ui';
+	import { Card, StatusPill } from '$lib/components/ui';
 	import type { AdminOperationResult } from './types';
-	import OperationHeader from './OperationHeader.svelte';
-	import { StatusIndicator } from '$lib/components';
 
 	interface Props {
 		result: AdminOperationResult;
@@ -16,7 +14,7 @@
 
 <Card>
 	<div class="flex items-center gap-2.5 mb-3">
-		<StatusIndicator status="active" size="md" pulse />
+		<StatusPill status="success" size="sm" pulse label="Success" />
 		<span class="text-sm font-semibold text-emerald-400">
 			{result.operation_name || result.operation_title || result.operation || 'Operation Completed'}
 		</span>

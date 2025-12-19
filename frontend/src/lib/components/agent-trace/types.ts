@@ -60,7 +60,7 @@ export const agentConfig: Record<string, AgentConfigItem> = {
 	}
 };
 
-export function getStatusColor(status: string): string {
+export function getTraceStatusColor(status: string): string {
 	switch (status) {
 		case 'started':
 			return 'bg-amber-500';

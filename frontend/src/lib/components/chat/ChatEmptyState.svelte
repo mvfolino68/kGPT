@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
+
 	interface Props {
 		onQuickAction: (value: string) => void;
 	}
@@ -24,9 +26,9 @@
 
 	<div class="flex flex-wrap justify-center gap-2">
 		{#each quickActions as action}
-			<button type="button" class="btn btn-ghost btn-sm" onclick={() => onQuickAction(action.value)}>
+			<Button variant="ghost" size="sm" onclick={() => onQuickAction(action.value)}>
 				{action.label}
-			</button>
+			</Button>
 		{/each}
 	</div>
 </div>

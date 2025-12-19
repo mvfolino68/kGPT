@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { BrokerInfo } from '$lib/api';
-	import { ClickableCard } from '$lib/components/ui';
+	import { Card } from '$lib/components/ui';
 
 	interface Props {
 		brokers: BrokerInfo[];
@@ -18,60 +18,61 @@
 	}
 </script>
 
-<div class="panel overflow-hidden">
-	<div class="panel-header flex items-center justify-between">
-		<h3 class="text-sm font-medium text-surface-200">Brokers</h3>
-		<span class="text-xs text-surface-500">{brokers.length} nodes</span>
-	</div>
-
-	{#if brokers.length === 0}
-		<div class="p-6 text-center text-surface-500 text-sm">No brokers available</div>
-	{:else}
-		<div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-			{#each brokers as broker}
-				<ClickableCard onclick={() => onBrokerClick?.(broker.id)}>
-					<div class="flex items-center justify-between mb-3">
-						<div class="flex items-center gap-2">
-							<div
-								class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary"
-							>
-								{broker.id}
+<Card title="Brokers" subtitle="{brokers.length} nodes">
+	{#snippet children()}
+		{#if brokers.length === 0}
+			<div class="text-center text-text-tertiary text-sm py-2">No brokers available</div>
+		{:else}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+				{#each brokers as broker}
+					<button
+						type="button"
+						onclick={() => onBrokerClick?.(broker.id)}
+						class="p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left"
+					>
+						<div class="flex items-center justify-between mb-3">
+							<div class="flex items-center gap-2">
+								<div
+									class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary"
+								>
+									{broker.id}
+								</div>
+								<div>
+									<div class="text-sm font-medium text-text">Broker {broker.id}</div>
+									{#if broker.is_controller}
+										<span class="text-[10px] text-primary">Controller</span>
+									{/if}
+								</div>
 							</div>
-							<div>
-								<div class="text-sm font-medium text-surface-100">Broker {broker.id}</div>
-								{#if broker.is_controller}
-									<span class="text-[10px] text-primary">Controller</span>
-								{/if}
+							<div class="w-2.5 h-2.5 rounded-full bg-success shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+						</div>
+
+						<div class="text-xs text-text-tertiary font-mono mb-3 truncate" title="{broker.host}:{broker.port}">
+							{broker.host}:{broker.port}
+						</div>
+
+						<div class="space-y-2">
+							<div class="flex items-center justify-between text-xs">
+								<span class="text-text-tertiary">Partitions</span>
+								<span class="text-text-secondary font-medium tabular-nums">
+									{broker.partition_count}
+									<span class="text-text-tertiary">({getPartitionPercent(broker.partition_count)}%)</span>
+								</span>
+							</div>
+							<div class="h-1.5 bg-bg-elevated rounded-full overflow-hidden">
+								<div
+									class="h-full bg-primary/60 rounded-full transition-all"
+									style="width: {getPartitionPercent(broker.partition_count)}%"
+								></div>
+							</div>
+							<div class="flex items-center justify-between text-xs">
+								<span class="text-text-tertiary">Leader for</span>
+								<span class="text-text-secondary font-medium tabular-nums">{broker.leader_count} partitions</span>
 							</div>
 						</div>
-						<div class="w-2 h-2 rounded-full bg-emerald-400"></div>
-					</div>
-
-					<div class="text-xs text-surface-500 font-mono mb-3 truncate" title="{broker.host}:{broker.port}">
-						{broker.host}:{broker.port}
-					</div>
-
-					<div class="space-y-2">
-						<div class="flex items-center justify-between text-xs">
-							<span class="text-surface-500">Partitions</span>
-							<span class="text-surface-300 font-medium tabular-nums">
-								{broker.partition_count}
-								<span class="text-surface-600">({getPartitionPercent(broker.partition_count)}%)</span>
-							</span>
-						</div>
-						<div class="h-1.5 bg-surface-600 rounded-full overflow-hidden">
-							<div
-								class="h-full bg-primary/60 rounded-full transition-all"
-								style="width: {getPartitionPercent(broker.partition_count)}%"
-							></div>
-						</div>
-						<div class="flex items-center justify-between text-xs">
-							<span class="text-surface-500">Leader for</span>
-							<span class="text-surface-300 font-medium tabular-nums">{broker.leader_count} partitions</span>
-						</div>
-					</div>
-				</ClickableCard>
-			{/each}
-		</div>
-	{/if}
-</div>
+					</button>
+				{/each}
+			</div>
+		{/if}
+	{/snippet}
+</Card>

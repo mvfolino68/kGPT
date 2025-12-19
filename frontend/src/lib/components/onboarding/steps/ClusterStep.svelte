@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui';
 	import WizardStep from '../WizardStep.svelte';
 	import { connectCluster, getClusterInfo, type ClusterInfo } from '$lib/api';
 	import { StatusIndicator } from '$lib/components';
@@ -102,8 +103,8 @@
 						onclick={connectDemo}
 					>
 						<div class="flex items-center gap-4">
-							<div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-								<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+							<div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+								<svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
 								</svg>
 							</div>
@@ -151,10 +152,10 @@
 							<p class="text-surface-400 text-sm">Connecting to demo cluster...</p>
 						</div>
 					{:else if connected}
-						<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+						<div class="p-4 rounded-lg bg-success-bg border border-success/30">
 							<div class="flex items-center gap-3 mb-3">
 								<StatusIndicator status="active" size="sm" />
-								<span class="text-sm font-medium text-emerald-400">Connected</span>
+								<span class="text-sm font-medium text-success">Connected</span>
 							</div>
 							<div class="text-xs text-surface-400 space-y-1">
 								<p>Cluster: {clusterInfo?.cluster_id || 'Demo Cluster'}</p>
@@ -163,15 +164,15 @@
 							</div>
 						</div>
 					{:else if error}
-						<div class="p-4 rounded-lg bg-red-500/10 border border-red-500/30">
-							<div class="flex items-center gap-2 text-sm text-red-400">
+						<div class="p-4 rounded-lg bg-error-bg border border-error/30">
+							<div class="flex items-center gap-2 text-sm text-error">
 								<StatusIndicator status="error" size="sm" />
 								<span>{error}</span>
 							</div>
 						</div>
-						<button type="button" class="btn btn-default w-full" onclick={connectDemo}>
+						<Button variant="default" class="w-full" onclick={connectDemo}>
 							Retry
-						</button>
+						</Button>
 					{/if}
 				</div>
 
@@ -179,10 +180,10 @@
 				<!-- Custom cluster form -->
 				<div class="space-y-4">
 					{#if connected}
-						<div class="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+						<div class="p-4 rounded-lg bg-success-bg border border-success/30">
 							<div class="flex items-center gap-3 mb-3">
 								<StatusIndicator status="active" size="sm" />
-								<span class="text-sm font-medium text-emerald-400">Connected</span>
+								<span class="text-sm font-medium text-success">Connected</span>
 							</div>
 							<div class="text-xs text-surface-400 space-y-1">
 								<p>Cluster: {clusterInfo?.cluster_id || clusterName}</p>
@@ -199,7 +200,7 @@
 								type="text"
 								bind:value={clusterName}
 								placeholder="My Cluster"
-								class="w-full input"
+								class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 							/>
 						</div>
 
@@ -212,7 +213,7 @@
 								type="text"
 								bind:value={bootstrapServers}
 								placeholder="localhost:9092"
-								class="w-full input"
+								class="w-full bg-surface-700/50 border-none rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted transition-all focus:outline-none focus:bg-surface-700 focus:ring-2 focus:ring-primary-600/50"
 							/>
 						</div>
 
@@ -229,24 +230,21 @@
 						</div>
 
 						{#if error}
-							<div class="flex items-center gap-2 text-sm text-red-400">
+							<div class="flex items-center gap-2 text-sm text-error">
 								<StatusIndicator status="error" size="sm" />
 								<span>{error}</span>
 							</div>
 						{/if}
 
-						<button
-							type="button"
-							class="btn btn-primary w-full"
+						<Button
+							variant="primary"
+							class="w-full"
 							onclick={connectCustom}
 							disabled={connecting || !clusterName.trim() || !bootstrapServers.trim()}
+							loading={connecting}
 						>
-							{#if connecting}
-								Connecting...
-							{:else}
-								Connect
-							{/if}
-						</button>
+							Connect
+						</Button>
 					{/if}
 				</div>
 			{/if}
@@ -255,19 +253,19 @@
 
 	{#snippet actions()}
 		<div class="flex justify-between">
-			<button type="button" class="btn btn-ghost" onclick={goBack}>
+			<Button variant="ghost" onclick={goBack}>
 				Back
-			</button>
+			</Button>
 			<div class="flex gap-3">
 				{#if !connected}
-					<button type="button" class="btn btn-ghost" onclick={onSkip}>
+					<Button variant="ghost" onclick={onSkip}>
 						Skip for now
-					</button>
+					</Button>
 				{/if}
 				{#if connected}
-					<button type="button" class="btn btn-primary px-6" onclick={onNext}>
+					<Button variant="primary" class="px-6" onclick={onNext}>
 						Continue
-					</button>
+					</Button>
 				{/if}
 			</div>
 		</div>

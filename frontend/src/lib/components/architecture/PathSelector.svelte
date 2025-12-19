@@ -10,14 +10,21 @@
 </script>
 
 <div class="flex justify-center">
-	<div class="inline-flex bg-surface-800 rounded-xl p-1.5 gap-1">
+	<div class="inline-flex bg-bg-elevated rounded-lg p-1 ring-1 ring-white/5 gap-1">
 		{#each executionPaths as path}
 			<button
 				type="button"
 				onclick={() => onSelect(path.id)}
-				class="px-4 py-2.5 rounded-lg text-sm transition-all duration-200 {selectedPath === path.id
-					? `${getPathColor(path.color, 'bg')} ${getPathColor(path.color, 'text')} ${getPathColor(path.color, 'border')} border shadow-lg ${getPathColor(path.color, 'glow')}`
-					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800 border border-transparent'}"
+				aria-pressed={selectedPath === path.id}
+				class="
+					inline-flex items-center justify-center
+					px-3 py-1.5 rounded-md text-xs font-medium
+					transition-all duration-150 ease-out
+					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+					{selectedPath === path.id
+						? `${getPathColor(path.color, 'bg')} ${getPathColor(path.color, 'text')} ${getPathColor(path.color, 'border')} border shadow-sm`
+						: 'text-text-tertiary hover:text-text-secondary hover:bg-surface-hover border border-transparent'}
+				"
 			>
 				{path.shortName}
 			</button>

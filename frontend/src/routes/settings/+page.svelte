@@ -13,9 +13,8 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, StatusIndicator, IconButton } from '$lib/components';
+	import { Header, HeaderStatus, StatusDot, IconButton, Card, Icon } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
-	import { SettingsCard, FormField } from '$lib/components/settings';
 	import {
 		OpenAISection,
 		KafkaSection,
@@ -117,7 +116,6 @@
 		saving = true;
 		openaiValidationError = null;
 		try {
-			// If new API key provided, validate it first
 			if (openaiApiKey.trim()) {
 				openaiValidating = true;
 				const result = await validateApiKey('openai', openaiApiKey.trim());
@@ -129,7 +127,6 @@
 					return;
 				}
 
-				// Update models from validation
 				openaiModels = result.models;
 				if (!result.models.includes(openaiSelectedModel)) {
 					openaiSelectedModel = result.models[0] || '';
@@ -148,7 +145,6 @@
 				isOnboarding = false;
 				completeOnboarding();
 			} else {
-				// Just updating model
 				await updateSettings({ llm_model: openaiSelectedModel });
 			}
 			showSuccess('OpenAI settings saved');
@@ -287,7 +283,7 @@
 	<title>Settings - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-surface-900">
+<div class="flex flex-col h-full bg-bg">
 	<Header title="Settings" subtitle="Configure your kGPT instance">
 		{#snippet actions()}
 			{#if openaiValid && openaiSelectedModel && !isOnboarding}
@@ -305,41 +301,44 @@
 		<div class="max-w-3xl mx-auto space-y-4">
 			<!-- Messages -->
 			{#if error}
-				<div class="bg-red-500/5 border border-red-500/15 rounded-lg p-3 text-sm text-red-400/80 flex items-center gap-2">
-					<StatusIndicator status="error" size="sm" />
-					<span>{error}</span>
-					<IconButton
-						variant="danger"
-						size="sm"
-						class="ml-auto"
-						title="Dismiss error"
-						onclick={() => error = null}
-					>
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</IconButton>
-				</div>
+				<Card variant="error" padding="sm">
+					<div class="flex items-center gap-2 text-sm">
+						<StatusDot status="error" size="sm" />
+						<span class="text-error flex-1">{error}</span>
+						<IconButton
+							variant="danger"
+							size="sm"
+							title="Dismiss error"
+							onclick={() => error = null}
+						>
+							<Icon name="x" size="sm" />
+						</IconButton>
+					</div>
+				</Card>
 			{/if}
 			{#if success}
-				<div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center gap-2">
-					<StatusIndicator status="active" size="sm" />
-					<span>{success}</span>
-				</div>
+				<Card variant="success" padding="sm">
+					<div class="flex items-center gap-2 text-sm">
+						<StatusDot status="success" size="sm" />
+						<span class="text-success">{success}</span>
+					</div>
+				</Card>
 			{/if}
 
 			{#if loading}
-				<div class="panel p-12 text-center text-surface-500 flex items-center justify-center gap-2">
-					<StatusIndicator status="warning" pulse />
-					<span>Loading settings...</span>
-				</div>
+				<Card class="p-12 text-center">
+					<div class="flex items-center justify-center gap-2 text-text-secondary">
+						<Icon name="spinner" size="md" class="animate-spin" />
+						<span>Loading settings...</span>
+					</div>
+				</Card>
 
 			{:else if isOnboarding && !openaiValid}
-				<!-- ONBOARDING - uses same OpenAI section as main settings -->
+				<!-- ONBOARDING -->
 				<div class="space-y-4">
 					<div class="text-center py-8">
-						<h2 class="text-2xl font-semibold text-surface-100 mb-2">Welcome to kGPT</h2>
-						<p class="text-surface-400 text-sm">Configure your OpenAI API key to get started</p>
+						<h2 class="text-2xl font-semibold text-text mb-2">Welcome to kGPT</h2>
+						<p class="text-text-secondary text-sm">Configure your OpenAI API key to get started</p>
 					</div>
 
 					<OpenAISection
@@ -360,7 +359,6 @@
 			{:else}
 				<!-- MAIN SETTINGS -->
 
-				<!-- OpenAI Section -->
 				<OpenAISection
 					source={openaiSource}
 					models={openaiModels}
@@ -375,7 +373,6 @@
 					onapikeychange={(v) => openaiApiKey = v}
 				/>
 
-				<!-- Kafka Section -->
 				<KafkaSection
 					{clusterInfo}
 					{clusters}
@@ -396,7 +393,6 @@
 					onformprotocolchange={(v) => clusterFormProtocol = v}
 				/>
 
-				<!-- Embeddings Section -->
 				<EmbeddingsSection
 					provider={embeddingProvider}
 					model={embeddingModel}
@@ -406,7 +402,6 @@
 					onmodelchange={(v) => embeddingModel = v}
 				/>
 
-				<!-- Web Search Section -->
 				<WebSearchSection
 					apiKey={exaApiKey}
 					hasApiKey={hasExaApiKey}
@@ -415,7 +410,6 @@
 					onapikeychange={(v) => exaApiKey = v}
 				/>
 
-				<!-- Reranking Section -->
 				<RerankingSection
 					apiKey={cohereApiKey}
 					hasApiKey={hasCohereApiKey}
@@ -425,7 +419,7 @@
 				/>
 
 				<!-- Tips -->
-				<div class="text-xs text-surface-500 space-y-1 pt-2">
+				<div class="text-xs text-text-tertiary space-y-1 pt-2">
 					<p>Keys can also be set via environment variables (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
 					<p>Without Cohere, reranking falls back to a local cross-encoder model</p>
 				</div>
@@ -433,7 +427,6 @@
 		</div>
 	</div>
 
-	<!-- Contextual Hint -->
 	<Hint
 		id="settings"
 		title="Configure Your Setup"

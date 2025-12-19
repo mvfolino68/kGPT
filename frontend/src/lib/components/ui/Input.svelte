@@ -10,8 +10,11 @@
 		name?: string;
 		class?: string;
 		icon?: Snippet;
+		error?: boolean;
 		oninput?: (e: Event) => void;
 		onkeydown?: (e: KeyboardEvent) => void;
+		onfocus?: (e: FocusEvent) => void;
+		onblur?: (e: FocusEvent) => void;
 	}
 
 	let {
@@ -23,14 +26,17 @@
 		name,
 		class: className = '',
 		icon,
+		error = false,
 		oninput,
-		onkeydown
+		onkeydown,
+		onfocus,
+		onblur
 	}: Props = $props();
 </script>
 
 {#if icon}
-	<div class="input-icon-wrapper w-full {className}">
-		<span class="input-icon">
+	<div class="relative w-full {className}">
+		<span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary w-4 h-4 pointer-events-none">
 			{@render icon()}
 		</span>
 		<input
@@ -40,9 +46,18 @@
 			{placeholder}
 			{disabled}
 			bind:value
-			class="input w-full"
+			class="
+				w-full bg-surface-hover rounded-md px-3 py-2 text-sm text-text pl-10
+				placeholder:text-text-tertiary
+				transition-colors duration-150
+				focus:outline-none focus:bg-surface-active focus:ring-1 focus:ring-primary/50
+				disabled:opacity-50 disabled:cursor-not-allowed
+				{error ? 'ring-1 ring-error/50' : ''}
+			"
 			{oninput}
 			{onkeydown}
+			{onfocus}
+			{onblur}
 		/>
 	</div>
 {:else}
@@ -53,8 +68,18 @@
 		{placeholder}
 		{disabled}
 		bind:value
-		class="input w-full {className}"
+		class="
+			w-full bg-surface-hover rounded-md px-3 py-2 text-sm text-text
+			placeholder:text-text-tertiary
+			transition-colors duration-150
+			focus:outline-none focus:bg-surface-active focus:ring-1 focus:ring-primary/50
+			disabled:opacity-50 disabled:cursor-not-allowed
+			{error ? 'ring-1 ring-error/50' : ''}
+			{className}
+		"
 		{oninput}
 		{onkeydown}
+		{onfocus}
+		{onblur}
 	/>
 {/if}
