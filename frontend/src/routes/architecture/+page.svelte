@@ -57,7 +57,6 @@
 		</div>
 	{/snippet}
 
-	<div class="max-w-5xl mx-auto space-y-6">
 		{#if error}
 			<StatusMessage variant="error" message={error}>
 				{#snippet actions()}
@@ -105,7 +104,6 @@
 			<!-- CTA -->
 			<CallToAction />
 		{/if}
-	</div>
 </Page>
 
 <!-- Contextual Hint -->

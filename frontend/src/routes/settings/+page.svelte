@@ -300,8 +300,7 @@
 		{/if}
 	{/snippet}
 
-	<div class="max-w-3xl mx-auto space-y-6">
-		<!-- Messages -->
+	<!-- Messages -->
 		{#if error}
 			<StatusMessage variant="error" message={error}>
 				{#snippet actions()}
@@ -411,7 +410,6 @@
 				<p>Without Cohere, reranking falls back to a local cross-encoder model</p>
 			</div>
 		{/if}
-	</div>
 </Page>
 
 <!-- Contextual Hint -->
