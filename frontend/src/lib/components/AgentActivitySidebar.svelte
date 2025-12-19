@@ -68,7 +68,6 @@
 						variant="link"
 						size="xs"
 						onclick={handleClearSelection}
-						class="text-primary-400"
 						ariaLabel="Show live trace"
 					>
 						Live

@@ -6,6 +6,7 @@
 		type ClusterDetailsResponse
 	} from '$lib/api';
 	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState } from '$lib/components';
+	import { StatusMessage } from '$lib/components/common';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -183,12 +184,9 @@
 		<div class="p-6 space-y-6 max-w-7xl mx-auto">
 			<!-- Error display -->
 			{#if error}
-				<Card variant="error" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="error" />
-						<span class="text-error">{error}</span>
-					</div>
-				</Card>
+				<div class="max-w-7xl mx-auto">
+					<StatusMessage variant="error" message={error} />
+				</div>
 			{/if}
 
 			<!-- Loading state -->

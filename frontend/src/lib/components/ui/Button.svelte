@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 
 	// Note: we keep a few legacy variant/size names for backwards compatibility
 	// while the canonical design system stays centered on primary/secondary/ghost/etc.
@@ -16,33 +17,32 @@
 
 	type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm' | 'icon-md' | 'icon-lg';
 
-	interface Props {
+	interface Props extends HTMLButtonAttributes {
 		variant?: ButtonVariant;
 		size?: ButtonSize;
-		type?: 'button' | 'submit' | 'reset';
-		disabled?: boolean;
 		loading?: boolean;
 		title?: string;
+		// Backwards compatible alias for `aria-label`
 		ariaLabel?: string;
-		class?: string;
 		children: Snippet;
-		onclick?: (e: MouseEvent) => void;
 	}
 
 	let {
 		variant = 'secondary',
 		size = 'md',
 		type = 'button',
-		disabled = false,
+		disabled: disabledProp = false,
 		loading = false,
 		title,
 		ariaLabel,
+		'aria-label': ariaLabelAttr,
 		class: className = '',
 		children,
 		onclick
 	}: Props = $props();
 
 	const isIconSize = $derived(size.startsWith('icon-'));
+	const resolvedAriaLabel = $derived(ariaLabel ?? ariaLabelAttr);
 </script>
 
 <button
@@ -54,14 +54,14 @@
 		focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
 		disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
 		{variant === 'default' ? 'bg-surface text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active active:translate-y-px' : ''}
-		{variant === 'primary' ? 'bg-primary text-black hover:bg-primary-hover active:translate-y-px active:scale-[0.99]' : ''}
+		{variant === 'primary' ? 'bg-primary-bg text-primary border border-primary/30 hover:bg-primary-bg/80 hover:border-primary/50 active:translate-y-px active:scale-[0.99]' : ''}
 		{variant === 'secondary' ? 'bg-surface text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active active:translate-y-px' : ''}
 		{variant === 'ghost' ? 'bg-transparent text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active/60 active:translate-y-px' : ''}
-		{variant === 'danger' ? 'bg-error/10 text-error hover:bg-error/20' : ''}
+		{variant === 'danger' ? 'bg-error/10 text-error hover:bg-error/20 active:translate-y-px' : ''}
 		{variant === 'danger-solid' ? 'bg-error text-white hover:bg-error/90 active:translate-y-px active:scale-[0.99]' : ''}
-		{variant === 'success' ? 'bg-success/10 text-success hover:bg-success/20' : ''}
-		{variant === 'warning' ? 'bg-warning/10 text-warning hover:bg-warning/20' : ''}
-		{variant === 'link' ? 'bg-transparent text-primary hover:text-primary-hover underline-offset-2 hover:underline px-0' : ''}
+		{variant === 'success' ? 'bg-success/10 text-success hover:bg-success/20 active:translate-y-px' : ''}
+		{variant === 'warning' ? 'bg-warning/10 text-warning hover:bg-warning/20 active:translate-y-px' : ''}
+		{variant === 'link' ? 'bg-transparent text-primary hover:text-primary-hover hover:bg-primary-bg/30 active:bg-primary-bg/50 px-0' : ''}
 		{size === 'xs' ? 'px-2 py-1 text-xs' : ''}
 		{size === 'sm' ? 'px-2.5 py-1 text-xs' : ''}
 		{size === 'md' ? 'px-3 py-1.5 text-sm' : ''}
@@ -72,9 +72,9 @@
 		{size === 'icon-lg' ? 'p-2.5 [&>svg]:w-5 [&>svg]:h-5' : ''}
 		{className}
 	"
-	disabled={disabled || loading}
+	disabled={disabledProp || loading}
 	{title}
-	aria-label={ariaLabel}
+	aria-label={resolvedAriaLabel}
 	{onclick}
 >
 	{#if loading}

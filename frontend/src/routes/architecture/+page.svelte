@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button, StatusDot, Icon, Card, LoadingState } from '$lib/components';
+	import { Button, Icon, Card } from '$lib/components';
+	import { LoadingState, StatusMessage } from '$lib/components/common';
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, HeaderStatus } from '$lib/components';
@@ -57,20 +58,18 @@
 	<div class="flex-1 overflow-y-auto p-6">
 		<div class="max-w-5xl mx-auto space-y-8">
 			{#if error}
-				<Card variant="error" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="error" />
-						<span class="text-error flex-1">{error}</span>
+				<StatusMessage variant="error" message={error}>
+					{#snippet actions()}
 						<Button variant="ghost" size="sm" onclick={loadGraph}>Retry</Button>
-					</div>
-				</Card>
+					{/snippet}
+				</StatusMessage>
 			{:else if loading}
-				<div class="flex items-center justify-center py-20">
+				<div class="flex items-center justify-center py-16">
 					<div class="text-center">
 						<LoadingState
 							message="Loading agent graph..."
 							showSpinner={true}
-							size="lg"
+							size="xl"
 							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
 						/>
 					</div>

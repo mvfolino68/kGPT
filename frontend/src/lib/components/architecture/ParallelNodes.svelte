@@ -3,6 +3,7 @@
 	import type { NodeInfo } from './types';
 	import { getPathColor } from './types';
 	import { CardButton } from '$lib/components/ui';
+	import PathTint from './PathTint.svelte';
 
 	interface Props {
 		retrievalNode: AgentGraphNode;
@@ -10,11 +11,21 @@
 		webSearchInfo: NodeInfo;
 		pathColor: string;
 		selectedNode: string | null;
+		stepNumber: number;
 		onSelectRetrieval: () => void;
 		onSelectWebSearch: () => void;
 	}
 
-	let { retrievalNode, retrievalInfo, webSearchInfo, pathColor, selectedNode, onSelectRetrieval, onSelectWebSearch }: Props = $props();
+	let {
+		retrievalNode,
+		retrievalInfo,
+		webSearchInfo,
+		pathColor,
+		selectedNode,
+		stepNumber,
+		onSelectRetrieval,
+		onSelectWebSearch
+	}: Props = $props();
 </script>
 
 <div class="w-full max-w-lg">
@@ -29,11 +40,12 @@
 			variant="active"
 			size="md"
 			selected={selectedNode === 'retrieval'}
-			class="flex-1 {getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
+			class="flex-1 relative overflow-hidden {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
 			onclick={onSelectRetrieval}
 		>
-			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-lg flex items-center justify-center {getPathColor(pathColor, 'bg')}">
+			<PathTint color={pathColor} opacity={0.10} roundedClass="rounded-xl" />
+			<div class="relative flex items-center gap-3">
+				<div class="w-10 h-10 rounded-lg flex items-center justify-center bg-bg-elevated border {getPathColor(pathColor, 'border')}">
 					<svg
 						class="w-5 h-5 {getPathColor(pathColor, 'text')}"
 						fill="none"
@@ -50,12 +62,21 @@
 					</div>
 					<div class="text-xs text-text-tertiary mt-0.5">Searches indexed docs</div>
 				</div>
+				<div
+					class="w-7 h-7 rounded-full flex items-center justify-center text-xs bg-bg-elevated border {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'text')}"
+					aria-label={"Step " + stepNumber}
+				>
+					{stepNumber}
+				</div>
 			</div>
 			{#if selectedNode === 'retrieval' && retrievalInfo}
 				<div class="mt-3 pt-3 border-t border-current/20">
-					<div class="space-y-1">
+					<div class="space-y-1.5">
 						{#each retrievalInfo.details as detail}
-							<div class="text-xs text-left text-text-secondary">* {detail}</div>
+							<div class="text-xs text-left p-2 rounded-lg bg-bg-elevated/60">
+								<span class="{getPathColor(pathColor, 'text')}">*</span>
+								<span class="text-text-secondary ml-1">{detail}</span>
+							</div>
 						{/each}
 					</div>
 				</div>
@@ -67,11 +88,12 @@
 			variant="active"
 			size="md"
 			selected={selectedNode === 'web_search'}
-			class="flex-1 {getPathColor(pathColor, 'bg')} {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
+			class="flex-1 relative overflow-hidden {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'glow')}"
 			onclick={onSelectWebSearch}
 		>
-			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-lg flex items-center justify-center {getPathColor(pathColor, 'bg')}">
+			<PathTint color={pathColor} opacity={0.10} roundedClass="rounded-xl" />
+			<div class="relative flex items-center gap-3">
+				<div class="w-10 h-10 rounded-lg flex items-center justify-center bg-bg-elevated border {getPathColor(pathColor, 'border')}">
 					<svg
 						class="w-5 h-5 {getPathColor(pathColor, 'text')}"
 						fill="none"
@@ -88,12 +110,21 @@
 					</div>
 					<div class="text-xs text-text-tertiary mt-0.5">Real-time web search</div>
 				</div>
+				<div
+					class="w-7 h-7 rounded-full flex items-center justify-center text-xs bg-bg-elevated border {getPathColor(pathColor, 'border')} {getPathColor(pathColor, 'text')}"
+					aria-label={"Step " + stepNumber}
+				>
+					{stepNumber}
+				</div>
 			</div>
 			{#if selectedNode === 'web_search' && webSearchInfo}
 				<div class="mt-3 pt-3 border-t border-current/20">
-					<div class="space-y-1">
+					<div class="space-y-1.5">
 						{#each webSearchInfo.details as detail}
-							<div class="text-xs text-left text-text-secondary">* {detail}</div>
+							<div class="text-xs text-left p-2 rounded-lg bg-bg-elevated/60">
+								<span class="{getPathColor(pathColor, 'text')}">*</span>
+								<span class="text-text-secondary ml-1">{detail}</span>
+							</div>
 						{/each}
 					</div>
 				</div>

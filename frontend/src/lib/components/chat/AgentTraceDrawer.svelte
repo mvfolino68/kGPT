@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, Icon } from '$lib/components/ui';
+	import { Backdrop } from '$lib/components/common';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,
@@ -38,13 +39,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Backdrop -->
-<div
-	class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
-	onclick={onClose}
-	onkeydown={(e) => e.key === 'Escape' && onClose()}
-	role="button"
-	tabindex="-1"
-></div>
+<!-- Backdrop -->
+<Backdrop onClose={onClose} />
 
 <!-- Drawer -->
 <aside class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-surface-900 z-50 flex flex-col shadow-2xl animate-slide-in-right">

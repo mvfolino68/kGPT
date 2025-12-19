@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick, onMount, onDestroy } from 'svelte';
 	import { Button, Badge, Icon, IconButton, ListItem } from '$lib/components/ui';
+	import { Backdrop } from '$lib/components/common';
 	import {
 		chatMessages,
 		currentSessionId,
@@ -238,13 +239,8 @@
 </script>
 
 <!-- Backdrop -->
-<div
-	class="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-	onclick={onClose}
-	onkeydown={(e) => e.key === 'Escape' && onClose()}
-	role="button"
-	tabindex="-1"
-></div>
+<!-- Backdrop -->
+<Backdrop onClose={onClose} />
 
 <!-- Main Container - Side by side layout -->
 <div class="fixed top-0 right-0 bottom-0 z-50 flex animate-slide-in-right shadow-2xl">

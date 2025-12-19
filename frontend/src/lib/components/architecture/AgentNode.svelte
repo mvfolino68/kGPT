@@ -3,6 +3,7 @@
 	import type { NodeInfo } from './types';
 	import { getPathColor } from './types';
 	import { CardButton } from '$lib/components/ui';
+	import PathTint from './PathTint.svelte';
 
 	interface Props {
 		node: AgentGraphNode;
@@ -21,15 +22,20 @@
 	variant={isActive ? 'active' : 'default'}
 	size="lg"
 	selected={isSelected}
-	class="max-w-md {isActive
-		? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'border')} ${getPathColor(pathColor, 'glow')}`
+	class="max-w-md relative overflow-hidden {isActive
+		? `${getPathColor(pathColor, 'border')} ${getPathColor(pathColor, 'glow')}`
 		: ''}"
 	onclick={onToggle}
 >
-	<div class="flex items-center gap-4">
+	{#if isActive}
+		<!-- Subtle tint overlay (avoid “filled” look; consistent across paths) -->
+		<PathTint color={pathColor} opacity={0.10} roundedClass="rounded-xl" />
+	{/if}
+
+	<div class="relative flex items-center gap-4">
 		<!-- Icon -->
 		<div
-			class="w-12 h-12 rounded-xl flex items-center justify-center {isActive ? getPathColor(pathColor, 'bg') : 'bg-bg-elevated'}"
+			class="w-12 h-12 rounded-xl flex items-center justify-center bg-bg-elevated border {isActive ? getPathColor(pathColor, 'border') : 'border-white/5'}"
 		>
 			<svg
 				class="w-6 h-6 {isActive ? getPathColor(pathColor, 'text') : 'text-text-tertiary'}"
@@ -54,7 +60,7 @@
 
 		<!-- Step number -->
 		<div
-			class="w-8 h-8 rounded-full flex items-center justify-center text-sm {isActive ? `${getPathColor(pathColor, 'bg')} ${getPathColor(pathColor, 'text')}` : 'bg-bg-elevated text-text-tertiary'}"
+			class="w-8 h-8 rounded-full flex items-center justify-center text-sm bg-bg-elevated border {isActive ? `${getPathColor(pathColor, 'border')} ${getPathColor(pathColor, 'text')}` : 'border-white/5 text-text-tertiary'}"
 		>
 			{stepNumber}
 		</div>

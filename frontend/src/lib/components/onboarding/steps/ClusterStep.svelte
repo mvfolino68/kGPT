@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button, LoadingState } from '$lib/components/ui';
+	import { Button } from '$lib/components/ui';
+	import { LoadingState } from '$lib/components/common';
 	import WizardStep from '../WizardStep.svelte';
 	import { connectCluster, getClusterInfo, type ClusterInfo } from '$lib/api';
 	import { StatusIndicator } from '$lib/components';

@@ -505,18 +505,9 @@
 					tabindex={isActive ? 0 : -1}
 					variant={isActive ? 'secondary' : 'ghost'}
 					size="sm"
-					class="relative px-3 py-2 rounded-md {isActive ? 'bg-surface-active shadow-sm' : ''}"
 					onclick={() => setActiveTab(tab.id)}
 				>
-					<span class="relative z-10">{tab.label}</span>
-					<span
-						aria-hidden="true"
-						class={[
-							'absolute left-2 right-2 -bottom-px h-px rounded-full transition-opacity',
-							'bg-primary',
-							isActive ? 'opacity-100' : 'opacity-0'
-						].join(' ')}
-					></span>
+					{tab.label}
 				</Button>
 			{/each}
 			</div>

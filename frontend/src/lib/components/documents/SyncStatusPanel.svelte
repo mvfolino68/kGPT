@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button, Card, Input, Icon } from '$lib/components/ui';
+	import { Button, Card, Icon } from '$lib/components/ui';
+	import { ConfirmDialog } from '$lib/components/common';
 	import type { SyncStatusResponse, DestructiveOperation } from './types';
 
 	interface Props {
@@ -32,8 +33,10 @@
 		onPurgeAll
 	}: Props = $props();
 
-	let confirmText = $state('');
-	$effect(() => { confirmText = destructiveConfirmText; });
+	$effect(() => {
+		// Sync logic removed as ConfirmDialog handles its own input state
+		// If we need to bubble input up, we'd need to update ConfirmDialog or keep manual input
+	});
 
 	const showPanel = $derived(
 		!syncStatus.synced ||
@@ -89,32 +92,16 @@
 
 					{#if activeDestructiveOp === 'cleanup_orphans'}
 						<div class="mt-4 p-4 bg-warning-bg rounded-lg">
-							<p class="text-sm text-warning mb-3">This will permanently delete orphaned collections.</p>
-							<div class="mb-3">
-								<label for="sync-confirm-cleanup-orphans" class="label block mb-1">
-									Type <span class="text-warning font-semibold">confirm delete</span> to proceed:
-								</label>
-								<Input
-									id="sync-confirm-cleanup-orphans"
-									type="text"
-									bind:value={confirmText}
-									oninput={() => onConfirmTextChange(confirmText)}
-									placeholder="confirm delete"
-								/>
-							</div>
-							<div class="flex gap-2">
-								<Button
-									variant="danger"
-									onclick={onCleanupOrphans}
-									disabled={cleanupLoading || confirmText.toLowerCase() !== 'confirm delete'}
-									loading={cleanupLoading}
-								>
-									Delete Orphans
-								</Button>
-								<Button variant="ghost" onclick={onCancelDestructiveOp} disabled={cleanupLoading}>
-									Cancel
-								</Button>
-							</div>
+							<ConfirmDialog
+								title="Delete Orphans"
+								message="This will permanently delete orphaned collections."
+								confirmText="confirm delete"
+								confirmLabel="Delete Orphans"
+								variant="danger"
+								isLoading={cleanupLoading}
+								onConfirm={onCleanupOrphans}
+								onCancel={onCancelDestructiveOp}
+							/>
 						</div>
 					{/if}
 				</div>
@@ -152,32 +139,16 @@
 
 					{#if activeDestructiveOp === 'cleanup_stale'}
 						<div class="mt-4 p-4 bg-error-bg rounded-lg">
-							<p class="text-sm text-error mb-3">This will permanently remove stale database entries.</p>
-							<div class="mb-3">
-								<label for="sync-confirm-cleanup-stale" class="label block mb-1">
-									Type <span class="text-error font-semibold">confirm delete</span> to proceed:
-								</label>
-								<Input
-									id="sync-confirm-cleanup-stale"
-									type="text"
-									bind:value={confirmText}
-									oninput={() => onConfirmTextChange(confirmText)}
-									placeholder="confirm delete"
-								/>
-							</div>
-							<div class="flex gap-2">
-								<Button
-									variant="danger"
-									onclick={onCleanupStale}
-									disabled={cleanupLoading || confirmText.toLowerCase() !== 'confirm delete'}
-									loading={cleanupLoading}
-								>
-									Remove Stale
-								</Button>
-								<Button variant="ghost" onclick={onCancelDestructiveOp} disabled={cleanupLoading}>
-									Cancel
-								</Button>
-							</div>
+							<ConfirmDialog
+								title="Remove Stale Entries"
+								message="This will permanently remove stale database entries."
+								confirmText="confirm delete"
+								confirmLabel="Remove Stale"
+								variant="danger"
+								isLoading={cleanupLoading}
+								onConfirm={onCleanupStale}
+								onCancel={onCancelDestructiveOp}
+							/>
 						</div>
 					{/if}
 				</div>
@@ -200,38 +171,16 @@
 
 				{#if activeDestructiveOp === 'purge_all'}
 					<div class="mt-2 p-4 bg-error-bg rounded-lg">
-						<div class="flex items-center gap-2 mb-3">
-							<Icon name="warning" size="lg" class="text-error" />
-							<span class="text-base font-bold text-error">DANGER: Purge All Data</span>
-						</div>
-						<p class="text-sm text-error mb-3">
-							This will permanently delete ALL vectors and ALL database entries. This cannot be undone!
-						</p>
-						<div class="mb-3">
-							<label for="sync-confirm-purge-all" class="label block mb-1">
-								Type <span class="text-error font-semibold">confirm delete</span> to proceed:
-							</label>
-							<Input
-								id="sync-confirm-purge-all"
-								type="text"
-								bind:value={confirmText}
-								oninput={() => onConfirmTextChange(confirmText)}
-								placeholder="confirm delete"
-							/>
-						</div>
-						<div class="flex gap-2">
-							<Button
-								variant="danger"
-								onclick={onPurgeAll}
-								disabled={cleanupLoading || confirmText.toLowerCase() !== 'confirm delete'}
-								loading={cleanupLoading}
-							>
-								Purge All Data
-							</Button>
-							<Button variant="ghost" onclick={onCancelDestructiveOp} disabled={cleanupLoading}>
-								Cancel
-							</Button>
-						</div>
+						<ConfirmDialog
+							title="DANGER: Purge All Data"
+							message="This will permanently delete ALL vectors and ALL database entries. This cannot be undone!"
+							confirmText="confirm delete"
+							confirmLabel="Purge All Data"
+							variant="danger"
+							isLoading={cleanupLoading}
+							onConfirm={onPurgeAll}
+							onCancel={onCancelDestructiveOp}
+						/>
 					</div>
 				{/if}
 			</div>

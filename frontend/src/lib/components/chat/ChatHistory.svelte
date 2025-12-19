@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button, ResizeHandle, LoadingState } from '$lib/components/ui';
+	import { Button, ResizeHandle } from '$lib/components/ui';
+	import { LoadingState, EmptyState } from '$lib/components/common';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {
@@ -110,7 +111,13 @@
 				<LoadingState message="Loading..." showSpinner={false} size="xs" />
 			</div>
 		{:else if sessions.length === 0}
-			<div class="px-3 py-2 text-surface-600 text-xs">No sessions yet</div>
+			<div class="px-2">
+				<EmptyState
+					title="No sessions"
+					description="Start a new chat to begin"
+					class="!py-8"
+				/>
+			</div>
 		{:else}
 			{#each sessions as session (session.id)}
 				<SessionListItem

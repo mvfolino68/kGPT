@@ -2,6 +2,7 @@
 	import type { ExecutionPath } from './types';
 	import { Card } from '$lib/components';
 	import { getPathColor } from './types';
+	import PathTint from './PathTint.svelte';
 
 	interface Props {
 		path: ExecutionPath;
@@ -11,12 +12,17 @@
 </script>
 
 <Card
-	class="text-center {getPathColor(path.color, 'bg')} border {getPathColor(path.color, 'border')}"
+	class="text-center border {getPathColor(path.color, 'border')}"
 	padding="md"
 >
-	<h2 class="text-lg font-semibold {getPathColor(path.color, 'text')} mb-1">
-		{path.name}
-	</h2>
-	<p class="text-text-secondary text-sm">{path.description}</p>
-	<p class="text-text-tertiary text-xs mt-2 italic">{path.example}</p>
+	<!-- Subtle tint overlay (keeps all paths consistent; no "solid" fills) -->
+	<PathTint color={path.color} opacity={0.12} />
+
+	<div class="relative">
+		<h2 class="text-lg font-semibold {getPathColor(path.color, 'text')} mb-1">
+			{path.name}
+		</h2>
+		<p class="text-text-secondary text-sm">{path.description}</p>
+		<p class="text-text-tertiary text-xs mt-2 italic">{path.example}</p>
+	</div>
 </Card>

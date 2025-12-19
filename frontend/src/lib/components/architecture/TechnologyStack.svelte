@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Card } from '$lib/components';
+	import OverviewTile from './OverviewTile.svelte';
 
 	type TechColor =
 		| 'emerald'
@@ -65,21 +66,13 @@
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each aiMlTools as tool}
 					{@const tone = colorClasses[tool.color]}
-					<div class="p-3 bg-surface-700/30 rounded-lg hover:bg-surface-700/50 transition-colors cursor-pointer">
-						<div class="flex items-center gap-2 mb-2">
-							<div class="w-8 h-8 rounded-lg {tone.bg} flex items-center justify-center">
-								{#if tool.icon}
-									<svg class="w-4 h-4 {tone.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d={tool.icon} />
-									</svg>
-								{:else}
-									<span class="{tone.text} font-bold text-sm">{tool.letter}</span>
-								{/if}
-							</div>
-							<span class="text-sm {tone.text}">{tool.name}</span>
-						</div>
-						<p class="text-xs text-text-secondary">{tool.description}</p>
-					</div>
+					<OverviewTile
+						title={tool.name}
+						description={tool.description}
+						tone={tone}
+						iconPath={tool.icon}
+						letter={tool.letter}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -90,21 +83,13 @@
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each dataTools as tool}
 					{@const tone = colorClasses[tool.color]}
-					<div class="p-3 bg-surface-700/30 rounded-lg hover:bg-surface-700/50 transition-colors cursor-pointer">
-						<div class="flex items-center gap-2 mb-2">
-							<div class="w-8 h-8 rounded-lg {tone.bg} flex items-center justify-center">
-								{#if tool.icon}
-									<svg class="w-4 h-4 {tone.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d={tool.icon} />
-									</svg>
-								{:else}
-									<span class="{tone.text} font-bold text-sm">{tool.letter}</span>
-								{/if}
-							</div>
-							<span class="text-sm {tone.text}">{tool.name}</span>
-						</div>
-						<p class="text-xs text-text-secondary">{tool.description}</p>
-					</div>
+					<OverviewTile
+						title={tool.name}
+						description={tool.description}
+						tone={tone}
+						iconPath={tool.icon}
+						letter={tool.letter}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -115,21 +100,13 @@
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each frameworks as tool}
 					{@const tone = colorClasses[tool.color]}
-					<div class="p-3 bg-surface-700/30 rounded-lg hover:bg-surface-700/50 transition-colors cursor-pointer">
-						<div class="flex items-center gap-2 mb-2">
-							<div class="w-8 h-8 rounded-lg {tone.bg} flex items-center justify-center">
-								{#if tool.icon}
-									<svg class="w-4 h-4 {tone.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d={tool.icon} />
-									</svg>
-								{:else}
-									<span class="{tone.text} font-bold text-sm">{tool.letter}</span>
-								{/if}
-							</div>
-							<span class="text-sm {tone.text}">{tool.name}</span>
-						</div>
-						<p class="text-xs text-text-secondary">{tool.description}</p>
-					</div>
+					<OverviewTile
+						title={tool.name}
+						description={tool.description}
+						tone={tone}
+						iconPath={tool.icon}
+						letter={tool.letter}
+					/>
 				{/each}
 			</div>
 		</div>

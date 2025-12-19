@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Button, Icon, IconButton } from '$lib/components/ui';
+	import { Backdrop } from '$lib/components/common';
 	import type { CitationObject } from '$lib/api';
 
 	interface Props {
@@ -37,15 +38,12 @@
 
 {#if citation}
 	<!-- Modal backdrop -->
-	<div
-		class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-		role="button"
-		tabindex="-1"
-		onclick={handleBackdropClick}
-		onkeydown={(e) => e.key === 'Enter' && onClose()}
-	>
+	<Backdrop onClose={onClose} class="z-50 bg-black/60" />
+
+	<!-- Modal content container -->
+	<div class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
 		<!-- Modal content -->
-		<div class="w-full max-w-lg animate-fade-in">
+		<div class="w-full max-w-lg animate-fade-in pointer-events-auto">
 			<div class="bg-surface-900 rounded-lg overflow-hidden shadow-2xl">
 				<!-- Header -->
 				<div class="px-4 py-3 flex items-center justify-between bg-surface-800">
@@ -117,6 +115,7 @@
 					{/if}
 				</div>
 			</div>
+		</div>
 		</div>
 	</div>
 {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Panel, LoadingState } from '$lib/components/ui';
+	import { Panel } from '$lib/components/ui';
+	import { LoadingState, EmptyState } from '$lib/components/common';
 	import { StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
@@ -67,13 +68,11 @@
 			<LoadingState message="Loading..." showSpinner={true} size="sm" class="animate-pulse" />
 		</div>
 	{:else if documents.length === 0}
-		<div class="p-8 text-center text-surface-500">
-			<svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-			</svg>
-			<p>No sources indexed</p>
-			<p class="text-xs text-surface-600 mt-1">Add documentation above to get started</p>
-		</div>
+		<EmptyState
+			icon="file-text"
+			title="No sources indexed"
+			description="Add documentation above to get started"
+		/>
 	{:else}
 		<!-- Table header -->
 		<div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surface-900/50 text-[10px] font-bold uppercase tracking-wider text-surface-500">

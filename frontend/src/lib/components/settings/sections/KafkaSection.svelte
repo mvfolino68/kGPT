@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Button, Input, Select, Icon, LoadingState } from '$lib/components/ui';
+	import { Button, Input, Select, Icon } from '$lib/components/ui';
+	import { LoadingState } from '$lib/components/common';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import type { KafkaCluster, ClusterInfo } from '$lib/api';
 
@@ -71,7 +72,7 @@
 		{#if loading}
 			<LoadingState message="Loading..." showSpinner={false} size="xs" class="text-text-tertiary" />
 		{:else if clusterInfo.connected}
-			<Button variant="link" size="xs" class="text-xs" onclick={ondisconnect}>
+			<Button variant="ghost" size="sm" onclick={ondisconnect}>
 				Disconnect
 			</Button>
 		{/if}
@@ -141,7 +142,7 @@
 				<Button
 					variant="secondary"
 					size="lg"
-					class="w-full justify-start text-left p-3 rounded-lg bg-surface-hover hover:bg-surface-active"
+					class="w-full justify-start text-left"
 					onclick={onconnectdemo}
 				>
 					<div class="flex items-center gap-3">
@@ -149,16 +150,16 @@
 							<Icon name="play" size="sm" class="text-text-secondary" />
 						</div>
 						<div class="flex-1">
-							<span class="text-sm font-medium text-text group-hover:text-text transition-colors">Demo Cluster</span>
+							<span class="text-sm font-medium">Demo Cluster</span>
 							<p class="text-xs text-text-tertiary">localhost:9094</p>
 						</div>
-						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
+						<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
 					</div>
 				</Button>
 				<Button
 					variant="secondary"
 					size="lg"
-					class="w-full justify-start text-left p-3 rounded-lg bg-surface-hover hover:bg-surface-active"
+					class="w-full justify-start text-left"
 					onclick={onshowform}
 				>
 					<div class="flex items-center gap-3">
@@ -166,10 +167,10 @@
 							<Icon name="plus" size="sm" class="text-text-secondary" />
 						</div>
 						<div class="flex-1">
-							<span class="text-sm font-medium text-text group-hover:text-text transition-colors">Custom Cluster</span>
+							<span class="text-sm font-medium">Custom Cluster</span>
 							<p class="text-xs text-text-tertiary">Enter connection details</p>
 						</div>
-						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
+						<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
 					</div>
 				</Button>
 
@@ -180,17 +181,17 @@
 							{#each clusters as cluster}
 								<Button
 									variant="secondary"
-									size="lg"
-									class="w-full justify-start text-left p-2.5 rounded-lg bg-surface hover:bg-surface-700 cursor-pointer"
+									size="md"
+									class="w-full justify-start text-left"
 									onclick={() => onconnect(cluster)}
 									disabled={connecting}
 								>
-									<div class="flex items-center justify-between">
+									<div class="flex items-center justify-between w-full">
 										<div>
-											<span class="text-sm text-text-secondary group-hover:text-text transition-colors">{cluster.name}</span>
+											<span class="text-sm">{cluster.name}</span>
 											<p class="text-xs text-text-tertiary">{cluster.bootstrap_servers}</p>
 										</div>
-										<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
+										<Icon name="chevron-right" size="sm" class="text-text-tertiary" />
 									</div>
 								</Button>
 							{/each}

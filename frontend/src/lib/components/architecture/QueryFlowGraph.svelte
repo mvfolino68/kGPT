@@ -43,7 +43,7 @@
 		<!-- Vertical Flow -->
 		<div class="flex flex-col items-center gap-2">
 			<!-- START -->
-			<div class="px-4 py-1.5 bg-bg-elevated rounded-lg text-xs font-medium text-text-tertiary">
+			<div class="px-4 py-1.5 bg-bg-elevated border border-white/10 rounded-lg text-xs font-medium text-text-tertiary">
 				START
 			</div>
 
@@ -65,6 +65,7 @@
 							webSearchInfo={nodeInfo['web_search']}
 							{pathColor}
 							{selectedNode}
+							stepNumber={index + 1}
 							onSelectRetrieval={() => toggleNode('retrieval')}
 							onSelectWebSearch={() => toggleNode('web_search')}
 						/>
@@ -89,7 +90,7 @@
 			<FlowArrow pathColor={selectedPath.color} />
 
 			<!-- END -->
-			<div class="px-4 py-1.5 rounded-lg text-xs font-medium {getPathColor(selectedPath.color, 'bg')} {getPathColor(selectedPath.color, 'text')} border {getPathColor(selectedPath.color, 'border')}">
+			<div class="px-4 py-1.5 bg-bg-elevated border border-white/10 rounded-lg text-xs font-medium text-text-tertiary">
 				END
 			</div>
 		</div>

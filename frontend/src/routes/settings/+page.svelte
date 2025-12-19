@@ -13,7 +13,8 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, StatusDot, IconButton, Card, Icon, LoadingState } from '$lib/components';
+	import { Header, HeaderStatus, IconButton, Card, Icon } from '$lib/components';
+	import { LoadingState, StatusMessage } from '$lib/components/common';
 	import { Hint } from '$lib/components/hints';
 	import {
 		OpenAISection,
@@ -301,10 +302,8 @@
 		<div class="max-w-3xl mx-auto space-y-4">
 			<!-- Messages -->
 			{#if error}
-				<Card variant="error" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="error" size="sm" />
-						<span class="text-error flex-1">{error}</span>
+				<StatusMessage variant="error" message={error}>
+					{#snippet actions()}
 						<IconButton
 							variant="danger"
 							size="sm"
@@ -313,22 +312,24 @@
 						>
 							<Icon name="x" size="sm" />
 						</IconButton>
-					</div>
-				</Card>
+					{/snippet}
+				</StatusMessage>
 			{/if}
 			{#if success}
-				<Card variant="success" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="success" size="sm" />
-						<span class="text-success">{success}</span>
-					</div>
-				</Card>
+				<StatusMessage variant="success" message={success} />
 			{/if}
 
 			{#if loading}
-				<Card class="p-12 text-center">
-					<LoadingState message="Loading settings..." showSpinner={true} size="md" class="text-text-secondary" />
-				</Card>
+				<div class="flex items-center justify-center py-16">
+					<div class="text-center">
+						<LoadingState
+							message="Loading settings..."
+							showSpinner={true}
+							size="xl"
+							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
+						/>
+					</div>
+				</div>
 
 			{:else if isOnboarding && !openaiValid}
 				<!-- ONBOARDING -->

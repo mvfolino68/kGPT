@@ -13,7 +13,7 @@
 			Watch the agent pipeline process your queries in real-time with the Activity sidebar.
 		</p>
 		<div class="flex justify-center">
-			<Button variant="primary" onclick={() => goto('/')}>
+			<Button variant="primary" size="md" onclick={() => goto('/')}>
 				<Icon name="message" size="sm" />
 				Start chatting
 			</Button>
