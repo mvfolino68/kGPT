@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import Button from './Button.svelte';
 
 	type CardButtonVariant = 'default' | 'active' | 'selected';
 	type CardButtonSize = 'sm' | 'md' | 'lg';
@@ -41,15 +42,14 @@
 	);
 </script>
 
-<button
+<Button
 	{type}
 	{disabled}
 	{onclick}
+	variant="secondary"
 	class="
-		w-full rounded-xl border
+		text-left justify-start h-auto w-full rounded-xl border
 		transition-all duration-150 ease-out
-		focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
-		disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
 		{sizeClasses}
 		{variantClasses}
 		{selected ? 'ring-1 ring-white/10' : ''}
@@ -58,4 +58,4 @@
 	"
 >
 	{@render children()}
-</button>
+</Button>

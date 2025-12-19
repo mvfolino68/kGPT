@@ -2,8 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 
-	// Note: we keep a few legacy variant/size names for backwards compatibility
-	// while the canonical design system stays centered on primary/secondary/ghost/etc.
 	type ButtonVariant =
 		| 'primary'
 		| 'secondary'
@@ -12,13 +10,12 @@
 		| 'danger-solid'
 		| 'success'
 		| 'warning'
-		| 'link'
-		| 'default';
+		| 'link';
 
 	type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon' | 'icon-sm' | 'icon-md' | 'icon-lg';
 
 	interface Props extends HTMLButtonAttributes {
-		variant?: ButtonVariant;
+		variant?: ButtonVariant | 'default'; // keep 'default' in props for compat, map to secondary
 		size?: ButtonSize;
 		loading?: boolean;
 		title?: string;
@@ -43,29 +40,32 @@
 
 	const isIconSize = $derived(size.startsWith('icon-'));
 	const resolvedAriaLabel = $derived(ariaLabel ?? ariaLabelAttr);
+
+	// Map 'default' to 'secondary' logic
+	const activeVariant = $derived(variant === 'default' ? 'secondary' : variant);
 </script>
 
 <button
 	{type}
+	data-no-hover="true"
 	class="
-		inline-flex items-center justify-center gap-1.5
-		font-medium rounded-md
-		transition-all duration-150 ease-out
+		inline-flex items-center justify-center gap-2
+		font-medium rounded-lg
+		transition-all duration-200 ease-out
 		focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
 		disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
-		{variant === 'default' ? 'bg-surface text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active active:translate-y-px' : ''}
-		{variant === 'primary' ? 'bg-primary-bg text-primary border border-primary/30 hover:bg-primary-bg/80 hover:border-primary/50 active:translate-y-px active:scale-[0.99]' : ''}
-		{variant === 'secondary' ? 'bg-surface text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active active:translate-y-px' : ''}
-		{variant === 'ghost' ? 'bg-transparent text-text-secondary hover:bg-surface-700 hover:text-text active:bg-surface-active/60 active:translate-y-px' : ''}
-		{variant === 'danger' ? 'bg-error/10 text-error hover:bg-error/20 active:translate-y-px' : ''}
-		{variant === 'danger-solid' ? 'bg-error text-white hover:bg-error/90 active:translate-y-px active:scale-[0.99]' : ''}
-		{variant === 'success' ? 'bg-success/10 text-success hover:bg-success/20 active:translate-y-px' : ''}
-		{variant === 'warning' ? 'bg-warning/10 text-warning hover:bg-warning/20 active:translate-y-px' : ''}
-		{variant === 'link' ? 'bg-transparent text-primary hover:text-primary-hover hover:bg-primary-bg/30 active:bg-primary-bg/50 px-0' : ''}
-		{size === 'xs' ? 'px-2 py-1 text-xs' : ''}
-		{size === 'sm' ? 'px-2.5 py-1 text-xs' : ''}
-		{size === 'md' ? 'px-3 py-1.5 text-sm' : ''}
-		{size === 'lg' ? 'px-4 py-2 text-sm' : ''}
+		{activeVariant === 'primary' ? 'bg-primary-bg text-primary border border-primary/20 hover:bg-primary-bg/80 hover:border-primary/40 active:translate-y-px active:scale-[0.99]' : ''}
+		{activeVariant === 'secondary' ? 'bg-surface text-text-secondary border border-surface-hover hover:bg-surface-hover hover:text-text hover:border-surface-active active:bg-surface-active active:translate-y-px' : ''}
+		{activeVariant === 'ghost' ? 'bg-transparent text-text-secondary hover:bg-surface-hover hover:text-text active:bg-surface-active/60 active:translate-y-px' : ''}
+		{activeVariant === 'danger' ? 'bg-error-bg text-error border border-error/20 hover:bg-error-bg/80 hover:border-error/40 active:translate-y-px' : ''}
+		{activeVariant === 'danger-solid' ? 'bg-error text-white hover:bg-error/90 shadow-md shadow-error/20 active:translate-y-px active:scale-[0.99]' : ''}
+		{activeVariant === 'success' ? 'bg-success-bg text-success border border-success/20 hover:bg-success-bg/80 hover:border-success/40 active:translate-y-px' : ''}
+		{activeVariant === 'warning' ? 'bg-warning-bg text-warning border border-warning/20 hover:bg-warning-bg/80 hover:border-warning/40 active:translate-y-px' : ''}
+		{activeVariant === 'link' ? 'bg-transparent text-primary hover:text-primary-hover hover:underline underline-offset-4 decoration-primary/30 px-0 h-auto' : ''}
+		{size === 'xs' ? 'px-2.5 py-1 text-xs' : ''}
+		{size === 'sm' ? 'px-3 py-1.5 text-xs' : ''}
+		{size === 'md' ? 'px-4 py-2 text-sm' : ''}
+		{size === 'lg' ? 'px-5 py-2.5 text-base' : ''}
 		{size === 'icon' ? 'p-2 [&>svg]:w-4 [&>svg]:h-4' : ''}
 		{size === 'icon-sm' ? 'p-1.5 [&>svg]:w-3.5 [&>svg]:h-3.5' : ''}
 		{size === 'icon-md' ? 'p-2 [&>svg]:w-4 [&>svg]:h-4' : ''}

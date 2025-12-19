@@ -41,7 +41,7 @@
 				{/if}
 			</div>
 			{#if headerAction}
-				<div class="shrink-0">
+				<div class="flex items-center gap-2 shrink-0">
 					{@render headerAction()}
 				</div>
 			{/if}

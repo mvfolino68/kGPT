@@ -37,7 +37,7 @@
 					/>
 					Show vectors
 				</label>
-				<Button variant="link" size="xs" onclick={() => onLoadVectors()}>
+				<Button variant="secondary" size="sm" onclick={() => onLoadVectors()}>
 					Refresh
 				</Button>
 			</div>
@@ -68,7 +68,7 @@
 						{/if}
 						{#if browseResults.next_offset}
 							<Button
-								variant="ghost"
+								variant="secondary"
 								size="sm"
 								onclick={() => onLoadVectors(browseResults?.next_offset ?? undefined)}
 							>

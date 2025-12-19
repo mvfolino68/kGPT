@@ -253,7 +253,7 @@
 					<Button
 						variant={currentView === 'chat' ? 'secondary' : 'ghost'}
 						size="sm"
-						class="rounded-md px-3"
+						class="px-3"
 						onclick={() => currentView = 'chat'}
 					>
 						Chat
@@ -261,7 +261,7 @@
 					<Button
 						variant={currentView === 'history' ? 'secondary' : 'ghost'}
 						size="sm"
-						class="rounded-md px-3"
+						class="px-3"
 						onclick={() => currentView = 'history'}
 					>
 						<span class="flex items-center gap-2">
@@ -323,24 +323,24 @@
 						<div class="space-y-2 w-full max-w-xs">
 							<Button
 								variant="secondary"
-								size="lg"
-								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
+								size="sm"
+								class="w-full justify-start text-left text-surface-300"
 								onclick={() => sendMessage('List all topics')}
 							>
 								List all topics
 							</Button>
 							<Button
 								variant="secondary"
-								size="lg"
-								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
+								size="sm"
+								class="w-full justify-start text-left text-surface-300"
 								onclick={() => sendMessage('Show consumer groups')}
 							>
 								Show consumer groups
 							</Button>
 							<Button
 								variant="secondary"
-								size="lg"
-								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
+								size="sm"
+								class="w-full justify-start text-left text-surface-300"
 								onclick={() => sendMessage('How do I create a topic?')}
 							>
 								How do I create a topic?

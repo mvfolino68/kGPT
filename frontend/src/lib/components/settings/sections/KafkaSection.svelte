@@ -71,7 +71,7 @@
 		{#if loading}
 			<LoadingState message="Loading..." showSpinner={false} size="xs" class="text-text-tertiary" />
 		{:else if clusterInfo.connected}
-			<Button variant="ghost" size="sm" onclick={ondisconnect}>
+			<Button variant="danger" size="sm" onclick={ondisconnect}>
 				Disconnect
 			</Button>
 		{/if}
