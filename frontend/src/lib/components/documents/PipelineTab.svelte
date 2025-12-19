@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Panel } from '$lib/components/ui';
+	import { Button, Panel, LoadingState } from '$lib/components/ui';
 	import { getSimilarityColor, type RAGPipelineInfo, type RAGDemoResponse, type ChunkAnalytics } from './types';
 
 	interface Props {
@@ -46,7 +46,7 @@
 <div class="space-y-4">
 	{#if pipelineLoading}
 		<div class="panel p-8 text-center">
-			<span class="text-surface-500 animate-pulse">Loading pipeline info...</span>
+			<LoadingState message="Loading pipeline info..." showSpinner={false} size="sm" class="text-surface-500 animate-pulse" />
 		</div>
 	{:else if pipelineInfo}
 		<!-- RAG Overview -->
@@ -261,7 +261,7 @@
 			</Panel>
 		{:else if analyticsLoading}
 			<div class="panel p-8 text-center">
-				<span class="text-surface-500 animate-pulse">Loading analytics...</span>
+				<LoadingState message="Loading analytics..." showSpinner={false} size="sm" class="text-surface-500 animate-pulse" />
 			</div>
 		{/if}
 

@@ -14,6 +14,7 @@ export {
 	Icon,
 	IconButton,
 	DeleteButton,
+	LoadingState,
 	Panel,
 	ClickableCard
 } from './ui';

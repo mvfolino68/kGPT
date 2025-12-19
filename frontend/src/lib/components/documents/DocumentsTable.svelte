@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Panel } from '$lib/components/ui';
+	import { Panel, LoadingState } from '$lib/components/ui';
 	import { StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
@@ -63,8 +63,8 @@
 	{/snippet}
 	{#snippet children()}
 	{#if loading}
-		<div class="p-8 text-center text-surface-500">
-			<span class="animate-pulse">Loading...</span>
+		<div class="p-8 text-center">
+			<LoadingState message="Loading..." showSpinner={true} size="sm" class="animate-pulse" />
 		</div>
 	{:else if documents.length === 0}
 		<div class="p-8 text-center text-surface-500">

@@ -13,7 +13,7 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, StatusDot, IconButton, Card, Icon } from '$lib/components';
+	import { Header, HeaderStatus, StatusDot, IconButton, Card, Icon, LoadingState } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import {
 		OpenAISection,
@@ -327,10 +327,7 @@
 
 			{#if loading}
 				<Card class="p-12 text-center">
-					<div class="flex items-center justify-center gap-2 text-text-secondary">
-						<Icon name="spinner" size="md" class="animate-spin" />
-						<span>Loading settings...</span>
-					</div>
+					<LoadingState message="Loading settings..." showSpinner={true} size="md" class="text-text-secondary" />
 				</Card>
 
 			{:else if isOnboarding && !openaiValid}

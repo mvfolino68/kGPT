@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, StatusDot, Icon, Card } from '$lib/components';
+	import { Button, StatusDot, Icon, Card, LoadingState } from '$lib/components';
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, HeaderStatus } from '$lib/components';
@@ -66,9 +66,13 @@
 				</Card>
 			{:else if loading}
 				<div class="flex items-center justify-center py-20">
-					<div class="text-center space-y-4">
-						<Icon name="spinner" size="xl" class="mx-auto text-primary animate-spin" />
-						<p class="text-text-secondary">Loading agent graph...</p>
+					<div class="text-center">
+						<LoadingState
+							message="Loading agent graph..."
+							showSpinner={true}
+							size="lg"
+							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
+						/>
 					</div>
 				</div>
 			{:else if agentGraph}

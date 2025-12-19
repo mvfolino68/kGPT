@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Panel } from '$lib/components/ui';
+	import { Button, Panel, LoadingState } from '$lib/components/ui';
 	import type { VectorBrowseResponse } from './types';
 
 	interface Props {
@@ -52,7 +52,7 @@
 	{#if browseLoading}
 		<Panel padding="lg">
 			<div class="text-center">
-				<span class="text-muted animate-pulse">Loading vectors...</span>
+				<LoadingState message="Loading vectors..." showSpinner={false} size="sm" class="text-muted animate-pulse" />
 			</div>
 		</Panel>
 	{:else if browseResults}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui';
+	import { Button, LoadingState } from '$lib/components/ui';
 	import WizardStep from '../WizardStep.svelte';
 	import { connectCluster, getClusterInfo, type ClusterInfo } from '$lib/api';
 	import { StatusIndicator } from '$lib/components';
@@ -147,11 +147,12 @@
 				<div class="space-y-4">
 					{#if connecting}
 						<div class="text-center py-8">
-							<svg class="w-8 h-8 mx-auto text-primary animate-spin mb-4" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-							</svg>
-							<p class="text-surface-400 text-sm">Connecting to demo cluster...</p>
+							<LoadingState
+								message="Connecting to demo cluster..."
+								showSpinner={true}
+								size="md"
+								class="flex-col gap-4 text-surface-400 [&>svg]:text-primary"
+							/>
 						</div>
 					{:else if connected}
 						<div class="p-4 rounded-lg bg-success-bg border border-success/30">

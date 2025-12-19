@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button, ResizeHandle } from '$lib/components/ui';
+	import { Button, ResizeHandle, LoadingState } from '$lib/components/ui';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {
@@ -106,7 +106,9 @@
 
 	<div class="flex-1 overflow-y-auto py-2 px-2">
 		{#if sessionsLoading}
-			<div class="px-3 py-2 text-surface-500 text-xs">Loading...</div>
+			<div class="px-3 py-2">
+				<LoadingState message="Loading..." showSpinner={false} size="xs" />
+			</div>
 		{:else if sessions.length === 0}
 			<div class="px-3 py-2 text-surface-600 text-xs">No sessions yet</div>
 		{:else}

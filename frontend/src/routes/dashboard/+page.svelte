@@ -5,7 +5,7 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon } from '$lib/components';
+	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState } from '$lib/components';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -195,8 +195,12 @@
 			{#if loading && !clusterDetails.connected}
 				<div class="flex items-center justify-center py-16">
 					<div class="text-center">
-						<Icon name="spinner" size="xl" class="mx-auto text-primary animate-spin mb-4" />
-						<p class="text-text-secondary">Loading cluster information...</p>
+						<LoadingState
+							message="Loading cluster information..."
+							showSpinner={true}
+							size="xl"
+							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
+						/>
 					</div>
 				</div>
 			{:else if clusterDetails.connected}

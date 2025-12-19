@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Input, Select, Icon } from '$lib/components/ui';
+	import { Button, Input, Select, Icon, LoadingState } from '$lib/components/ui';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import type { KafkaCluster, ClusterInfo } from '$lib/api';
 
@@ -69,7 +69,7 @@
 
 	{#snippet headerAction()}
 		{#if loading}
-			<span class="text-xs text-text-tertiary">Loading...</span>
+			<LoadingState message="Loading..." showSpinner={false} size="xs" class="text-text-tertiary" />
 		{:else if clusterInfo.connected}
 			<Button variant="link" size="xs" class="text-xs" onclick={ondisconnect}>
 				Disconnect
