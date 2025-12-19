@@ -13,7 +13,7 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, IconButton, Card, Icon, LoadingState, StatusMessage } from '$lib/components';
+	import { Header, HeaderStatus, IconButton, Card, Icon, LoadingState, StatusMessage, Page } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import {
 		OpenAISection,
@@ -283,78 +283,50 @@
 	<title>Settings - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-bg">
-	<Header title="Settings" subtitle="Configure your kGPT instance">
-		{#snippet actions()}
-			{#if openaiValid && openaiSelectedModel && !isOnboarding}
-				<HeaderStatus
-					status="active"
-					label="Active"
-					sublabel="openai/{openaiSelectedModel}"
-					pulse
-				/>
-			{/if}
-		{/snippet}
-	</Header>
+<Page
+	title="Settings"
+	subtitle="Configure your kGPT instance"
+	loading={loading}
+	error={null}
+>
+	{#snippet headerActions()}
+		{#if openaiValid && openaiSelectedModel && !isOnboarding}
+			<HeaderStatus
+				status="active"
+				label="Active"
+				sublabel="openai/{openaiSelectedModel}"
+				pulse
+			/>
+		{/if}
+	{/snippet}
 
-	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-3xl mx-auto space-y-6">
-			<!-- Messages -->
-			{#if error}
-				<StatusMessage variant="error" message={error}>
-					{#snippet actions()}
-						<IconButton
-							variant="danger"
-							size="sm"
-							title="Dismiss error"
-							onclick={() => error = null}
-						>
-							<Icon name="x" size="sm" />
-						</IconButton>
-					{/snippet}
-				</StatusMessage>
-			{/if}
-			{#if success}
-				<StatusMessage variant="success" message={success} />
-			{/if}
+	<div class="max-w-3xl mx-auto space-y-6">
+		<!-- Messages -->
+		{#if error}
+			<StatusMessage variant="error" message={error}>
+				{#snippet actions()}
+					<IconButton
+						variant="danger"
+						size="sm"
+						title="Dismiss error"
+						onclick={() => error = null}
+					>
+						<Icon name="x" size="sm" />
+					</IconButton>
+				{/snippet}
+			</StatusMessage>
+		{/if}
+		{#if success}
+			<StatusMessage variant="success" message={success} />
+		{/if}
 
-			{#if loading}
-				<div class="flex items-center justify-center py-16">
-					<div class="text-center">
-						<LoadingState
-							message="Loading settings..."
-							showSpinner={true}
-							size="xl"
-							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
-						/>
-					</div>
+		{#if isOnboarding && !openaiValid}
+			<!-- ONBOARDING -->
+			<div class="space-y-4">
+				<div class="text-center py-8">
+					<h2 class="text-2xl font-semibold text-text mb-2">Welcome to kGPT</h2>
+					<p class="text-text-secondary text-sm">Configure your OpenAI API key to get started</p>
 				</div>
-
-			{:else if isOnboarding && !openaiValid}
-				<!-- ONBOARDING -->
-				<div class="space-y-4">
-					<div class="text-center py-8">
-						<h2 class="text-2xl font-semibold text-text mb-2">Welcome to kGPT</h2>
-						<p class="text-text-secondary text-sm">Configure your OpenAI API key to get started</p>
-					</div>
-
-					<OpenAISection
-						source={openaiSource}
-						models={openaiModels}
-						selectedModel={openaiSelectedModel}
-						apiKey={openaiApiKey}
-						hasApiKey={openaiConfigured}
-						{saving}
-						validating={openaiValidating}
-						validationError={openaiValidationError}
-						onsave={saveOpenAISettings}
-						onmodelchange={(v) => openaiSelectedModel = v}
-						onapikeychange={(v) => openaiApiKey = v}
-					/>
-				</div>
-
-			{:else}
-				<!-- MAIN SETTINGS -->
 
 				<OpenAISection
 					source={openaiSource}
@@ -369,64 +341,82 @@
 					onmodelchange={(v) => openaiSelectedModel = v}
 					onapikeychange={(v) => openaiApiKey = v}
 				/>
+			</div>
 
-				<KafkaSection
-					{clusterInfo}
-					{clusters}
-					loading={clusterLoading}
-					connecting={clusterConnecting}
-					error={clusterError}
-					showForm={showClusterForm}
-					formName={clusterFormName}
-					formBootstrap={clusterFormBootstrap}
-					formProtocol={clusterFormProtocol}
-					onconnect={handleClusterConnect}
-					ondisconnect={handleClusterDisconnect}
-					onconnectdemo={connectDemoCluster}
-					onshowform={() => showClusterForm = true}
-					onhideform={() => showClusterForm = false}
-					onformnamechange={(v) => clusterFormName = v}
-					onformbootstrapchange={(v) => clusterFormBootstrap = v}
-					onformprotocolchange={(v) => clusterFormProtocol = v}
-				/>
+		{:else}
+			<!-- MAIN SETTINGS -->
 
-				<EmbeddingsSection
-					provider={embeddingProvider}
-					model={embeddingModel}
-					{saving}
-					onsave={saveEmbeddingSettings}
-					onproviderchange={(v) => embeddingProvider = v}
-					onmodelchange={(v) => embeddingModel = v}
-				/>
+			<OpenAISection
+				source={openaiSource}
+				models={openaiModels}
+				selectedModel={openaiSelectedModel}
+				apiKey={openaiApiKey}
+				hasApiKey={openaiConfigured}
+				{saving}
+				validating={openaiValidating}
+				validationError={openaiValidationError}
+				onsave={saveOpenAISettings}
+				onmodelchange={(v) => openaiSelectedModel = v}
+				onapikeychange={(v) => openaiApiKey = v}
+			/>
 
-				<WebSearchSection
-					apiKey={exaApiKey}
-					hasApiKey={hasExaApiKey}
-					{saving}
-					onsave={saveExaSettings}
-					onapikeychange={(v) => exaApiKey = v}
-				/>
+			<KafkaSection
+				{clusterInfo}
+				{clusters}
+				loading={clusterLoading}
+				connecting={clusterConnecting}
+				error={clusterError}
+				showForm={showClusterForm}
+				formName={clusterFormName}
+				formBootstrap={clusterFormBootstrap}
+				formProtocol={clusterFormProtocol}
+				onconnect={handleClusterConnect}
+				ondisconnect={handleClusterDisconnect}
+				onconnectdemo={connectDemoCluster}
+				onshowform={() => showClusterForm = true}
+				onhideform={() => showClusterForm = false}
+				onformnamechange={(v) => clusterFormName = v}
+				onformbootstrapchange={(v) => clusterFormBootstrap = v}
+				onformprotocolchange={(v) => clusterFormProtocol = v}
+			/>
 
-				<RerankingSection
-					apiKey={cohereApiKey}
-					hasApiKey={hasCohereApiKey}
-					{saving}
-					onsave={saveCohereSettings}
-					onapikeychange={(v) => cohereApiKey = v}
-				/>
+			<EmbeddingsSection
+				provider={embeddingProvider}
+				model={embeddingModel}
+				{saving}
+				onsave={saveEmbeddingSettings}
+				onproviderchange={(v) => embeddingProvider = v}
+				onmodelchange={(v) => embeddingModel = v}
+			/>
 
-				<!-- Tips -->
-				<div class="text-xs text-text-tertiary space-y-1 pt-2">
-					<p>Keys can also be set via environment variables (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
-					<p>Without Cohere, reranking falls back to a local cross-encoder model</p>
-				</div>
-			{/if}
-		</div>
+			<WebSearchSection
+				apiKey={exaApiKey}
+				hasApiKey={hasExaApiKey}
+				{saving}
+				onsave={saveExaSettings}
+				onapikeychange={(v) => exaApiKey = v}
+			/>
+
+			<RerankingSection
+				apiKey={cohereApiKey}
+				hasApiKey={hasCohereApiKey}
+				{saving}
+				onsave={saveCohereSettings}
+				onapikeychange={(v) => cohereApiKey = v}
+			/>
+
+			<!-- Tips -->
+			<div class="text-xs text-text-tertiary space-y-1 pt-2">
+				<p>Keys can also be set via environment variables (OPENAI_API_KEY, EXA_API_KEY, COHERE_API_KEY)</p>
+				<p>Without Cohere, reranking falls back to a local cross-encoder model</p>
+			</div>
+		{/if}
 	</div>
+</Page>
 
-	<Hint
-		id="settings"
-		title="Configure Your Setup"
-		description="Customize AI providers, connect Kafka clusters, and fine-tune your kGPT experience here."
-	/>
-</div>
+<!-- Contextual Hint -->
+<Hint
+	id="settings"
+	title="Configure Your Setup"
+	description="Customize AI providers, connect Kafka clusters, and fine-tune your kGPT experience here."
+/>

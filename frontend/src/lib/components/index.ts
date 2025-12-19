@@ -23,6 +23,7 @@ export {
 	Backdrop,
 	Panel,
 	ClickableCard,
+	Tabs, // New component
 	// Merged from root
 	CodeBlock,
 	FormattedMessage,
@@ -31,7 +32,7 @@ export {
 } from './ui';
 
 // Layout Components
-export { Sidebar, Header, HeaderStatus } from './layout';
+export { Sidebar, Header, HeaderStatus, Page } from './layout';
 
 // Admin Components
 export {

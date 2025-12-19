@@ -5,7 +5,7 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState, StatusMessage } from '$lib/components';
+	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState, StatusMessage, Page } from '$lib/components';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -144,217 +144,187 @@
 	<title>Dashboard - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-bg">
-	<Header
-		title="Kafka Dashboard"
-		subtitle={clusterDetails.connected
-			? `Cluster ${clusterDetails.cluster_id || ''}`
-			: 'Connect to monitor your Kafka cluster'}
-	>
-		{#snippet actions()}
-			<div class="flex items-center gap-4">
-				{#if clusterDetails.connected}
-					<HeaderStatus status="active" label="Connected" pulse />
-				{:else if loading}
-					<HeaderStatus status="warning" label="Loading" pulse />
-				{:else}
-					<HeaderStatus status="inactive" label="Disconnected" />
-				{/if}
-				<ClusterSwitcher
-					currentClusterId={clusterDetails.cluster_id}
-					onSwitch={loadClusterData}
-				/>
-				<Button variant="ghost" size="sm" onclick={loadClusterData} disabled={loading}>
-					{loading ? 'Loading...' : 'Refresh'}
+<Page
+	title="Kafka Dashboard"
+	subtitle={clusterDetails.connected
+		? `Cluster ${clusterDetails.cluster_id || ''}`
+		: 'Connect to monitor your Kafka cluster'}
+	loading={loading && !clusterDetails.connected}
+	error={error}
+	status={{ connected: clusterDetails.connected }}
+>
+	{#snippet headerActions()}
+		<div class="flex items-center gap-4">
+			<ClusterSwitcher
+				currentClusterId={clusterDetails.cluster_id}
+				onSwitch={loadClusterData}
+			/>
+			<Button variant="ghost" size="sm" onclick={loadClusterData} disabled={loading}>
+				{loading ? 'Loading...' : 'Refresh'}
+			</Button>
+			{#if !clusterDetails.connected && !loading}
+				<Button variant="primary" size="sm" onclick={connectDemo} loading={connecting}>
+					Quick Connect
 				</Button>
-				{#if !clusterDetails.connected && !loading}
-					<Button variant="primary" size="sm" onclick={connectDemo} loading={connecting}>
-						Quick Connect
-					</Button>
-				{/if}
-				<Button variant={showChat ? 'primary' : 'ghost'} size="sm" onclick={() => (showChat = !showChat)}>
-					AI Assistant
-				</Button>
-			</div>
-		{/snippet}
-	</Header>
-
-	<div class="flex-1 overflow-y-auto">
-		<div class="p-6 space-y-6 max-w-7xl mx-auto">
-			<!-- Error display -->
-			{#if error}
-				<div class="max-w-7xl mx-auto">
-					<StatusMessage variant="error" message={error} />
-				</div>
 			{/if}
+			<Button variant={showChat ? 'primary' : 'ghost'} size="sm" onclick={() => (showChat = !showChat)}>
+				AI Assistant
+			</Button>
+		</div>
+	{/snippet}
 
-			<!-- Loading state -->
-			{#if loading && !clusterDetails.connected}
-				<div class="flex items-center justify-center py-16">
-					<div class="text-center">
-						<LoadingState
-							message="Loading cluster information..."
-							showSpinner={true}
-							size="xl"
-							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
-						/>
-					</div>
-				</div>
-			{:else if clusterDetails.connected}
-				<!-- Connected: Show full dashboard -->
+	<!-- Connected: Show full dashboard -->
+	{#if clusterDetails.connected}
+		<!-- Cluster Health Overview -->
+		<ClusterHealthCard
+			connected={clusterDetails.connected}
+			clusterId={clusterDetails.cluster_id}
+			controllerId={clusterDetails.controller_id}
+			brokerCount={clusterDetails.broker_count}
+			topicCount={clusterDetails.topic_count}
+			totalPartitions={clusterDetails.total_partitions}
+			underReplicatedCount={clusterDetails.under_replicated_count}
+			consumerGroupCount={clusterDetails.consumer_group_count}
+		/>
 
-				<!-- Cluster Health Overview -->
-				<ClusterHealthCard
-					connected={clusterDetails.connected}
-					clusterId={clusterDetails.cluster_id}
-					controllerId={clusterDetails.controller_id}
-					brokerCount={clusterDetails.broker_count}
-					topicCount={clusterDetails.topic_count}
-					totalPartitions={clusterDetails.total_partitions}
-					underReplicatedCount={clusterDetails.under_replicated_count}
-					consumerGroupCount={clusterDetails.consumer_group_count}
-				/>
+		<!-- Quick Actions -->
+		<QuickActions onAction={handleQuickAction} disabled={!clusterDetails.connected} />
 
-				<!-- Quick Actions -->
-				<QuickActions onAction={handleQuickAction} disabled={!clusterDetails.connected} />
+		<!-- Brokers Grid -->
+		{#if clusterDetails.brokers.length > 0}
+			<BrokersGrid brokers={clusterDetails.brokers} onBrokerClick={handleBrokerClick} />
+		{/if}
 
-				<!-- Brokers Grid -->
-				{#if clusterDetails.brokers.length > 0}
-					<BrokersGrid brokers={clusterDetails.brokers} onBrokerClick={handleBrokerClick} />
-				{/if}
+		<!-- Topics and Consumer Groups side by side -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+			<TopicsPanel topics={clusterDetails.topics} onTopicClick={handleTopicClick} />
+			<ConsumerGroupsPanel
+				groups={clusterDetails.consumer_groups}
+				onGroupClick={handleGroupClick}
+			/>
+		</div>
+	{:else}
+		<!-- Not connected: Show connection options -->
+		<Card class="py-8">
+			<div class="text-center mb-8">
+				<Icon name="server" size="xl" class="mx-auto text-text-tertiary mb-4 w-16 h-16" />
+				<h3 class="text-lg font-semibold text-text-secondary mb-2">Connect to Kafka</h3>
+				<p class="text-text-tertiary max-w-md mx-auto text-sm">
+					Connect to a cluster to view brokers, topics, consumer groups, and manage your
+					streaming infrastructure.
+				</p>
+			</div>
 
-				<!-- Topics and Consumer Groups side by side -->
-				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					<TopicsPanel topics={clusterDetails.topics} onTopicClick={handleTopicClick} />
-					<ConsumerGroupsPanel
-						groups={clusterDetails.consumer_groups}
-						onGroupClick={handleGroupClick}
-					/>
+			{#if !showConnectForm}
+				<div class="max-w-md mx-auto space-y-3">
+					<Button
+						variant="secondary"
+						size="lg"
+						class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
+						onclick={connectDemo}
+						disabled={connecting}
+					>
+						<div class="flex items-center gap-4">
+							<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+								<Icon name="play" size="lg" class="text-primary" />
+							</div>
+							<div class="flex-1">
+								<h4 class="text-sm font-medium text-text group-hover:text-text">
+									Use Demo Cluster
+								</h4>
+								<p class="text-xs text-text-tertiary mt-0.5">
+									Connect to the local development cluster at localhost:9094
+								</p>
+							</div>
+							{#if connecting}
+								<Icon name="spinner" size="md" class="text-primary animate-spin" />
+							{:else}
+								<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
+							{/if}
+						</div>
+					</Button>
+
+					<Button
+						variant="secondary"
+						size="lg"
+						class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
+						onclick={() => (showConnectForm = true)}
+					>
+						<div class="flex items-center gap-4">
+							<div class="w-12 h-12 rounded-xl bg-surface-active flex items-center justify-center">
+								<Icon name="plus" size="lg" class="text-text-secondary" />
+							</div>
+							<div class="flex-1">
+								<h4 class="text-sm font-medium text-text group-hover:text-text">
+									Connect Custom Cluster
+								</h4>
+								<p class="text-xs text-text-tertiary mt-0.5">
+									Enter your own cluster connection details
+								</p>
+							</div>
+							<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
+						</div>
+					</Button>
+
+					<p class="text-xs text-text-tertiary text-center pt-2">
+						Manage saved clusters in <a href="/settings" class="text-text-secondary hover:underline">Settings</a>
+					</p>
 				</div>
 			{:else}
-				<!-- Not connected: Show connection options -->
-				<Card class="py-8">
-					<div class="text-center mb-8">
-						<Icon name="server" size="xl" class="mx-auto text-text-tertiary mb-4 w-16 h-16" />
-						<h3 class="text-lg font-semibold text-text-secondary mb-2">Connect to Kafka</h3>
-						<p class="text-text-tertiary max-w-md mx-auto text-sm">
-							Connect to a cluster to view brokers, topics, consumer groups, and manage your
-							streaming infrastructure.
-						</p>
-					</div>
-
-					{#if !showConnectForm}
-						<div class="max-w-md mx-auto space-y-3">
-							<Button
-								variant="secondary"
-								size="lg"
-								class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
-								onclick={connectDemo}
-								disabled={connecting}
-							>
-								<div class="flex items-center gap-4">
-									<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-										<Icon name="play" size="lg" class="text-primary" />
-									</div>
-									<div class="flex-1">
-										<h4 class="text-sm font-medium text-text group-hover:text-text">
-											Use Demo Cluster
-										</h4>
-										<p class="text-xs text-text-tertiary mt-0.5">
-											Connect to the local development cluster at localhost:9094
-										</p>
-									</div>
-									{#if connecting}
-										<Icon name="spinner" size="md" class="text-primary animate-spin" />
-									{:else}
-										<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
-									{/if}
-								</div>
-							</Button>
-
-							<Button
-								variant="secondary"
-								size="lg"
-								class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active group"
-								onclick={() => (showConnectForm = true)}
-							>
-								<div class="flex items-center gap-4">
-									<div class="w-12 h-12 rounded-xl bg-surface-active flex items-center justify-center">
-										<Icon name="plus" size="lg" class="text-text-secondary" />
-									</div>
-									<div class="flex-1">
-										<h4 class="text-sm font-medium text-text group-hover:text-text">
-											Connect Custom Cluster
-										</h4>
-										<p class="text-xs text-text-tertiary mt-0.5">
-											Enter your own cluster connection details
-										</p>
-									</div>
-									<Icon name="chevron-right" size="md" class="text-text-tertiary group-hover:text-text-secondary" />
-								</div>
-							</Button>
-
-							<p class="text-xs text-text-tertiary text-center pt-2">
-								Manage saved clusters in <a href="/settings" class="text-text-secondary hover:underline">Settings</a>
-							</p>
+				<!-- Inline connect form -->
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleConnect();
+					}}
+					class="max-w-md mx-auto space-y-4"
+				>
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<label for="dash-cluster-name" class="label block mb-1.5">Name</label>
+							<Input
+								id="dash-cluster-name"
+								type="text"
+								bind:value={formName}
+								placeholder="my-cluster"
+							/>
 						</div>
-					{:else}
-						<!-- Inline connect form -->
-						<form
-							onsubmit={(e) => {
-								e.preventDefault();
-								handleConnect();
-							}}
-							class="max-w-md mx-auto space-y-4"
+						<div>
+							<label for="dash-protocol" class="label block mb-1.5">Protocol</label>
+							<Select
+								id="dash-protocol"
+								bind:value={formProtocol}
+								options={protocolOptions}
+							/>
+						</div>
+					</div>
+					<div>
+						<label for="dash-bootstrap" class="label block mb-1.5">Bootstrap Servers</label>
+						<Input
+							id="dash-bootstrap"
+							type="text"
+							bind:value={formBootstrap}
+							placeholder="localhost:9092"
+						/>
+					</div>
+					<div class="flex gap-2">
+						<Button
+							type="submit"
+							variant="primary"
+							disabled={connecting || !formName.trim() || !formBootstrap.trim()}
+							loading={connecting}
 						>
-							<div class="grid grid-cols-2 gap-3">
-								<div>
-									<label for="dash-cluster-name" class="label block mb-1.5">Name</label>
-									<Input
-										id="dash-cluster-name"
-										type="text"
-										bind:value={formName}
-										placeholder="my-cluster"
-									/>
-								</div>
-								<div>
-									<label for="dash-protocol" class="label block mb-1.5">Protocol</label>
-									<Select
-										id="dash-protocol"
-										bind:value={formProtocol}
-										options={protocolOptions}
-									/>
-								</div>
-							</div>
-							<div>
-								<label for="dash-bootstrap" class="label block mb-1.5">Bootstrap Servers</label>
-								<Input
-									id="dash-bootstrap"
-									type="text"
-									bind:value={formBootstrap}
-									placeholder="localhost:9092"
-								/>
-							</div>
-							<div class="flex gap-2">
-								<Button
-									type="submit"
-									variant="primary"
-									disabled={connecting || !formName.trim() || !formBootstrap.trim()}
-									loading={connecting}
-								>
-									Connect
-								</Button>
-								<Button type="button" variant="ghost" onclick={() => (showConnectForm = false)}>
-									Cancel
-								</Button>
-							</div>
-						</form>
-					{/if}
-				</Card>
+							Connect
+						</Button>
+						<Button type="button" variant="ghost" onclick={() => (showConnectForm = false)}>
+							Cancel
+						</Button>
+					</div>
+				</form>
 			{/if}
-		</div>
-	</div>
-</div>
+		</Card>
+	{/if}
+</Page>
 
 <!-- Contextual Hint -->
 <Hint

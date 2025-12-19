@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Icon, Card, LoadingState, StatusMessage } from '$lib/components';
+	import { Button, Icon, Card, LoadingState, StatusMessage, Page } from '$lib/components';
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, HeaderStatus } from '$lib/components';
@@ -42,81 +42,71 @@
 	<title>Agent Architecture - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-bg">
-	<Header title="Agent Architecture" subtitle="Multi-agent RAG orchestration">
-		{#snippet actions()}
-			<div class="flex items-center gap-4">
-				<HeaderStatus status="active" label="LangGraph" pulse />
-				<Button variant="ghost" size="sm" onclick={loadGraph} disabled={loading} loading={loading}>
-					Refresh
-				</Button>
-			</div>
-		{/snippet}
-	</Header>
-
-	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-5xl mx-auto space-y-6">
-			{#if error}
-				<StatusMessage variant="error" message={error}>
-					{#snippet actions()}
-						<Button variant="ghost" size="sm" onclick={loadGraph}>Retry</Button>
-					{/snippet}
-				</StatusMessage>
-			{:else if loading}
-				<div class="flex items-center justify-center py-16">
-					<div class="text-center">
-						<LoadingState
-							message="Loading agent graph..."
-							showSpinner={true}
-							size="xl"
-							class="flex-col gap-4 text-text-secondary [&>svg]:text-primary"
-						/>
-					</div>
-				</div>
-			{:else if agentGraph}
-				<!-- Hero -->
-				<section class="text-center py-6">
-					<h1 class="text-3xl font-bold text-text mb-3">
-						Multi-Agent Orchestration
-					</h1>
-					<p class="text-text-secondary text-sm max-w-2xl mx-auto">
-						Your question flows through specialized AI agents. Select a path below to see how
-						different queries are handled.
-					</p>
-				</section>
-
-				<!-- Path Selector -->
-				<PathSelector
-					{selectedPath}
-					onSelect={(id) => selectedPath = id}
-				/>
-
-				<!-- Selected Path Info -->
-				<SelectedPathInfo path={executionPaths[selectedPath]} />
-
-				<!-- Interactive Graph -->
-				<QueryFlowGraph
-					{agentGraph}
-					selectedPath={executionPaths[selectedPath]}
-					{selectedNode}
-					onNodeSelect={(node) => selectedNode = node}
-				/>
-
-				<!-- All Agents Overview -->
-				<AllAgentsOverview nodes={agentGraph.nodes} />
-
-				<!-- Technology Stack -->
-				<TechnologyStack />
-
-				<!-- Graph Stats -->
-				<GraphStats agents={agentGraph.nodes.length + 1} edges={agentGraph.edges.length} />
-
-				<!-- CTA -->
-				<CallToAction />
-			{/if}
+<Page
+	title="Agent Architecture"
+	subtitle="Multi-agent RAG orchestration"
+	loading={loading}
+	error={null}
+>
+	{#snippet headerActions()}
+		<div class="flex items-center gap-4">
+			<HeaderStatus status="active" label="LangGraph" pulse />
+			<Button variant="ghost" size="sm" onclick={loadGraph} disabled={loading} loading={loading}>
+				Refresh
+			</Button>
 		</div>
+	{/snippet}
+
+	<div class="max-w-5xl mx-auto space-y-6">
+		{#if error}
+			<StatusMessage variant="error" message={error}>
+				{#snippet actions()}
+					<Button variant="ghost" size="sm" onclick={loadGraph}>Retry</Button>
+				{/snippet}
+			</StatusMessage>
+		{:else if agentGraph}
+			<!-- Hero -->
+			<section class="text-center py-6">
+				<h1 class="text-3xl font-bold text-text mb-3">
+					Multi-Agent Orchestration
+				</h1>
+				<p class="text-text-secondary text-sm max-w-2xl mx-auto">
+					Your question flows through specialized AI agents. Select a path below to see how
+					different queries are handled.
+				</p>
+			</section>
+
+			<!-- Path Selector -->
+			<PathSelector
+				{selectedPath}
+				onSelect={(id) => selectedPath = id}
+			/>
+
+			<!-- Selected Path Info -->
+			<SelectedPathInfo path={executionPaths[selectedPath]} />
+
+			<!-- Interactive Graph -->
+			<QueryFlowGraph
+				{agentGraph}
+				selectedPath={executionPaths[selectedPath]}
+				{selectedNode}
+				onNodeSelect={(node) => selectedNode = node}
+			/>
+
+			<!-- All Agents Overview -->
+			<AllAgentsOverview nodes={agentGraph.nodes} />
+
+			<!-- Technology Stack -->
+			<TechnologyStack />
+
+			<!-- Graph Stats -->
+			<GraphStats agents={agentGraph.nodes.length + 1} edges={agentGraph.edges.length} />
+
+			<!-- CTA -->
+			<CallToAction />
+		{/if}
 	</div>
-</div>
+</Page>
 
 <!-- Contextual Hint -->
 <Hint

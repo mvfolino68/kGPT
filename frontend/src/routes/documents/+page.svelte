@@ -44,7 +44,7 @@
 		type SyncStatusResponse,
 		type ChunkAnalytics
 	} from '$lib/components/documents';
-	import { Card, Icon, IconButton, StatusDot, Button } from '$lib/components/ui';
+	import { Card, Icon, IconButton, StatusDot, Button, Page, Tabs } from '$lib/components';
 
 	// =========================================================================
 	// Tab Navigation
@@ -468,224 +468,179 @@
 	<title>Vector Store - kGPT</title>
 </svelte:head>
 
-<div class="flex flex-col h-full bg-bg">
-	<!-- Header -->
-	<Header title="Vector Store" subtitle="RAG Document & Embedding Management">
-		{#snippet actions()}
-			{#if syncStatus}
-				<HeaderStatus
-					status={syncStatus.synced ? 'active' : 'warning'}
-					label={syncStatus.synced ? 'Synced' : 'Sync Warning'}
-					pulse={!syncStatus.synced}
-				/>
-			{/if}
-		{/snippet}
-	</Header>
+<Page
+	title="Vector Store"
+	subtitle="RAG Document & Embedding Management"
+	loading={loading && documents.length === 0}
+	error={error}
+	status={syncStatus ? { connected: syncStatus.synced, label: syncStatus.synced ? 'Synced' : 'Sync Warning' } : null}
+>
+	{#snippet headerActions()}
+	{/snippet}
 
-	<!-- Tab navigation -->
-	<nav
-		class="border-b border-white/5 bg-bg-elevated"
-		aria-label="Vector store sections"
-	>
-		<div class="px-6 max-w-7xl mx-auto">
-			<div class="flex gap-1" role="tablist" aria-orientation="horizontal">
-			{#each [
-				{ id: 'sources' as Tab, label: 'Sources' },
-				{ id: 'search' as Tab, label: 'Search' },
-				{ id: 'browse' as Tab, label: 'Browse' },
-				{ id: 'pipeline' as Tab, label: 'RAG Pipeline' }
-			] as tab}
-				{@const isActive = activeTab === tab.id}
-				<Button
-					id={"tab-" + tab.id}
-					type="button"
-					role="tab"
-					aria-selected={isActive}
-					aria-controls={"tabpanel-" + tab.id}
-					tabindex={isActive ? 0 : -1}
-					variant={isActive ? 'secondary' : 'ghost'}
+	{#snippet subNavigation()}
+		<Tabs
+			active={activeTab}
+			items={[
+				{ id: 'sources', label: 'Sources' },
+				{ id: 'search', label: 'Search' },
+				{ id: 'browse', label: 'Browse' },
+				{ id: 'pipeline', label: 'RAG Pipeline' }
+			]}
+			on:change={(e) => setActiveTab(e.detail as Tab)}
+		/>
+	{/snippet}
+
+	<!-- Success message for destructive operations -->
+	{#if lastDestructiveResult}
+		<Card variant="success" padding="sm" class="mb-6">
+			<div class="flex items-center gap-2 text-sm">
+				<StatusDot status="success" size="sm" />
+				<span class="text-success flex-1">{lastDestructiveResult.message}</span>
+				<IconButton
+					variant="ghost"
 					size="sm"
-					onclick={() => setActiveTab(tab.id)}
+					title="Dismiss message"
+					onclick={() => lastDestructiveResult = null}
 				>
-					{tab.label}
-				</Button>
-			{/each}
+					<Icon name="x" size="sm" />
+				</IconButton>
 			</div>
+		</Card>
+	{/if}
+
+	<!-- Tab Content -->
+	{#if activeTab === 'sources'}
+		<div
+			id="tabpanel-sources"
+			role="tabpanel"
+			aria-labelledby="tab-sources"
+			tabindex="0"
+			class="space-y-6"
+		>
+		<IngestionForm
+			{sourceType}
+			{sourceName}
+			{sourceUrl}
+			{rawTextContent}
+			{useSmartNaming}
+			{nameSuggestions}
+			{smartName}
+			{fetchingName}
+			{ingesting}
+			onSourceTypeChange={(type) => { sourceType = type; nameSuggestions = []; smartName = null; sourceName = ''; }}
+			onSourceNameChange={(name) => sourceName = name}
+			onUrlInput={handleUrlInput}
+			onTextContentInput={handleTextContentInput}
+			onSmartNamingChange={(enabled) => useSmartNaming = enabled}
+			onSelectSuggestion={(name) => sourceName = name}
+			onSubmit={handleIngest}
+		/>
+
+		{#if syncStatus}
+			<SyncStatusPanel
+				{syncStatus}
+				{syncLoading}
+				{cleanupLoading}
+				{activeDestructiveOp}
+				{destructiveConfirmText}
+				onRefresh={loadSyncStatus}
+				onStartDestructiveOp={startDestructiveOp}
+				onCancelDestructiveOp={cancelDestructiveOp}
+				onConfirmTextChange={(text) => destructiveConfirmText = text}
+				onCleanupOrphans={handleCleanupOrphans}
+				onCleanupStale={handleCleanupStale}
+				onPurgeAll={handlePurgeAll}
+			/>
+		{/if}
+
+		{#if collections}
+			<CollectionsOverview {collections} />
+		{/if}
+
+		<DocumentsTable
+			{documents}
+			{loading}
+			{activeIngestions}
+			{ingestionStartTimes}
+			{currentTime}
+			{confirmingDeleteId}
+			onRefresh={loadAll}
+			onCancel={handleCancel}
+			onDeleteClick={(id) => confirmingDeleteId = id}
+			onConfirmDelete={handleConfirmDelete}
+			onCancelDelete={() => confirmingDeleteId = null}
+		/>
 		</div>
-	</nav>
 
-	<div class="flex-1 overflow-y-auto">
-		<div class="p-6 space-y-6 max-w-7xl mx-auto">
-			<!-- Error display -->
-			{#if error}
-				<Card variant="error" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="error" size="sm" />
-						<span class="text-error flex-1">{error}</span>
-						<IconButton
-							variant="danger"
-							size="sm"
-							title="Dismiss error"
-							onclick={() => error = null}
-						>
-							<Icon name="x" size="sm" />
-						</IconButton>
-					</div>
-				</Card>
-			{/if}
-
-			<!-- Success message for destructive operations -->
-			{#if lastDestructiveResult}
-				<Card variant="success" padding="sm">
-					<div class="flex items-center gap-2 text-sm">
-						<StatusDot status="success" size="sm" />
-						<span class="text-success flex-1">{lastDestructiveResult.message}</span>
-						<IconButton
-							variant="ghost"
-							size="sm"
-							title="Dismiss message"
-							onclick={() => lastDestructiveResult = null}
-						>
-							<Icon name="x" size="sm" />
-						</IconButton>
-					</div>
-				</Card>
-			{/if}
-
-			<!-- Tab Content -->
-			{#if activeTab === 'sources'}
-				<div
-					id="tabpanel-sources"
-					role="tabpanel"
-					aria-labelledby="tab-sources"
-					tabindex="0"
-					class="space-y-6"
-				>
-				<IngestionForm
-					{sourceType}
-					{sourceName}
-					{sourceUrl}
-					{rawTextContent}
-					{useSmartNaming}
-					{nameSuggestions}
-					{smartName}
-					{fetchingName}
-					{ingesting}
-					onSourceTypeChange={(type) => { sourceType = type; nameSuggestions = []; smartName = null; sourceName = ''; }}
-					onSourceNameChange={(name) => sourceName = name}
-					onUrlInput={handleUrlInput}
-					onTextContentInput={handleTextContentInput}
-					onSmartNamingChange={(enabled) => useSmartNaming = enabled}
-					onSelectSuggestion={(name) => sourceName = name}
-					onSubmit={handleIngest}
-				/>
-
-				{#if syncStatus}
-					<SyncStatusPanel
-						{syncStatus}
-						{syncLoading}
-						{cleanupLoading}
-						{activeDestructiveOp}
-						{destructiveConfirmText}
-						onRefresh={loadSyncStatus}
-						onStartDestructiveOp={startDestructiveOp}
-						onCancelDestructiveOp={cancelDestructiveOp}
-						onConfirmTextChange={(text) => destructiveConfirmText = text}
-						onCleanupOrphans={handleCleanupOrphans}
-						onCleanupStale={handleCleanupStale}
-						onPurgeAll={handlePurgeAll}
-					/>
-				{/if}
-
-				{#if collections}
-					<CollectionsOverview {collections} />
-				{/if}
-
-				<DocumentsTable
-					{documents}
-					{loading}
-					{activeIngestions}
-					{ingestionStartTimes}
-					{currentTime}
-					{confirmingDeleteId}
-					onRefresh={loadAll}
-					onCancel={handleCancel}
-					onDeleteClick={(id) => confirmingDeleteId = id}
-					onConfirmDelete={handleConfirmDelete}
-					onCancelDelete={() => confirmingDeleteId = null}
-				/>
-				</div>
-
-			{:else if activeTab === 'search'}
-				<div
-					id="tabpanel-search"
-					role="tabpanel"
-					aria-labelledby="tab-search"
-					tabindex="0"
-					class="space-y-6"
-				>
-				<SearchTab
-					{searchQuery}
-					{searchResults}
-					{searchLoading}
-					{searchK}
-					onQueryChange={(query) => searchQuery = query}
-					onKChange={(k) => searchK = k}
-					onSearch={handleSearch}
-				/>
-				</div>
-
-			{:else if activeTab === 'browse'}
-				<div
-					id="tabpanel-browse"
-					role="tabpanel"
-					aria-labelledby="tab-browse"
-					tabindex="0"
-					class="space-y-6"
-				>
-				<BrowseTab
-					{browseResults}
-					{browseLoading}
-					{showVectors}
-					{browseHistory}
-					onLoadVectors={loadVectors}
-					onToggleVectors={(show) => { showVectors = show; loadVectors(); }}
-					onGoBack={goBack}
-				/>
-				</div>
-
-			{:else if activeTab === 'pipeline'}
-				<div
-					id="tabpanel-pipeline"
-					role="tabpanel"
-					aria-labelledby="tab-pipeline"
-					tabindex="0"
-					class="space-y-6"
-				>
-				<PipelineTab
-					{pipelineInfo}
-					{pipelineLoading}
-					{demoQuery}
-					{demoResult}
-					{demoLoading}
-					{chunkAnalytics}
-					{analyticsLoading}
-					{embedText1}
-					{embedText2}
-					{embedCompareResult}
-					{embedLoading}
-					onDemoQueryChange={(query) => demoQuery = query}
-					onRunDemo={runDemo}
-					onLoadAnalytics={loadAnalytics}
-					onEmbedText1Change={(text) => embedText1 = text}
-					onEmbedText2Change={(text) => embedText2 = text}
-					onEmbedCompare={handleEmbedCompare}
-				/>
-				</div>
-			{/if}
+	{:else if activeTab === 'search'}
+		<div
+			id="tabpanel-search"
+			role="tabpanel"
+			aria-labelledby="tab-search"
+			tabindex="0"
+			class="space-y-6"
+		>
+		<SearchTab
+			{searchQuery}
+			{searchResults}
+			{searchLoading}
+			{searchK}
+			onQueryChange={(query) => searchQuery = query}
+			onKChange={(k) => searchK = k}
+			onSearch={handleSearch}
+		/>
 		</div>
-	</div>
-</div>
+
+	{:else if activeTab === 'browse'}
+		<div
+			id="tabpanel-browse"
+			role="tabpanel"
+			aria-labelledby="tab-browse"
+			tabindex="0"
+			class="space-y-6"
+		>
+		<BrowseTab
+			{browseResults}
+			{browseLoading}
+			{showVectors}
+			{browseHistory}
+			onLoadVectors={loadVectors}
+			onToggleVectors={(show) => { showVectors = show; loadVectors(); }}
+			onGoBack={goBack}
+		/>
+		</div>
+
+	{:else if activeTab === 'pipeline'}
+		<div
+			id="tabpanel-pipeline"
+			role="tabpanel"
+			aria-labelledby="tab-pipeline"
+			tabindex="0"
+			class="space-y-6"
+		>
+		<PipelineTab
+			{pipelineInfo}
+			{pipelineLoading}
+			{demoQuery}
+			{demoResult}
+			{demoLoading}
+			{chunkAnalytics}
+			{analyticsLoading}
+			{embedText1}
+			{embedText2}
+			{embedCompareResult}
+			{embedLoading}
+			onDemoQueryChange={(query) => demoQuery = query}
+			onRunDemo={runDemo}
+			onLoadAnalytics={loadAnalytics}
+			onEmbedText1Change={(text) => embedText1 = text}
+			onEmbedText2Change={(text) => embedText2 = text}
+			onEmbedCompare={handleEmbedCompare}
+		/>
+		</div>
+	{/if}
+</Page>
 
 <!-- Contextual Hint -->
 <Hint
