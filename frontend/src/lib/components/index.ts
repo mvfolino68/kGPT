@@ -7,6 +7,9 @@ export * from './layout';
 // Admin Components
 export { AdminResultCard } from './admin';
 
+// Agent Trace Components
+export * from './agent-trace';
+
 // Shared Components
 export { default as MessageCard } from './MessageCard.svelte';
 export { default as MetricCard } from './MetricCard.svelte';

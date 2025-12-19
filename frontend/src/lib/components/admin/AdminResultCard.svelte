@@ -4,6 +4,8 @@
 	import { isPartitionDetailList } from './types';
 
 	import PendingConfirmation from './PendingConfirmation.svelte';
+	import NeedsInfoForm from './NeedsInfoForm.svelte';
+	import UnclearOperation from './UnclearOperation.svelte';
 	import TopicsTable from './TopicsTable.svelte';
 	import TopicDetails from './TopicDetails.svelte';
 	import ConsumerGroupsTable from './ConsumerGroupsTable.svelte';
@@ -52,6 +54,8 @@
 
 	const displayResult = $derived(executionResult || result);
 	const isPending = $derived(result.pending && !executionResult);
+	const needsInfo = $derived(result.needs_info && !executionResult);
+	const isUnclear = $derived(result.unclear && !executionResult);
 
 	// Data extraction
 	const data = $derived(displayResult.data || {});
@@ -74,6 +78,12 @@
 			onConfirm={handleConfirm}
 			onCancel={handleCancel}
 		/>
+
+	{:else if needsInfo}
+		<NeedsInfoForm {result} onComplete={onOperationComplete} />
+
+	{:else if isUnclear}
+		<UnclearOperation {result} />
 
 	{:else if displayResult.operation === 'list_topics' && (displayResult.success || displayResult.executed)}
 		<TopicsTable {topics} totalCount={data.total_count} />

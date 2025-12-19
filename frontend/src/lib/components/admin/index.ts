@@ -1,5 +1,7 @@
 export { default as AdminResultCard } from './AdminResultCard.svelte';
 export { default as PendingConfirmation } from './PendingConfirmation.svelte';
+export { default as NeedsInfoForm } from './NeedsInfoForm.svelte';
+export { default as UnclearOperation } from './UnclearOperation.svelte';
 export { default as TopicsTable } from './TopicsTable.svelte';
 export { default as TopicDetails } from './TopicDetails.svelte';
 export { default as ConsumerGroupsTable } from './ConsumerGroupsTable.svelte';
