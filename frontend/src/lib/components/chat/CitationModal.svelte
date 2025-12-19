@@ -45,11 +45,11 @@
 	>
 		<!-- Modal content -->
 		<div class="w-full max-w-lg animate-fade-in">
-			<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+			<div class="bg-surface-900 rounded-lg overflow-hidden shadow-2xl">
 				<!-- Header -->
-				<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between bg-surface-800/50">
+				<div class="px-4 py-3 flex items-center justify-between bg-surface-800">
 					<div class="flex items-center gap-3">
-						<span class="flex items-center justify-center w-6 h-6 rounded bg-surface-800 text-xs text-primary-light font-bold border border-surface-700/50">
+						<span class="flex items-center justify-center w-6 h-6 rounded bg-surface-700/50 text-xs text-surface-200 font-bold">
 							{index}
 						</span>
 						<div class="flex items-center gap-2">
@@ -90,7 +90,7 @@
 					</div>
 
 					{#if citation.content_preview}
-						<div class="p-3 rounded-lg bg-surface-800/50 border border-surface-700/50">
+						<div class="p-3 rounded-lg bg-surface-700/40">
 							<p class="text-xs text-surface-300 leading-relaxed line-clamp-6">
 								{citation.content_preview}
 							</p>
@@ -99,7 +99,7 @@
 				</div>
 
 				<!-- Footer -->
-				<div class="px-4 py-3 border-t border-surface-700/50 flex justify-end gap-2">
+				<div class="px-4 py-3 bg-surface-800 flex justify-end gap-2">
 					<button type="button" class="btn btn-ghost btn-sm" onclick={onClose}>
 						Close
 					</button>

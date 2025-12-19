@@ -14,7 +14,7 @@
 	];
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg px-4 py-3">
+<div class="bg-surface-800 rounded-lg px-4 py-3">
 	<div class="flex items-center gap-2 flex-wrap">
 		<span class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mr-2">Quick Actions</span>
 		{#each actions as action}

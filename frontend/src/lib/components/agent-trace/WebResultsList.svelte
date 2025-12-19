@@ -15,7 +15,7 @@
 </script>
 
 {#if results.results.length > 0}
-	<div class="pt-2 border-t border-surface-700/30">
+	<div class="pt-2 mt-2">
 		<button
 			type="button"
 			onclick={onToggle}
@@ -41,7 +41,7 @@
 						href={result.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="block rounded border border-surface-700/50 bg-surface-800/30 p-2 hover:border-blue-500/30 transition-colors"
+						class="block rounded bg-surface-700/50 p-2 hover:bg-surface-700/70 transition-colors"
 					>
 						<span class="font-medium text-blue-400 truncate block {compact ? 'text-[10px]' : 'text-xs'}">
 							{result.title}

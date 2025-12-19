@@ -59,7 +59,7 @@
 	<div class="flex-1 overflow-y-auto p-6">
 		<div class="max-w-5xl mx-auto space-y-8">
 			{#if error}
-				<div class="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-center gap-3">
+				<div class="bg-red-500/5 rounded-lg p-4 flex items-center gap-3">
 					<StatusIndicator status="error" />
 					<span class="text-sm text-red-400">{error}</span>
 					<button type="button" class="btn btn-ghost btn-sm" onclick={loadGraph}>Retry</button>
@@ -107,7 +107,7 @@
 				<TechnologyStack />
 
 				<!-- Graph Stats -->
-				<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
+				<div class="bg-surface-800 rounded-lg overflow-hidden">
 					<GraphStats agents={agentGraph.nodes.length + 1} edges={agentGraph.edges.length} />
 				</div>
 

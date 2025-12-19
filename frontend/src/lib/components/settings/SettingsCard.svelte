@@ -6,7 +6,6 @@
 		title: string;
 		icon?: Snippet;
 		status?: 'saved' | 'connected' | null;
-		variant?: 'default' | 'success';
 		headerAction?: Snippet;
 		children: Snippet;
 		footer?: Snippet;
@@ -16,16 +15,10 @@
 		title,
 		icon,
 		status = null,
-		variant = 'default',
 		headerAction,
 		children,
 		footer
 	}: Props = $props();
-
-	const variantClasses = {
-		default: 'border-surface-700/50',
-		success: 'border-emerald-500/30'
-	};
 
 	const statusConfig = {
 		saved: { variant: 'default' as const, label: 'saved' },
@@ -33,9 +26,9 @@
 	};
 </script>
 
-<div class="bg-surface-900 border {variantClasses[variant]} rounded-lg overflow-hidden">
+<div class="bg-surface-800 rounded-lg overflow-hidden">
 	<!-- Header -->
-	<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+	<div class="px-4 py-3 flex items-center justify-between">
 		<div class="flex items-center gap-2.5">
 			{#if icon}
 				<span class="text-surface-400">
@@ -61,7 +54,7 @@
 
 	<!-- Footer (optional) -->
 	{#if footer}
-		<div class="px-4 py-3 border-t border-surface-700/50 flex justify-end">
+		<div class="px-4 py-3 flex justify-end">
 			{@render footer()}
 		</div>
 	{/if}

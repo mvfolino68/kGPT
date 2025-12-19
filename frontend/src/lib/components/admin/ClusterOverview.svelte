@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui';
 	import type { BrokerInfo } from './types';
 	import OperationHeader from './OperationHeader.svelte';
 	import DataTable from './DataTable.svelte';
@@ -14,7 +15,7 @@
 	let { clusterId, controllerId, brokerCount = 0, topicCount = 0, brokers = [] }: Props = $props();
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4">
+<Card>
 	<OperationHeader
 		icon="cluster"
 		title="Cluster Overview"
@@ -40,7 +41,7 @@
 			</h4>
 			<DataTable headers={['ID', 'Host', 'Port']}>
 				{#each brokers as broker}
-					<tr class="border-b border-surface-700/30 last:border-b-0 hover:bg-surface-800/60 transition-colors">
+					<tr class="border-b border-surface-700/20 last:border-b-0 hover:bg-surface-800/40 transition-colors">
 						<td class="px-3 py-2 text-violet-400">{broker.id}</td>
 						<td class="px-3 py-2 text-surface-300">{broker.host}</td>
 						<td class="px-3 py-2 text-right text-surface-300">{broker.port}</td>
@@ -49,4 +50,4 @@
 			</DataTable>
 		</div>
 	{/if}
-</div>
+</Card>

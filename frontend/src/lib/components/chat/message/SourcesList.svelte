@@ -12,7 +12,7 @@
 </script>
 
 {#if sources.length > 0}
-	<div class="mt-3 pt-3 border-t border-surface-700/50">
+	<div class="mt-3 pt-3">
 		<button
 			type="button"
 			class="flex items-center gap-2 text-xs text-surface-400 hover:text-cyan-400 transition-colors"

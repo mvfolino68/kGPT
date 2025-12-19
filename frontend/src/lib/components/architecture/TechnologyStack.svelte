@@ -21,8 +21,8 @@
 	];
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
-	<div class="px-6 py-4 border-b border-surface-700/50">
+<div class="bg-surface-800 rounded-lg overflow-hidden">
+	<div class="px-6 py-4">
 		<h2 class="text-sm text-surface-200">Technology Stack</h2>
 		<p class="text-xs text-surface-500 mt-1">The services and tools powering kGPT</p>
 	</div>
@@ -35,7 +35,7 @@
 			</h3>
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each aiMlTools as tool}
-					<div class="p-3 bg-surface-800/50 rounded-lg border border-surface-700/50 hover:border-{tool.color}-500/50 transition-colors">
+					<div class="p-3 bg-surface-700/40 rounded-lg hover:bg-surface-700/60 transition-colors">
 						<div class="flex items-center gap-2 mb-2">
 							<div class="w-8 h-8 rounded-lg bg-{tool.color}-500/10 flex items-center justify-center">
 								{#if tool.icon}
@@ -61,7 +61,7 @@
 			</h3>
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each dataTools as tool}
-					<div class="p-3 bg-surface-800/50 rounded-lg border border-surface-700/50 hover:border-{tool.color}-500/50 transition-colors">
+					<div class="p-3 bg-surface-700/40 rounded-lg hover:bg-surface-700/60 transition-colors">
 						<div class="flex items-center gap-2 mb-2">
 							<div class="w-8 h-8 rounded-lg bg-{tool.color}-500/10 flex items-center justify-center">
 								{#if tool.icon}
@@ -87,7 +87,7 @@
 			</h3>
 			<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{#each frameworks as tool}
-					<div class="p-3 bg-surface-800/50 rounded-lg border border-surface-700/50 hover:border-{tool.color}-500/50 transition-colors">
+					<div class="p-3 bg-surface-700/40 rounded-lg hover:bg-surface-700/60 transition-colors">
 						<div class="flex items-center gap-2 mb-2">
 							<div class="w-8 h-8 rounded-lg bg-{tool.color}-500/10 flex items-center justify-center">
 								{#if tool.icon}

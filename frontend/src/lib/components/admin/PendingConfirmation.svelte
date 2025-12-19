@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui';
 	import type { AdminOperationResult } from './types';
 	import OperationHeader from './OperationHeader.svelte';
 
@@ -15,7 +16,7 @@
 	const isHighWarning = $derived(result.warning_level === 'high');
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4">
+<Card>
 	<OperationHeader
 		icon="warning"
 		title={result.operation_title || result.operation || 'Confirm Operation'}
@@ -85,4 +86,4 @@
 			Cancel
 		</button>
 	</div>
-</div>
+</Card>

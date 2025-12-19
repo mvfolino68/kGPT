@@ -13,8 +13,8 @@
 	];
 </script>
 
-<div class="bg-surface-900 border border-primary/20 rounded-lg text-center py-12">
-	<div class="w-20 h-20 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6 mx-auto">
+<div class="bg-surface-800 rounded-lg text-center py-12">
+	<div class="w-20 h-20 rounded-xl bg-surface-700/50 flex items-center justify-center mb-6 mx-auto">
 		<svg class="w-10 h-10 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
 		</svg>

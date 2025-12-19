@@ -31,9 +31,9 @@
 	let hasContent = $derived(trace.agentTimeline.length > 0 || trace.routingDecision !== null);
 </script>
 
-<aside class="w-80 bg-surface-900 border-l border-surface-700/50 flex flex-col">
+<aside class="w-80 bg-surface-950 flex flex-col border-l-2 border-surface-600 shadow-[-4px_0_12px_rgba(0,0,0,0.3)]">
 	<!-- Header -->
-	<header class="flex items-center justify-between px-3 py-3 border-b border-surface-700/50 bg-surface-800/50">
+	<header class="flex items-center justify-between px-3 py-3 bg-surface-900 border-b border-surface-700">
 		<div class="flex items-center gap-2">
 			<div class="w-6 h-6 rounded bg-violet-500/10 flex items-center justify-center">
 				<svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -145,7 +145,7 @@
 	</div>
 
 	<!-- Footer -->
-	<footer class="px-3 py-2 border-t border-surface-700/50 bg-surface-800/30">
+	<footer class="px-3 py-2 bg-surface-900 border-t border-surface-700">
 		<p class="text-[10px] text-surface-600 text-center">
 			AI decision process
 		</p>

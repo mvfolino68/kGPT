@@ -33,9 +33,9 @@
 </script>
 
 {#if isVisible}
-	<aside class="w-80 bg-surface-900 border-l border-surface-700/50 flex flex-col overflow-hidden">
+	<aside class="w-80 bg-surface-900 border-l border-surface-800 flex flex-col overflow-hidden">
 		<!-- Header -->
-		<div class="p-4 border-b border-surface-700/50 flex items-center justify-between">
+		<div class="p-4 border-b border-surface-800 flex items-center justify-between">
 			<div class="flex items-center gap-2 flex-1 min-w-0">
 				<svg
 					class="w-4 h-4 flex-shrink-0 {isViewingHistory ? 'text-violet-400' : 'text-primary-light'}"
@@ -162,27 +162,27 @@
 							Validation
 						</button>
 
-						{#if expandedSections['validation']}
-							<div class="bg-surface-800/60 rounded-lg border border-cyan-500/20 p-3">
-								<div class="flex items-center gap-4 text-xs">
-									<div>
-										<span class="text-surface-500">Validated</span>
-										<span class="block font-mono text-emerald-400">{trace.validationResults.validated}</span>
-									</div>
-									<div>
-										<span class="text-surface-500">Filtered</span>
-										<span class="block font-mono text-amber-400">{trace.validationResults.filtered}</span>
-									</div>
+					{#if expandedSections['validation']}
+						<div class="bg-surface-800/40 rounded-lg border border-surface-700/20 p-3">
+							<div class="flex items-center gap-4 text-xs">
+								<div>
+									<span class="text-surface-500">Validated</span>
+									<span class="block font-mono text-surface-300">{trace.validationResults.validated}</span>
+								</div>
+								<div>
+									<span class="text-surface-500">Filtered</span>
+									<span class="block font-mono text-surface-400">{trace.validationResults.filtered}</span>
 								</div>
 							</div>
-						{/if}
+						</div>
+					{/if}
 					</div>
 				{/if}
 			{/if}
 		</div>
 
 		<!-- Footer info -->
-		<div class="p-3 border-t border-surface-700/50 bg-surface-900/50">
+		<div class="p-3 border-t border-surface-800 bg-surface-900/50">
 			<p class="text-[10px] text-surface-600 text-center font-mono">
 				Agent pipeline shows the AI reasoning process
 			</p>

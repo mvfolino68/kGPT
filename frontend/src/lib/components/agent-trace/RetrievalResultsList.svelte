@@ -15,7 +15,7 @@
 </script>
 
 {#if results.docs.length > 0}
-	<div class="pt-2 border-t border-surface-700/30">
+	<div class="pt-2 mt-2">
 		<button
 			type="button"
 			onclick={onToggle}
@@ -37,7 +37,7 @@
 		{#if expanded}
 			<div class="space-y-1.5">
 				{#each docs as doc}
-					<div class="rounded border border-surface-700/50 bg-surface-800/30 p-2">
+					<div class="rounded bg-surface-700/50 p-2">
 						<div class="flex items-center justify-between mb-1">
 							<span
 								class="text-surface-400 truncate {compact ? 'max-w-[140px] text-[10px]' : 'max-w-[180px] text-xs'}"

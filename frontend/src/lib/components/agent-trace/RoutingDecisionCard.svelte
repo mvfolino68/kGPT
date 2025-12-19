@@ -12,7 +12,7 @@
 	let { decision, expanded, onToggle, compact = false }: Props = $props();
 </script>
 
-<div class="pt-2 border-t border-surface-700/30">
+<div class="pt-2 mt-2">
 	<button
 		type="button"
 		onclick={onToggle}
@@ -33,7 +33,7 @@
 
 	{#if expanded}
 		<div
-			class="rounded-lg border border-surface-700/50 bg-surface-800/30 space-y-2
+			class="rounded-lg bg-surface-800 space-y-2
 				{compact ? 'p-2.5' : 'p-3'}"
 		>
 			<div class="flex items-center justify-between">
@@ -47,40 +47,40 @@
 				</p>
 			{/if}
 
-			<div class="flex flex-wrap gap-1">
-				{#if decision.needs_cluster}
-					<span
-						class="rounded bg-blue-500/10 text-blue-400 border border-blue-500/20
-							{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
-					>
-						cluster
-					</span>
-				{/if}
-				{#if decision.needs_retrieval}
-					<span
-						class="rounded bg-blue-500/10 text-blue-400 border border-blue-500/20
-							{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
-					>
-						retrieval
-					</span>
-				{/if}
-				{#if decision.needs_web_search}
-					<span
-						class="rounded bg-green-500/10 text-green-400 border border-green-500/20
-							{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
-					>
-						web
-					</span>
-				{/if}
-				{#if decision.needs_admin}
-					<span
-						class="rounded bg-amber-500/10 text-amber-400 border border-amber-500/20
-							{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
-					>
-						admin
-					</span>
-				{/if}
-			</div>
+		<div class="flex flex-wrap gap-1">
+			{#if decision.needs_cluster}
+				<span
+					class="rounded bg-blue-500/15 text-blue-400
+						{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
+				>
+					cluster
+				</span>
+			{/if}
+			{#if decision.needs_retrieval}
+				<span
+					class="rounded bg-blue-500/15 text-blue-400
+						{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
+				>
+					retrieval
+				</span>
+			{/if}
+			{#if decision.needs_web_search}
+				<span
+					class="rounded bg-green-500/15 text-green-400
+						{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
+				>
+					web
+				</span>
+			{/if}
+			{#if decision.needs_admin}
+				<span
+					class="rounded bg-amber-500/15 text-amber-400
+						{compact ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-0.5 text-xs'}"
+				>
+					admin
+				</span>
+			{/if}
+		</div>
 		</div>
 	{/if}
 </div>

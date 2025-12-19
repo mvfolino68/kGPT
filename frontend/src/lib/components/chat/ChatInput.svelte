@@ -21,9 +21,9 @@
 	}
 </script>
 
-<div class="border-t border-surface-700/50 bg-surface-900 p-6">
+<div class="bg-surface-800 p-6">
 	<div class="max-w-4xl mx-auto space-y-2">
-		<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
+		<div class="bg-surface-700/50 rounded-lg overflow-hidden">
 			<div class="flex items-end gap-3 p-3">
 				<span class="text-primary-light text-lg pb-1">&gt;</span>
 				<textarea

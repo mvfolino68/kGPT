@@ -44,10 +44,10 @@
 	);
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
-	<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+<div class="panel overflow-hidden">
+	<div class="panel-header flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<span class="text-primary-light text-xs">+</span>
+			<span class="text-surface-400 text-xs">+</span>
 			<span class="text-sm text-surface-300">Add Internal Docs</span>
 		</div>
 	</div>
@@ -60,10 +60,10 @@
 					type="button"
 					onclick={() => onSourceTypeChange(option.value)}
 					class="flex-1 p-3 rounded-lg border transition-all text-left {sourceType === option.value
-						? 'border-primary/30 bg-primary/10'
-						: 'border-surface-700 bg-surface-800/50 hover:border-surface-600'}"
+						? 'border-surface-600/50 bg-surface-800/60'
+						: 'border-surface-700/30 bg-surface-800/30 hover:border-surface-600/40'}"
 				>
-					<div class="text-sm {sourceType === option.value ? 'text-primary-light' : 'text-surface-300'}">
+					<div class="text-sm {sourceType === option.value ? 'text-surface-100' : 'text-surface-300'}">
 						{option.label}
 					</div>
 					<div class="text-xs text-surface-500 mt-0.5">{option.description}</div>
@@ -147,7 +147,7 @@
 							<button
 								type="button"
 								onclick={() => onSelectSuggestion(suggestion)}
-								class="px-2 py-1 text-xs bg-surface-800 hover:bg-surface-700 text-surface-300 rounded border border-surface-700 hover:border-surface-600 transition-colors"
+								class="px-2 py-1 text-xs bg-surface-800/50 hover:bg-surface-700/50 text-surface-300 rounded border border-surface-700/30 hover:border-surface-600/40 transition-colors"
 							>
 								{suggestion}
 							</button>

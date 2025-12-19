@@ -47,7 +47,7 @@
 <button
 	onclick={onSelect}
 	class="w-full group px-3 py-2.5 text-left rounded-lg transition-all mb-1
-		{isActive ? 'bg-primary/10 border border-primary/20 text-primary-light' : 'bg-surface-800/50 border border-surface-700/50 hover:bg-surface-800 text-surface-300'}"
+		{isActive ? 'bg-surface-700/60 text-surface-100' : 'bg-surface-800/50 hover:bg-surface-700/50 text-surface-300'}"
 >
 	{#if isEditing}
 		<input

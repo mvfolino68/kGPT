@@ -291,10 +291,10 @@
 	<Header title="Settings" subtitle="Configure your kGPT instance">
 		{#snippet actions()}
 			{#if openaiValid && openaiSelectedModel && !isOnboarding}
-				<div class="px-3 py-1.5 bg-surface-800 rounded-lg border border-surface-700/50 text-xs flex items-center gap-2">
+				<div class="px-3 py-1.5 bg-surface-800 rounded-lg text-xs flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" pulse />
 					<span class="text-surface-500">active:</span>
-					<span class="text-primary-light font-medium">openai/{openaiSelectedModel}</span>
+					<span class="text-surface-200 font-medium">openai/{openaiSelectedModel}</span>
 				</div>
 			{/if}
 		{/snippet}
@@ -304,12 +304,12 @@
 		<div class="max-w-3xl mx-auto space-y-4">
 			<!-- Messages -->
 			{#if error}
-				<div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400 flex items-center gap-2">
+				<div class="bg-red-500/5 border border-red-500/15 rounded-lg p-3 text-sm text-red-400/80 flex items-center gap-2">
 					<StatusIndicator status="error" size="sm" />
 					<span>{error}</span>
 					<button
 						type="button"
-						class="ml-auto text-red-400 hover:text-red-300"
+						class="ml-auto text-red-400/60 hover:text-red-400"
 						onclick={() => error = null}
 						aria-label="Dismiss error"
 					>
@@ -320,14 +320,14 @@
 				</div>
 			{/if}
 			{#if success}
-				<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-sm text-emerald-400 flex items-center gap-2">
+				<div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center gap-2">
 					<StatusIndicator status="active" size="sm" />
 					<span>{success}</span>
 				</div>
 			{/if}
 
 			{#if loading}
-				<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-12 text-center text-surface-500 flex items-center justify-center gap-2">
+				<div class="panel p-12 text-center text-surface-500 flex items-center justify-center gap-2">
 					<StatusIndicator status="warning" pulse />
 					<span>Loading settings...</span>
 				</div>

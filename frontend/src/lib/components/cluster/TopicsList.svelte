@@ -13,10 +13,10 @@
 	const hasMore = $derived(topics.length > maxDisplay);
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
-	<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+<div class="bg-surface-800 rounded-lg overflow-hidden">
+	<div class="px-4 py-3 flex items-center justify-between">
 		<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500">Topics</h3>
-		<span class="px-2 py-0.5 text-xs bg-surface-800 text-surface-400 rounded border border-surface-700/50">
+		<span class="px-2 py-0.5 text-xs bg-surface-700/50 text-surface-400 rounded">
 			{topics.length}
 		</span>
 	</div>
@@ -41,7 +41,7 @@
 			{#if hasMore}
 				<button
 					type="button"
-					class="w-full mt-2 py-2 text-sm text-primary-light hover:text-primary transition-colors"
+					class="w-full mt-2 py-2 text-sm text-surface-400 hover:text-surface-200 transition-colors"
 					onclick={() => showAll = !showAll}
 				>
 					{showAll ? 'Show less' : `Show ${topics.length - maxDisplay} more`}

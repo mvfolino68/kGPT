@@ -118,7 +118,7 @@
 	});
 </script>
 
-<div bind:this={container} class="w-full h-[400px] bg-surface-900 rounded-lg border border-surface-700/50 overflow-hidden">
+<div bind:this={container} class="w-full h-[400px] bg-surface-800 rounded-lg overflow-hidden">
 	{#if !connected}
 		<div class="flex items-center justify-center h-full">
 			<div class="text-center">

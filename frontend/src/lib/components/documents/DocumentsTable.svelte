@@ -38,10 +38,10 @@
 	}
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
-	<div class="px-4 py-3 border-b border-surface-700/50 flex items-center justify-between">
+<div class="panel overflow-hidden">
+	<div class="panel-header flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<span class="text-primary-light text-xs">&gt;</span>
+			<span class="text-surface-400 text-xs">&gt;</span>
 			<span class="text-sm text-surface-300">Document Sources</span>
 			<span class="text-surface-500 text-xs">({documents.length})</span>
 		</div>
@@ -64,7 +64,7 @@
 		</div>
 	{:else}
 		<!-- Table header -->
-		<div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surface-800/50 border-b border-surface-700/50 text-[10px] font-bold uppercase tracking-wider text-surface-500">
+		<div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surface-800/30 border-b border-surface-700/20 text-[10px] font-bold uppercase tracking-wider text-surface-500">
 			<div class="col-span-1">ID</div>
 			<div class="col-span-2">Name</div>
 			<div class="col-span-1">Type</div>
@@ -78,7 +78,7 @@
 		{#each documents as doc}
 			{@const progress = activeIngestions.get(doc.id)}
 			{@const startTime = ingestionStartTimes.get(doc.id)}
-			<div class="border-b border-surface-700/30 last:border-b-0">
+			<div class="border-b border-surface-700/20 last:border-b-0">
 				<div class="grid grid-cols-12 gap-2 px-4 py-2.5 text-sm items-center hover:bg-surface-800/30 transition-colors">
 					<div class="col-span-1 text-surface-500 text-xs">#{doc.id}</div>
 					<div class="col-span-2 text-surface-100 truncate" title={doc.name}>{doc.name}</div>
@@ -97,7 +97,7 @@
 						{#if doc.status === 'indexing'}
 							<button
 								onclick={() => onCancel(doc.id)}
-								class="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 rounded border border-amber-500/30"
+								class="px-2 py-0.5 text-xs bg-amber-500/10 text-amber-400/80 hover:bg-amber-500/15 rounded border border-amber-500/15"
 							>
 								Cancel
 							</button>
@@ -134,19 +134,19 @@
 
 				<!-- Progress section -->
 				{#if doc.status === 'indexing' && progress}
-					<div class="px-4 py-3 bg-surface-800/30 border-t border-surface-700/30">
+					<div class="px-4 py-3 bg-surface-800/20 border-t border-surface-700/20">
 						<div class="flex items-center gap-4 mb-2">
-							<div class="flex-1 h-1.5 bg-surface-700 rounded-full overflow-hidden">
-								<div class="h-full bg-emerald-500 transition-all duration-300" style="width: {progress.progress}%"></div>
+							<div class="flex-1 h-1.5 bg-surface-800 rounded-full overflow-hidden">
+								<div class="h-full bg-surface-500 transition-all duration-300" style="width: {progress.progress}%"></div>
 							</div>
 							{#if startTime}
-								<span class="text-xs text-emerald-400">{formatElapsedTime(startTime)}</span>
+								<span class="text-xs text-surface-300">{formatElapsedTime(startTime)}</span>
 							{/if}
 							<span class="text-xs text-surface-400">{progress.progress}%</span>
 						</div>
 						<div class="flex items-center gap-4 text-xs">
-							<span class="text-amber-400">[{progress.stage}]</span>
-							<span class="text-surface-400">{progress.message}</span>
+							<span class="text-surface-400">[{progress.stage}]</span>
+							<span class="text-surface-500">{progress.message}</span>
 						</div>
 						{#if progress.pages_fetched || progress.chunks || progress.chunks_embedded}
 							<div class="flex gap-4 mt-2 text-xs text-surface-500">
@@ -169,15 +169,15 @@
 
 				<!-- Error display -->
 				{#if doc.status === 'error' && progress?.error}
-					<div class="px-4 py-2 bg-red-500/10 border-t border-red-500/30">
-						<span class="text-xs text-red-400">Error: {progress.error}</span>
+					<div class="px-4 py-2 bg-red-500/5 border-t border-red-500/10">
+						<span class="text-xs text-red-400/80">Error: {progress.error}</span>
 					</div>
 				{/if}
 
 				<!-- Completed display -->
 				{#if progress?.status === 'completed' && progress.count !== undefined}
-					<div class="px-4 py-2 bg-emerald-500/10 border-t border-emerald-500/30">
-						<span class="text-xs text-emerald-400">
+					<div class="px-4 py-2 bg-emerald-500/5 border-t border-emerald-500/10">
+						<span class="text-xs text-emerald-400/80">
 							Indexed {progress.count.toLocaleString()} chunks
 							{#if progress.pages} from {progress.pages} pages{/if}
 							{#if progress.elapsed_seconds} in {progress.elapsed_seconds}s{/if}

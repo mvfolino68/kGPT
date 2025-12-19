@@ -47,9 +47,9 @@
 ></div>
 
 <!-- Drawer -->
-<aside class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-surface-900 border-l border-surface-700/50 z-50 flex flex-col shadow-2xl animate-slide-in-right">
+<aside class="fixed top-0 right-0 bottom-0 w-full max-w-md bg-surface-900 z-50 flex flex-col shadow-2xl animate-slide-in-right">
 	<!-- Header -->
-	<header class="flex items-center justify-between px-4 py-3 border-b border-surface-700/50 bg-surface-800/50">
+	<header class="flex items-center justify-between px-4 py-3 bg-surface-800">
 		<div class="flex items-center gap-3">
 			<div class="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
 				<svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -143,7 +143,7 @@
 	</div>
 
 	<!-- Footer -->
-	<footer class="px-4 py-3 border-t border-surface-700/50 bg-surface-800/30">
+	<footer class="px-4 py-3 bg-surface-800">
 		<p class="text-xs text-surface-500 text-center">
 			View the AI's decision-making process
 		</p>

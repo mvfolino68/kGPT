@@ -249,9 +249,9 @@
 <!-- Main Container - Side by side layout -->
 <div class="fixed top-0 right-0 bottom-0 z-50 flex animate-slide-in-right shadow-2xl">
 	<!-- Chat Panel -->
-	<div class="w-[480px] bg-surface-900 border-l border-surface-700/50 flex flex-col">
+	<div class="w-[480px] bg-surface-900 flex flex-col">
 		<!-- Header -->
-		<header class="flex items-center justify-between px-4 py-3 border-b border-surface-700/50 bg-surface-800/50">
+		<header class="flex items-center justify-between px-4 py-3 bg-surface-800">
 			<div class="flex items-center gap-2">
 				<!-- View Toggle -->
 				<div class="flex bg-surface-800 rounded-lg p-0.5">
@@ -325,19 +325,19 @@
 
 						<div class="space-y-2 w-full max-w-xs">
 							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 text-sm text-surface-300 transition-colors border border-surface-700/50"
+								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
 								onclick={() => sendMessage('List all topics')}
 							>
 								List all topics
 							</button>
 							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 text-sm text-surface-300 transition-colors border border-surface-700/50"
+								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
 								onclick={() => sendMessage('Show consumer groups')}
 							>
 								Show consumer groups
 							</button>
 							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800/50 hover:bg-surface-700/50 text-sm text-surface-300 transition-colors border border-surface-700/50"
+								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
 								onclick={() => sendMessage('How do I create a topic?')}
 							>
 								How do I create a topic?
@@ -352,7 +352,7 @@
 			</div>
 
 			<!-- Input -->
-			<div class="border-t border-surface-700/50 p-4 bg-surface-800/30">
+			<div class="p-4 bg-surface-800">
 				<div class="flex items-end gap-2">
 					<textarea
 						bind:this={inputRef}
@@ -412,13 +412,13 @@
 					<div class="p-2 space-y-1">
 						{#each $sessions as session (session.id)}
 							{@const isActive = session.id === $currentSessionId}
-							<div class="group relative">
+							<div class="group flex items-center gap-1 rounded-lg transition-colors {isActive ? 'bg-surface-700/50' : 'hover:bg-surface-800/50'}">
 								<button
 									type="button"
-									class="w-full text-left px-3 py-3 rounded-lg transition-colors {isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-surface-800/50 border border-transparent'}"
+									class="flex-1 min-w-0 text-left px-3 py-3"
 									onclick={() => handleSelectSession(session.id)}
 								>
-									<div class="flex items-start justify-between gap-2">
+									<div class="flex items-center justify-between gap-2">
 										<div class="min-w-0 flex-1">
 											<p class="text-sm font-medium text-surface-200 truncate">{session.title}</p>
 											<p class="text-xs text-surface-500 mt-0.5">{formatDate(session.updated_at)}</p>
@@ -430,7 +430,7 @@
 								</button>
 								<button
 									type="button"
-									class="absolute top-2 right-2 p-1.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-all"
+									class="p-1.5 mr-2 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-all shrink-0"
 									onclick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
 									title="Delete session"
 								>

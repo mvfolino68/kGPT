@@ -108,7 +108,7 @@ body {
   border-radius: var(--radius-md);
   transition: all var(--transition-base) ease;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: none;
 }
 
 .btn:disabled {
@@ -124,13 +124,11 @@ body {
 /* Default button */
 .btn-default {
   background: rgb(var(--color-surface-800));
-  border-color: rgb(var(--color-surface-700));
   color: rgb(var(--color-surface-200));
 }
 
 .btn-default:hover:not(:disabled) {
   background: rgb(var(--color-surface-700));
-  border-color: rgb(var(--color-surface-600));
   color: rgb(var(--color-surface-100));
 }
 
@@ -158,13 +156,11 @@ body {
 /* Danger button */
 .btn-danger {
   background: rgb(var(--color-error) / 0.15);
-  border-color: rgb(var(--color-error) / 0.3);
   color: rgb(var(--color-error-light));
 }
 
 .btn-danger:hover:not(:disabled) {
   background: rgb(var(--color-error) / 0.25);
-  border-color: rgb(var(--color-error) / 0.5);
 }
 
 /* Button sizes */
@@ -195,16 +191,13 @@ body {
    ============================================================================ */
 
 .card {
-  background: rgb(var(--color-surface-800) / 0.8);
-  border: 1px solid rgb(var(--color-surface-700) / 0.5);
+  background: rgb(var(--color-surface-800));
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(8px);
 }
 
 .card-elevated {
-  background: rgb(var(--color-surface-800));
-  border-color: rgb(var(--color-surface-600) / 0.5);
-  box-shadow: var(--shadow-lg);
+  background: rgb(var(--color-surface-800) / 0.7);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
 }
 
 .card-interactive {
@@ -212,28 +205,23 @@ body {
 }
 
 .card-interactive:hover {
-  border-color: rgb(var(--color-primary) / 0.3);
-  box-shadow: var(--shadow-md);
+  background: rgb(var(--color-surface-700) / 0.8);
 }
 
-/* Card variants */
+/* Card variants - subtle tints, no borders */
 .card-success {
-  border-color: rgb(var(--color-success) / 0.3);
   background: rgb(var(--color-success) / 0.05);
 }
 
 .card-warning {
-  border-color: rgb(var(--color-warning) / 0.3);
   background: rgb(var(--color-warning) / 0.05);
 }
 
 .card-error {
-  border-color: rgb(var(--color-error) / 0.3);
   background: rgb(var(--color-error) / 0.05);
 }
 
 .card-primary {
-  border-color: rgb(var(--color-primary) / 0.3);
   background: rgb(var(--color-primary) / 0.05);
 }
 
@@ -242,8 +230,8 @@ body {
    ============================================================================ */
 
 .input {
-  background: rgb(var(--color-surface-900));
-  border: 1px solid rgb(var(--color-surface-700));
+  background: rgb(var(--color-surface-700) / 0.5);
+  border: none;
   border-radius: var(--radius-md);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -253,8 +241,8 @@ body {
 
 .input:focus {
   outline: none;
-  border-color: rgb(var(--color-primary));
-  box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.1);
+  background: rgb(var(--color-surface-700) / 0.7);
+  box-shadow: 0 0 0 2px rgb(var(--color-surface-600) / 0.3);
 }
 
 .input::placeholder {
@@ -546,6 +534,10 @@ code, pre, .prose, p, span, h1, h2, h3, h4, h5, h6 {
 .border-surface-700 { border-color: rgb(var(--color-surface-700)); }
 .border-surface-800 { border-color: rgb(var(--color-surface-800)); }
 
+/* Subtle border utilities - use these for softer UI */
+.border-subtle { border-color: rgb(var(--color-surface-700) / 0.3); }
+.border-subtle-hover:hover { border-color: rgb(var(--color-surface-600) / 0.5); }
+
 /* Primary color utilities */
 .text-primary { color: rgb(var(--color-primary)); }
 .text-primary-light { color: rgb(var(--color-primary-light)); }
@@ -558,6 +550,29 @@ code, pre, .prose, p, span, h1, h2, h3, h4, h5, h6 {
 .text-error { color: rgb(var(--color-error)); }
 
 /* ============================================================================
+   SECTION CONTAINERS - Soft panels for content grouping
+   ============================================================================ */
+
+.panel {
+  background: rgb(var(--color-surface-800));
+  border-radius: var(--radius-lg);
+}
+
+.panel-header {
+  padding: 0.75rem 1rem;
+}
+
+.panel-content {
+  padding: 1rem;
+}
+
+/* Subtle inner cards for nested content */
+.inner-card {
+  background: rgb(var(--color-surface-700) / 0.3);
+  border-radius: var(--radius-md);
+}
+
+/* ============================================================================
    IMAGE STYLING
    ============================================================================ */
 
@@ -566,12 +581,7 @@ code, pre, .prose, p, span, h1, h2, h3, h4, h5, h6 {
   margin: 1rem 0;
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid rgb(var(--color-surface-700) / 0.5);
-  background: rgb(var(--color-surface-800));
-}
-
-.markdown-image-container:hover {
-  border-color: rgb(var(--color-surface-600));
+  background: rgb(var(--color-surface-700) / 0.3);
 }
 
 .markdown-image {

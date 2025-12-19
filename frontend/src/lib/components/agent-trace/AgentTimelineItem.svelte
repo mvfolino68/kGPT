@@ -17,7 +17,7 @@
 	const hasResult = $derived(!!activity.result);
 </script>
 
-<div class="rounded-lg border border-surface-700/50 bg-surface-800/30 overflow-hidden">
+<div class="rounded-lg bg-surface-800 overflow-hidden">
 	<button
 		type="button"
 		onclick={() => hasResult && onToggle()}
@@ -75,9 +75,9 @@
 
 	<!-- Expanded result -->
 	{#if expanded && hasResult}
-		<div class="px-2.5 pb-2 border-t border-surface-700/30">
+		<div class="px-2.5 pb-2 pt-1 bg-surface-700/20">
 			<pre
-				class="text-surface-400 overflow-x-auto whitespace-pre-wrap mt-2 p-2 bg-surface-900/50 rounded break-all
+				class="text-surface-400 overflow-x-auto whitespace-pre-wrap p-2 bg-surface-900/50 rounded break-all
 					{compact ? 'text-[10px]' : 'text-xs'}">{JSON.stringify(activity.result, null, 2)}</pre>
 		</div>
 	{/if}

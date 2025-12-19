@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui';
 	import { isPartitionDetailList, type PartitionDetail, type ConfigEntry } from './types';
 	import OperationHeader from './OperationHeader.svelte';
 	import DataTable from './DataTable.svelte';
@@ -20,7 +21,7 @@
 	);
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4">
+<Card>
 	<OperationHeader
 		icon="topic"
 		title="Topic: {topic}"
@@ -35,7 +36,7 @@
 			</h4>
 			<DataTable headers={['Partition', 'Leader', 'Replicas', 'ISRs']}>
 				{#each partitionList as partition}
-					<tr class="border-b border-surface-700/30 last:border-b-0 hover:bg-surface-800/60 transition-colors">
+					<tr class="border-b border-surface-700/20 last:border-b-0 hover:bg-surface-800/40 transition-colors">
 						<td class="px-3 py-2 text-emerald-400">{partition.partition}</td>
 						<td class="px-3 py-2 text-surface-300">{partition.leader ?? '-'}</td>
 						<td class="px-3 py-2 text-surface-300">{partition.replicas?.join(', ') || '-'}</td>
@@ -49,4 +50,4 @@
 	{#if config}
 		<ConfigList {config} color="green" />
 	{/if}
-</div>
+</Card>

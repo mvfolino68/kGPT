@@ -28,11 +28,11 @@
 	}
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg overflow-hidden">
-	<div class="px-6 py-4 border-b border-surface-700/50">
+<div class="bg-surface-800 rounded-lg overflow-hidden">
+	<div class="px-6 py-4">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<div class="w-2 h-2 rounded-full {getPathColor(selectedPath.color, 'bg')} {getPathColor(selectedPath.color, 'border')} border animate-pulse"></div>
+				<div class="w-2 h-2 rounded-full {getPathColor(selectedPath.color, 'bg')} animate-pulse"></div>
 				<span class="text-sm text-surface-200">Query Flow</span>
 			</div>
 			<span class="text-xs text-surface-500">Click any agent for details</span>
@@ -43,7 +43,7 @@
 		<!-- Vertical Flow -->
 		<div class="flex flex-col items-center gap-2">
 			<!-- START -->
-			<div class="px-5 py-2 bg-surface-800 border border-surface-700/50 rounded-lg text-sm text-surface-400">
+			<div class="px-5 py-2 bg-surface-700/50 rounded-lg text-sm text-surface-400">
 				START
 			</div>
 

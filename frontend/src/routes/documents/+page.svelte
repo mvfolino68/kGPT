@@ -470,29 +470,29 @@
 					<div class="flex items-center gap-2">
 						<StatusIndicator status={syncStatus.synced ? 'active' : 'warning'} size="sm" pulse={!syncStatus.synced} />
 						<span class="text-surface-500">sync:</span>
-						<span class="{syncStatus.synced ? 'text-emerald-400' : 'text-amber-400'}">{syncStatus.synced ? 'OK' : 'WARN'}</span>
+						<span class="{syncStatus.synced ? 'text-emerald-400/80' : 'text-amber-400/80'}">{syncStatus.synced ? 'OK' : 'WARN'}</span>
 					</div>
 				{/if}
 				{#if collections}
-					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/50 rounded border border-surface-700/50">
+					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
 						<span class="text-surface-500">col:</span>
-						<span class="text-emerald-400">{collections.total_collections}</span>
+						<span class="text-surface-300">{collections.total_collections}</span>
 					</div>
-					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/50 rounded border border-surface-700/50">
+					<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
 						<span class="text-surface-500">vec:</span>
-						<span class="text-cyan-400">{collections.total_vectors.toLocaleString()}</span>
+						<span class="text-surface-300">{collections.total_vectors.toLocaleString()}</span>
 					</div>
 				{/if}
-				<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/50 rounded border border-surface-700/50">
+				<div class="flex items-center gap-2 px-2 py-1 bg-surface-800/30 rounded border border-surface-700/20">
 					<span class="text-surface-500">src:</span>
-					<span class="text-violet-400">{documents.length}</span>
+					<span class="text-surface-300">{documents.length}</span>
 				</div>
 			</div>
 		{/snippet}
 	</Header>
 
 	<!-- Tab navigation -->
-	<nav class="px-6 border-b border-surface-700/50 bg-surface-800/30 flex gap-1">
+	<nav class="px-6 border-b border-surface-800 bg-surface-900 flex gap-1">
 		{#each [
 			{ id: 'sources' as Tab, label: 'Sources' },
 			{ id: 'search' as Tab, label: 'Search' },
@@ -502,8 +502,8 @@
 			<button
 				onclick={() => setActiveTab(tab.id)}
 				class="px-4 py-2.5 text-sm transition-all {activeTab === tab.id
-					? 'text-primary-light border-b-2 border-primary bg-surface-800/50'
-					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/30 border-b-2 border-transparent'}"
+					? 'text-surface-100 border-b-2 border-surface-400 bg-surface-800/30'
+					: 'text-surface-400 hover:text-surface-200 hover:bg-surface-800/20 border-b-2 border-transparent'}"
 			>
 				{tab.label}
 			</button>
@@ -514,15 +514,15 @@
 		<div class="max-w-6xl mx-auto space-y-4">
 			<!-- Error display -->
 			{#if error}
-				<div class="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-400 flex items-center justify-between">
+				<div class="bg-red-500/5 border border-red-500/15 rounded-lg p-3 text-sm text-red-400/80 flex items-center justify-between">
 					<span>{error}</span>
-					<button onclick={() => error = null} class="text-red-500 hover:text-red-400">x</button>
+					<button onclick={() => error = null} class="text-red-400/60 hover:text-red-400">x</button>
 				</div>
 			{/if}
 
 			<!-- Success message for destructive operations -->
 			{#if lastDestructiveResult}
-				<div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-sm text-emerald-400 flex items-center justify-between">
+				<div class="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 text-sm text-emerald-400/80 flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<StatusIndicator status="active" size="sm" />
 						{lastDestructiveResult.message}

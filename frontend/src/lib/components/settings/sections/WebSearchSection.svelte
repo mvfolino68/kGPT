@@ -20,7 +20,7 @@
 
 <SettingsCard title="Web Search (Exa)" status={hasApiKey ? 'saved' : null}>
 	{#snippet icon()}
-		<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+		<svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
 		</svg>
 	{/snippet}
@@ -43,7 +43,7 @@
 				href="https://dashboard.exa.ai/api-keys"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="text-xs text-primary-light hover:underline mt-1.5 inline-block"
+				class="text-xs text-surface-400 hover:text-surface-300 hover:underline mt-1.5 inline-block"
 			>
 				Get key at dashboard.exa.ai/api-keys
 			</a>

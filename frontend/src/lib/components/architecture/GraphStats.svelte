@@ -7,7 +7,7 @@
 	let { agents, edges }: Props = $props();
 </script>
 
-<div class="px-6 py-4 border-t border-surface-700/50 bg-surface-800/30">
+<div class="px-6 py-4 bg-surface-800">
 	<div class="flex items-center justify-center gap-8 text-xs">
 		<div class="text-center">
 			<div class="text-primary-light text-lg font-bold">{agents}</div>

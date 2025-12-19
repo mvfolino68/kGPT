@@ -4,7 +4,7 @@
 	import { SourceDrawer } from '$lib/components/sources';
 	import { normalizeCitation, type Source } from '$lib/components/sources/types';
 	import { renderMarkdown } from '$lib/utils/markdown';
-	import { selectedMessageId, selectMessageForTrace, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
+	import { selectedMessageId, selectMessageForTrace, updateMessage, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
 	import { ThinkingIndicator, MessageActions, SourcesList } from './message';
 
 	interface Props {
@@ -40,6 +40,10 @@
 		}
 	}
 
+	function handleAdminOperationComplete(result: AdminOperationResult) {
+		updateMessage(message.id, { adminResult: result });
+	}
+
 	function normalizeSources(citations: unknown[] | undefined): Source[] {
 		if (!citations || citations.length === 0) return [];
 		return citations.map((c, index) => {
@@ -69,9 +73,9 @@
 {#if message.role === 'user'}
 	<!-- User Message -->
 	<div class="flex justify-end animate-fade-in">
-		<div class="max-w-[75%] bg-surface-800/60 border border-primary/20 rounded-lg px-4 py-3">
+		<div class="max-w-[75%] bg-surface-800 rounded-lg px-4 py-3">
 			<div class="flex items-center gap-2 mb-2">
-				<span class="text-[10px] font-bold uppercase tracking-wider text-primary-light">User</span>
+				<span class="text-[10px] font-bold uppercase tracking-wider text-surface-400">USER</span>
 			</div>
 			<p class="text-surface-100 text-sm leading-relaxed">{message.content}</p>
 		</div>
@@ -87,7 +91,7 @@
 
 			<!-- Message content -->
 			{#if message.content}
-				<div class="bg-surface-900 border border-surface-700/50 rounded-lg {isSelected ? 'ring-1 ring-violet-500/50' : ''}">
+				<div class="bg-surface-800 rounded-lg {isSelected ? 'ring-1 ring-violet-500/50' : ''}">
 					<div class="px-4 py-3">
 						<!-- Header -->
 						<div class="flex items-center gap-2 mb-3">
@@ -102,8 +106,8 @@
 									onclick={handleTraceClick}
 									class="ml-auto flex items-center gap-1 px-2 py-0.5 rounded text-[9px] transition-colors
 										{isSelected
-											? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
-											: 'text-surface-500 hover:text-violet-400 hover:bg-violet-500/10'}"
+											? 'bg-surface-700/60 text-surface-200'
+											: 'text-surface-500 hover:text-surface-300 hover:bg-surface-700/40'}"
 									title="View agent pipeline trace"
 								>
 									<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -134,7 +138,7 @@
 
 			<!-- Admin Operation Result -->
 			{#if message.adminResult && (!message.isStreaming || message.adminResult.pending || message.adminResult.needs_info || message.adminResult.unclear)}
-				<AdminResultCard result={message.adminResult} />
+				<AdminResultCard result={message.adminResult} onOperationComplete={handleAdminOperationComplete} />
 			{/if}
 
 			<!-- Suggested Actions -->
@@ -163,17 +167,15 @@
 	:global(.message-content li) { margin: 0.25rem 0; }
 
 	:global(.message-content code) {
-		background: rgba(var(--color-surface-800), 0.8);
+		background: rgba(var(--color-surface-700), 0.5);
 		padding: 0.125rem 0.375rem;
 		border-radius: 0.25rem;
 		font-size: 0.875em;
-		color: rgb(var(--color-accent));
-		border: 1px solid rgba(var(--color-accent), 0.2);
+		color: rgb(var(--color-surface-200));
 	}
 
 	:global(.message-content pre) {
 		background: rgb(var(--color-surface-900));
-		border: 1px solid rgb(var(--color-surface-700) / 0.5);
 		border-radius: 0.5rem;
 		padding: 1rem;
 		overflow-x: auto;
@@ -200,7 +202,7 @@
 	}
 
 	:global(.message-content blockquote) {
-		border-left: 3px solid rgba(var(--color-primary), 0.3);
+		border-left: 3px solid rgba(var(--color-surface-600), 0.5);
 		padding-left: 1rem;
 		margin: 0.75rem 0;
 		color: rgb(var(--color-surface-400));
@@ -218,8 +220,7 @@
 		font-size: 0.65em;
 		font-weight: 700;
 		color: rgb(var(--color-accent));
-		background: rgba(var(--color-accent), 0.1);
-		border: 1px solid rgba(var(--color-accent), 0.3);
+		background: rgba(var(--color-accent), 0.15);
 		border-radius: 0.25rem;
 		cursor: pointer;
 		vertical-align: super;
@@ -227,8 +228,7 @@
 		transition: all 0.15s ease;
 	}
 	:global(.citation-ref:hover) {
-		background: rgba(var(--color-accent), 0.25);
-		border-color: rgba(var(--color-accent), 0.6);
+		background: rgba(var(--color-accent), 0.3);
 		transform: scale(1.1);
 	}
 
@@ -248,7 +248,6 @@
 		margin: 1rem 0;
 		border-radius: 0.5rem;
 		overflow: hidden;
-		border: 1px solid rgb(var(--color-surface-700) / 0.5);
 		background: rgb(var(--color-surface-900) / 0.3);
 	}
 	:global(.message-content .markdown-image) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui';
 	import type { AdminOperationResult } from './types';
 	import OperationHeader from './OperationHeader.svelte';
 	import { StatusIndicator } from '$lib/components';
@@ -13,7 +14,7 @@
 	const entries = $derived(Object.entries(data).slice(0, 10));
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4">
+<Card>
 	<div class="flex items-center gap-2.5 mb-3">
 		<StatusIndicator status="active" size="md" pulse />
 		<span class="text-sm font-semibold text-emerald-400">
@@ -49,4 +50,4 @@
 			{/each}
 		</div>
 	{/if}
-</div>
+</Card>

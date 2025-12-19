@@ -92,10 +92,10 @@
 </script>
 
 <aside
-	class="bg-surface-900 border-r border-surface-700/50 flex flex-col relative"
+	class="bg-surface-900 flex flex-col relative"
 	style="width: {sidebarWidth}px; min-width: {MIN_WIDTH}px; max-width: {MAX_WIDTH}px;"
 >
-	<div class="p-4 border-b border-surface-700/50 flex items-center justify-between">
+	<div class="p-4 flex items-center justify-between">
 		<span class="text-[10px] font-bold text-surface-500 uppercase tracking-wider">Sessions</span>
 		<button type="button" class="btn btn-primary btn-sm btn-icon" onclick={onNewChat}>
 			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

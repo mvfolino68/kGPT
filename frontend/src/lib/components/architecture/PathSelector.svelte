@@ -10,7 +10,7 @@
 </script>
 
 <div class="flex justify-center">
-	<div class="inline-flex bg-surface-800/50 border border-surface-700/50 rounded-xl p-1.5 gap-1">
+	<div class="inline-flex bg-surface-800 rounded-xl p-1.5 gap-1">
 		{#each executionPaths as path}
 			<button
 				type="button"

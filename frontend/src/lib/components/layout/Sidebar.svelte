@@ -40,11 +40,11 @@
 	let hoveredItem = $state<string | null>(null);
 </script>
 
-<aside class="w-56 bg-surface-900 flex flex-col border-r border-surface-700/50">
+<aside class="w-56 bg-surface-900 flex flex-col">
 	<!-- Logo -->
-	<div class="px-4 py-5 border-b border-surface-700/50">
+	<div class="px-4 py-5">
 		<a href="/dashboard" class="flex items-center gap-3 group">
-			<div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+			<div class="w-9 h-9 rounded-lg bg-surface-800 flex items-center justify-center">
 				<img src={kgptLogo} alt="kGPT" class="w-5 h-5" />
 			</div>
 			<div>
@@ -65,8 +65,8 @@
 					onmouseleave={() => hoveredItem = null}
 					class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
 						{isActive
-						? 'bg-primary/10 text-primary-light border border-primary/20'
-						: 'text-surface-400 hover:bg-surface-800/50 hover:text-surface-200 border border-transparent'}"
+						? 'bg-surface-800 text-surface-100'
+						: 'text-surface-400 hover:bg-surface-800/50 hover:text-surface-200'}"
 				>
 					{#if item.icon === 'dashboard'}
 						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -92,9 +92,9 @@
 				<!-- Tooltip -->
 				{#if hoveredItem === item.href}
 					<div class="absolute left-full ml-2 top-0 z-50 pointer-events-none">
-						<div class="bg-surface-800 text-surface-200 text-xs px-3 py-2 rounded-lg border border-surface-700 shadow-xl max-w-[250px]">
+						<div class="bg-surface-800 text-surface-200 text-xs px-3 py-2 rounded-lg shadow-xl max-w-[250px]">
 							{item.tooltip}
-							<div class="absolute right-full top-3 -mr-1 w-2 h-2 bg-surface-800 border-l border-b border-surface-700 rotate-45"></div>
+							<div class="absolute right-full top-3 -mr-1 w-2 h-2 bg-surface-800 rotate-45"></div>
 						</div>
 					</div>
 				{/if}
@@ -103,7 +103,7 @@
 	</nav>
 
 	<!-- Status Footer -->
-	<div class="px-4 py-4 border-t border-surface-700/50 space-y-2">
+	<div class="px-4 py-4 space-y-2">
 		<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">System Status</div>
 
 		{#if $health}
@@ -114,8 +114,8 @@
 				>
 					<span class="text-surface-400 group-hover:text-surface-300">Qdrant</span>
 					<div class="flex items-center gap-2">
-						<span class="w-2 h-2 rounded-full {$health.qdrant_connected ? 'bg-emerald-400' : 'bg-red-400'}"></span>
-						<span class="text-xs {$health.qdrant_connected ? 'text-emerald-400' : 'text-red-400'}">
+						<span class="w-2 h-2 rounded-full {$health.qdrant_connected ? 'bg-emerald-400/80' : 'bg-red-400/80'}"></span>
+						<span class="text-xs {$health.qdrant_connected ? 'text-emerald-400/80' : 'text-red-400/80'}">
 							{$health.qdrant_connected ? 'Connected' : 'Offline'}
 						</span>
 					</div>
@@ -126,8 +126,8 @@
 				>
 					<span class="text-surface-400 group-hover:text-surface-300">Kafka</span>
 					<div class="flex items-center gap-2">
-						<span class="w-2 h-2 rounded-full {$health.kafka_connected ? 'bg-emerald-400' : 'bg-surface-600'}"></span>
-						<span class="text-xs {$health.kafka_connected ? 'text-emerald-400' : 'text-surface-500'}">
+						<span class="w-2 h-2 rounded-full {$health.kafka_connected ? 'bg-emerald-400/80' : 'bg-surface-600'}"></span>
+						<span class="text-xs {$health.kafka_connected ? 'text-emerald-400/80' : 'text-surface-500'}">
 							{$health.kafka_connected ? 'Connected' : 'Not connected'}
 						</span>
 					</div>

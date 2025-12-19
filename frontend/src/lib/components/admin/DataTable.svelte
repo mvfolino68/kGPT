@@ -13,10 +13,10 @@
 	const showMore = $derived(totalCount && totalCount > maxRows);
 </script>
 
-<div class="bg-surface-800/50 border border-surface-700/50 rounded-lg overflow-hidden">
+<div class="bg-surface-800/30 rounded-lg overflow-hidden">
 	<table class="w-full text-xs">
 		<thead>
-			<tr class="border-b border-surface-700/50 bg-surface-900/50">
+			<tr class="border-b border-surface-700/30 bg-surface-800/50">
 				{#each headers as header, i}
 					<th class="px-3 py-2 text-surface-500 font-medium {i === headers.length - 1 ? 'text-right' : 'text-left'}">
 						{header}
@@ -29,7 +29,7 @@
 		</tbody>
 	</table>
 	{#if showMore}
-		<div class="px-3 py-2 text-xs text-surface-500 bg-surface-900/30 border-t border-surface-700/50">
+		<div class="px-3 py-2 text-xs text-surface-500 bg-surface-800/30 border-t border-surface-700/30">
 			... and {totalCount - maxRows} more
 		</div>
 	{/if}

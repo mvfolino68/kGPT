@@ -35,7 +35,7 @@ function createRenderer() {
 
 		// Standardized image wrapper with consistent styling
 		return `
-			<div class="markdown-image-container my-4 rounded-lg overflow-hidden border border-surface-700/50 bg-surface-900/30 transition-all duration-200 hover:border-surface-600/50 hover:shadow-lg">
+			<div class="markdown-image-container my-4 rounded-lg overflow-hidden bg-surface-700/30">
 				<img
 					src="${href.replace(/"/g, '&quot;')}"
 					alt="${alt.replace(/"/g, '&quot;')}"
@@ -43,7 +43,7 @@ function createRenderer() {
 					class="markdown-image w-full h-auto max-w-full transition-opacity duration-200 object-contain"
 					loading="lazy"
 				/>
-				${alt ? `<div class="image-caption text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center border-t border-surface-700/30 pt-2">${alt}</div>` : ''}
+				${alt ? `<div class="image-caption text-xs text-surface-500 font-mono mt-2 px-3 pb-2 text-center pt-2">${alt}</div>` : ''}
 			</div>
 		`;
 	};

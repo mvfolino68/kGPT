@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Card } from '$lib/components/ui';
 	import type { MemberInfo, CoordinatorInfo } from './types';
 	import OperationHeader from './OperationHeader.svelte';
 
@@ -13,7 +14,7 @@
 	let { groupId, state, protocol, coordinator, members = [] }: Props = $props();
 </script>
 
-<div class="bg-surface-900 border border-surface-700/50 rounded-lg p-4">
+<Card>
 	<OperationHeader
 		icon="groups"
 		title="Group: {groupId}"
@@ -49,4 +50,4 @@
 			</div>
 		</div>
 	{/if}
-</div>
+</Card>

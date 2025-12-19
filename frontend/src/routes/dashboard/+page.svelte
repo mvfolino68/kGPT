@@ -209,18 +209,18 @@
 							<div class="max-w-md mx-auto space-y-3">
 								<button
 									type="button"
-									class="w-full p-4 rounded-xl bg-surface-800/50 border border-surface-700/50 hover:border-emerald-500/30 hover:bg-surface-800 transition-all text-left group"
+									class="w-full p-4 rounded-xl bg-surface-800 hover:bg-surface-700/80 transition-all text-left group"
 									onclick={connectDemo}
 									disabled={connecting}
 								>
 									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-											<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+										<div class="w-12 h-12 rounded-xl bg-surface-700/50 flex items-center justify-center">
+											<svg class="w-6 h-6 text-surface-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
 											</svg>
 										</div>
 										<div class="flex-1">
-											<h4 class="text-sm font-medium text-surface-100 group-hover:text-emerald-400">Use Demo Cluster</h4>
+											<h4 class="text-sm font-medium text-surface-100 group-hover:text-surface-50">Use Demo Cluster</h4>
 											<p class="text-xs text-surface-500 mt-0.5">Connect to the local development cluster at localhost:9094</p>
 										</div>
 										{#if connecting}
@@ -229,7 +229,7 @@
 												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
 											</svg>
 										{:else}
-											<svg class="w-5 h-5 text-surface-600 group-hover:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+											<svg class="w-5 h-5 text-surface-600 group-hover:text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 											</svg>
 										{/if}
@@ -238,27 +238,27 @@
 
 								<button
 									type="button"
-									class="w-full p-4 rounded-xl bg-surface-800/50 border border-surface-700/50 hover:border-primary/30 hover:bg-surface-800 transition-all text-left group"
+									class="w-full p-4 rounded-xl bg-surface-800 hover:bg-surface-700/80 transition-all text-left group"
 									onclick={() => showConnectForm = true}
 								>
 									<div class="flex items-center gap-4">
-										<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-											<svg class="w-6 h-6 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+										<div class="w-12 h-12 rounded-xl bg-surface-700/50 flex items-center justify-center">
+											<svg class="w-6 h-6 text-surface-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 											</svg>
 										</div>
 										<div class="flex-1">
-											<h4 class="text-sm font-medium text-surface-100 group-hover:text-primary-light">Connect Custom Cluster</h4>
+											<h4 class="text-sm font-medium text-surface-100 group-hover:text-surface-50">Connect Custom Cluster</h4>
 											<p class="text-xs text-surface-500 mt-0.5">Enter your own cluster connection details</p>
 										</div>
-										<svg class="w-5 h-5 text-surface-600 group-hover:text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+										<svg class="w-5 h-5 text-surface-600 group-hover:text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 											<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 										</svg>
 									</div>
 								</button>
 
 								<p class="text-xs text-surface-500 text-center pt-2">
-									Manage saved clusters in <a href="/settings" class="text-primary-light hover:underline">Settings</a>
+									Manage saved clusters in <a href="/settings" class="text-surface-300 hover:underline">Settings</a>
 								</p>
 							</div>
 						{:else}
