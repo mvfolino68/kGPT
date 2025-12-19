@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Panel } from '$lib/components/ui';
-	import { LoadingState, EmptyState } from '$lib/components/common';
-	import { StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
+	import { Panel, LoadingState, EmptyState, StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
 	interface Props {

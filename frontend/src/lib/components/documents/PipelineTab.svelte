@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Panel } from '$lib/components/ui';
-	import { LoadingState } from '$lib/components/common';
+	import { Button, Panel, LoadingState } from '$lib/components/ui';
 	import { getSimilarityColor, type RAGPipelineInfo, type RAGDemoResponse, type ChunkAnalytics } from './types';
 
 	interface Props {

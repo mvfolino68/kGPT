@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Icon, IconButton } from '$lib/components/ui';
-	import { Backdrop } from '$lib/components/common';
+	import { Button, Icon, IconButton, Backdrop } from '$lib/components/ui';
 	import type { CitationObject } from '$lib/api';
 
 	interface Props {

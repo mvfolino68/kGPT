@@ -15,8 +15,19 @@ export {
 	IconButton,
 	DeleteButton,
 	LoadingState,
+	// Common components now in UI
+	LoadingSpinner,
+	EmptyState,
+	StatusMessage,
+	ConfirmDialog,
+	Backdrop,
 	Panel,
-	ClickableCard
+	ClickableCard,
+	// Merged from root
+	CodeBlock,
+	FormattedMessage,
+	Image,
+	StatusIndicator
 } from './ui';
 
 // Layout Components
@@ -47,13 +58,6 @@ export * from './admin/types';
 export { AgentTimelineItem, RoutingDecisionCard, RetrievalResultsList, WebResultsList } from './agent-trace';
 export * from './agent-trace/types';
 
-// Shared Components
-export { default as CodeBlock } from './CodeBlock.svelte';
-export { default as FormattedMessage } from './FormattedMessage.svelte';
-export { default as AgentActivitySidebar } from './AgentActivitySidebar.svelte';
-export { default as StatusIndicator } from './StatusIndicator.svelte';
-export { default as Image } from './Image.svelte';
-
 // Chat components
 export {
 	ChatEmptyState,
@@ -63,7 +67,8 @@ export {
 	SessionListItem,
 	ChatDrawer,
 	AgentTraceDrawer,
-	AgentTracePanel
+	AgentTracePanel,
+	AgentActivitySidebar,
 } from './chat';
 export { ThinkingIndicator, MessageActions, SourcesList } from './chat/message';
 
@@ -80,11 +85,8 @@ export {
 	BrokersGrid,
 	TopicsPanel,
 	ConsumerGroupsPanel,
-	ClusterSwitcher
-} from './cluster';
-
-// Cluster page components
-export {
+	ClusterSwitcher,
+	// Merged components
 	ConnectionStatus,
 	ClusterStats,
 	TopicsChips,
@@ -92,7 +94,7 @@ export {
 	QuickConnect,
 	ConnectForm,
 	SavedClusters
-} from './cluster-page';
+} from './cluster';
 
 // Architecture components
 export {

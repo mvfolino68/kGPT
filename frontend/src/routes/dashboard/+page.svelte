@@ -5,8 +5,7 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState } from '$lib/components';
-	import { StatusMessage } from '$lib/components/common';
+	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState, StatusMessage } from '$lib/components';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,

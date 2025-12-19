@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { tick, onMount, onDestroy } from 'svelte';
-	import { Button, Badge, Icon, IconButton, ListItem } from '$lib/components/ui';
-	import { Backdrop } from '$lib/components/common';
+	import { Button, Badge, Icon, IconButton, ListItem, Backdrop } from '$lib/components/ui';
 	import {
 		chatMessages,
 		currentSessionId,

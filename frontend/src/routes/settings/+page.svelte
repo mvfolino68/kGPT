@@ -13,8 +13,7 @@
 		type ClusterInfo
 	} from '$lib/api';
 	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
-	import { Header, HeaderStatus, IconButton, Card, Icon } from '$lib/components';
-	import { LoadingState, StatusMessage } from '$lib/components/common';
+	import { Header, HeaderStatus, IconButton, Card, Icon, LoadingState, StatusMessage } from '$lib/components';
 	import { Hint } from '$lib/components/hints';
 	import {
 		OpenAISection,

@@ -12,12 +12,25 @@ export { default as NavLink } from './NavLink.svelte';
 export { default as ListItem } from './ListItem.svelte';
 export { default as Icon } from './Icon.svelte';
 
+// Common UI Patterns (formerly in common)
+export { default as LoadingSpinner } from './LoadingSpinner.svelte';
+export { default as LoadingState } from './LoadingState.svelte';
+export { default as EmptyState } from './EmptyState.svelte';
+export { default as StatusMessage } from './StatusMessage.svelte';
+export { default as ConfirmDialog } from './ConfirmDialog.svelte';
+export { default as Backdrop } from './Backdrop.svelte';
+
 // Specialized Components
 export { default as IconButton } from './IconButton.svelte';
 export { default as DeleteButton } from './DeleteButton.svelte';
 export { default as CardButton } from './CardButton.svelte';
 export { default as ResizeHandle } from './ResizeHandle.svelte';
-export { default as LoadingState } from '../common/LoadingState.svelte';
+
+// Merged from root
+export { default as CodeBlock } from './CodeBlock.svelte';
+export { default as FormattedMessage } from './FormattedMessage.svelte';
+export { default as Image } from './Image.svelte';
+export { default as StatusIndicator } from './StatusIndicator.svelte';
 
 // Aliases for backward compatibility
 export { default as Panel } from './Card.svelte';

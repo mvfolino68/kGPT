@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui';
-	import { EmptyState } from '$lib/components/common';
+	import { Button, EmptyState } from '$lib/components/ui';
 
 	interface Props {
 		onQuickAction: (value: string) => void;

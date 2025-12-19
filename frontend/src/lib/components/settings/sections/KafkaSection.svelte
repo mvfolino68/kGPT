@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Input, Select, Icon } from '$lib/components/ui';
-	import { LoadingState } from '$lib/components/common';
+	import { Button, Input, Select, Icon, LoadingState } from '$lib/components/ui';
 	import { SettingsCard, FormField } from '$lib/components/settings';
 	import type { KafkaCluster, ClusterInfo } from '$lib/api';
 

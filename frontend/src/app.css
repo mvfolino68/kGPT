@@ -1,73 +1,77 @@
 @import 'tailwindcss';
 
-@theme {
   /* ========================================================================
-     COLOR SYSTEM - Professional Dark Theme with Clear Elevation
+     COLOR SYSTEM - Premium Dark Theme
      ======================================================================== */
 
-  /* Background - The deepest layer */
-  --color-bg: rgb(5 7 11);                 /* Deep dark background */
-  --color-bg-elevated: rgb(14 18 26);      /* Sidebar, header - slightly lifted */
+  /* Backgrounds */
+  --color-bg: rgb(3 6 12);                 /* Deepest void */
+  --color-bg-elevated: rgb(15 20 31);      /* Sidebar, elevated areas */
 
-  /* Surface Colors - Cards clearly stand out from background */
-  --color-surface: rgb(32 38 54);          /* Card backgrounds - elevated feel */
-  --color-surface-hover: rgb(44 52 72);    /* Hover state - visible change */
-  --color-surface-active: rgb(58 68 92);   /* Active/pressed state */
+  /* Glassmorphism & Transparencies */
+  --glass-bg: rgba(15, 20, 31, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+
+  /* Surface Colors */
+  --color-surface: rgb(24 29 42);          /* Cards */
+  --color-surface-hover: rgb(35 41 58);    /* Hover state */
+  --color-surface-active: rgb(45 52 70);   /* Active state */
 
   /* Text Hierarchy */
-  --color-text: rgb(240 243 248);          /* Primary text - crisp white */
-  --color-text-secondary: rgb(170 178 190); /* Secondary */
-  --color-text-tertiary: rgb(120 130 145);  /* Labels, hints */
+  --color-text: rgb(245 247 250);          /* Primary text - almost white */
+  --color-text-secondary: rgb(160 170 185); /* Secondary text */
+  --color-text-tertiary: rgb(100 110 125);  /* Muted/Placeholder */
 
-  /* Borders - Very subtle, for inner dividers only */
-  --color-border: rgb(60 68 82);
-  --color-border-subtle: rgb(45 52 65);
+  /* Borders */
+  --color-border: rgb(40 48 64);
+  --color-border-subtle: rgb(30 36 50);
 
-  /* Primary/Accent - Blue */
-  --color-primary: rgb(88 166 255);
-  --color-primary-hover: rgb(130 190 255);
-  --color-primary-muted: rgb(56 139 253);
-  --color-primary-bg: rgb(30 45 65);
+  /* Primary Accent - Electric Blue */
+  --color-primary: rgb(56 125 255);
+  --color-primary-hover: rgb(85 150 255);
+  --color-primary-muted: rgb(40 85 160);
+  --color-primary-bg: rgba(56, 125, 255, 0.15);
 
-  /* Status Colors */
-  --color-success: rgb(52 211 153);
-  --color-success-muted: rgb(35 160 85);
-  --color-success-bg: rgb(20 50 40);
+  /* Status Colors (Vibrant but controlled) */
+  --color-success: rgb(34 197 94);
+  --color-success-muted: rgb(20 120 60);
+  --color-success-bg: rgba(34, 197, 94, 0.15);
 
-  --color-warning: rgb(251 191 36);
-  --color-warning-muted: rgb(200 160 20);
-  --color-warning-bg: rgb(45 40 20);
+  --color-warning: rgb(245 158 11);
+  --color-warning-muted: rgb(180 110 10);
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
 
-  --color-error: rgb(251 113 133);
-  --color-error-muted: rgb(220 70 70);
-  --color-error-bg: rgb(50 25 30);
+  --color-error: rgb(239 68 68);
+  --color-error-muted: rgb(180 40 40);
+  --color-error-bg: rgba(239, 68, 68, 0.15);
 
-  --color-info: rgb(88 166 255);
-  --color-info-bg: rgb(30 45 65);
-
-  /* ========================================================================
-     SHADOWS - Key to elevation without borders
-     ======================================================================== */
-
-  /* Matches current Card defaults (keeps visuals stable) */
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.55), 0 10px 28px rgba(0, 0, 0, 0.45);
-  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.65), 0 14px 36px rgba(0, 0, 0, 0.55);
-  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.7), 0 16px 48px rgba(0, 0, 0, 0.5);
+  --color-info: rgb(56 189 248);
+  --color-info-bg: rgba(56, 189, 248, 0.15);
 
   /* ========================================================================
-     ALIASES - For component compatibility
+     SHADOWS & GLOWS
      ======================================================================== */
 
-  /* Surface scale (used by components) */
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.15);
+  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-dropdown: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --shadow-glow-primary: 0 0 20px rgba(56, 125, 255, 0.25);
+
+  /* ========================================================================
+     ALIASES
+     ======================================================================== */
+
+  /* Surface scale */
   --color-surface-900: var(--color-bg-elevated);
   --color-surface-800: var(--color-surface);
   --color-surface-700: var(--color-surface-hover);
   --color-surface-600: var(--color-surface-active);
-  --color-surface-500: rgb(78 86 98);
-  --color-surface-400: rgb(110 118 129);
-  --color-surface-300: rgb(139 148 158);
-  --color-surface-200: rgb(173 180 189);
-  --color-surface-100: rgb(230 237 243);
+  --color-surface-500: rgb(75 85 100);
+  --color-surface-400: rgb(100 110 125);
+  --color-surface-300: rgb(130 140 155);
+  --color-surface-200: rgb(160 170 185);
+  --color-surface-100: rgb(220 230 240);
 
   /* Text aliases */
   --color-foreground: var(--color-text);
@@ -77,43 +81,43 @@
   --color-muted-foreground: var(--color-text-secondary);
 
   /* Primary scale */
-  --color-primary-700: var(--color-primary);
-  --color-primary-600: var(--color-primary-hover);
-  --color-primary-400: var(--color-primary);
-  --color-primary-500: var(--color-primary-hover);
+  --color-primary-700: rgb(30 70 140);
+  --color-primary-600: var(--color-primary-muted);
+  --color-primary-500: var(--color-primary);
+  --color-primary-400: var(--color-primary-hover);
 
   /* Status scales */
   --color-success-500: var(--color-success);
-  --color-success-400: var(--color-success);
+  --color-success-400: rgb(74 222 128);
   --color-success-600: var(--color-success-muted);
   --color-warning-500: var(--color-warning);
-  --color-warning-400: var(--color-warning);
+  --color-warning-400: rgb(251 191 36);
   --color-warning-600: var(--color-warning-muted);
   --color-error-500: var(--color-error);
-  --color-error-400: var(--color-error);
+  --color-error-400: rgb(248 113 113);
   --color-error-600: var(--color-error-muted);
   --color-info-500: var(--color-info);
-  --color-info-400: var(--color-info);
+  --color-info-400: rgb(125 211 252);
 
   /* ========================================================================
-     TYPOGRAPHY
+     TYPOGRAPHY - Clean & Modern
      ======================================================================== */
 
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Consolas', monospace;
+  --font-family-mono: 'JetBrains Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
 
-  --font-size-2xs: 0.625rem;
-  --font-size-xs: 0.6875rem;
-  --font-size-sm: 0.75rem;
-  --font-size-base: 0.8125rem;
-  --font-size-md: 0.875rem;
-  --font-size-lg: 1rem;
-  --font-size-xl: 1.125rem;
-  --font-size-2xl: 1.25rem;
-  --font-size-3xl: 1.5rem;
+  --font-size-2xs: 0.625rem;  /* 10px */
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.825rem;   /* 13.5px - slightly legible */
+  --font-size-base: 0.925rem; /* 15px - modern standard */
+  --font-size-md: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 2rem;      /* 32px */
 
   /* ========================================================================
-     SPACING
+     SPACING & LAYOUT
      ======================================================================== */
 
   --spacing-0: 0;
@@ -126,24 +130,26 @@
   --spacing-8: 2rem;
   --spacing-10: 2.5rem;
   --spacing-12: 3rem;
+  --spacing-16: 4rem;
 
   /* ========================================================================
      BORDER RADIUS
      ======================================================================== */
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --radius-full: 9999px;
 
   /* ========================================================================
      TRANSITIONS
      ======================================================================== */
 
-  --transition-fast: 100ms ease;
-  --transition-base: 150ms ease;
-  --transition-slow: 250ms ease;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ============================================================================

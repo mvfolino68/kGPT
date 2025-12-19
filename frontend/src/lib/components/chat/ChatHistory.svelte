@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Button, ResizeHandle } from '$lib/components/ui';
-	import { LoadingState, EmptyState } from '$lib/components/common';
+	import { Button, ResizeHandle, LoadingState, EmptyState } from '$lib/components/ui';
 	import SessionListItem from './SessionListItem.svelte';
 
 	interface Session {

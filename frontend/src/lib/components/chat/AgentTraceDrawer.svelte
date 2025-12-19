@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Icon } from '$lib/components/ui';
-	import { Backdrop } from '$lib/components/common';
+	import { Button, Icon, Backdrop } from '$lib/components/ui';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,

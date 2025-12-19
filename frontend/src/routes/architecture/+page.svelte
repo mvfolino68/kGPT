@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Icon, Card } from '$lib/components';
-	import { LoadingState, StatusMessage } from '$lib/components/common';
+	import { Button, Icon, Card, LoadingState, StatusMessage } from '$lib/components';
 	import { onMount } from 'svelte';
 	import { getAgentGraph, type AgentGraphInfo } from '$lib/api';
 	import { Header, HeaderStatus } from '$lib/components';

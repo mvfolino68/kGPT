@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Card, Icon } from '$lib/components/ui';
-	import { ConfirmDialog } from '$lib/components/common';
+	import { Button, Card, Icon, ConfirmDialog } from '$lib/components/ui';
 	import type { SyncStatusResponse, DestructiveOperation } from './types';
 
 	interface Props {
