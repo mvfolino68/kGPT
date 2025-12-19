@@ -7,6 +7,7 @@
 		type Settings,
 		type KeyStatus
 	} from '$lib/api';
+	import { completeOnboarding } from '$lib/stores/onboarding.svelte';
 	import { Header, StatusIndicator } from '$lib/components';
 
 	let settings = $state<Settings | null>(null);
@@ -147,6 +148,7 @@
 			success = 'OpenAI API key saved';
 			cancelAddKey();
 			isOnboarding = false;
+			completeOnboarding();
 			setTimeout(() => { success = null; }, 2000);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed';

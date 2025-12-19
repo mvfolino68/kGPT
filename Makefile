@@ -1,7 +1,7 @@
 # kGPT Makefile
 # Run `make help` to see all available commands
 
-.PHONY: help install dev dev-infra dev-backend dev-frontend stop clean lint test build docker-up docker-down check-venv check-prerequisites check-docker
+.PHONY: help install dev dev-infra dev-backend dev-frontend stop clean lint test build docker-up docker-down check-venv check-prerequisites check-docker reset reset-full reset-nuke reset-status
 
 # Default target
 help:
@@ -31,11 +31,17 @@ help:
 	@echo "  make docker-down    Stop production Docker stack"
 	@echo "  make docker-logs    View Docker logs"
 	@echo ""
+	@echo "Reset / Onboarding:"
+	@echo "  make reset          Clear API keys (triggers onboarding)"
+	@echo "  make reset-full     Clear settings + chat history"
+	@echo "  make reset-nuke     Factory reset (WARNING: deletes all data)"
+	@echo "  make reset-status   Show current database state"
+	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean          Remove build artifacts and caches"
 	@echo "  make clean-docker   Remove Docker volumes (WARNING: deletes data)"
 	@echo ""
-	@echo "Prerequisites:"
+	@echo "Prerequisites:
 	@echo "  Python 3.11+, Node.js 20+, uv, Docker, Make"
 	@echo "  See DEVELOPMENT.md for installation instructions"
 
@@ -239,6 +245,31 @@ docker-logs: check-docker
 
 docker-logs-backend: check-docker
 	docker compose logs -f backend
+
+# ============================================================================
+# RESET / ONBOARDING
+# ============================================================================
+
+reset:
+	@echo "Soft reset - clearing API keys to trigger onboarding..."
+	.venv/bin/python reset_onboarding.py --soft
+	@echo ""
+	@echo "Restart the dev server to apply changes"
+
+reset-full:
+	@echo "Full reset - clearing settings and chat history..."
+	.venv/bin/python reset_onboarding.py --full -y
+	@echo ""
+	@echo "Restart the dev server to apply changes"
+
+reset-nuke:
+	@echo "Factory reset - deleting all data..."
+	.venv/bin/python reset_onboarding.py --nuke -y
+	@echo ""
+	@echo "Restart the dev server to apply changes"
+
+reset-status:
+	@.venv/bin/python reset_onboarding.py --status
 
 # ============================================================================
 # CLEANUP

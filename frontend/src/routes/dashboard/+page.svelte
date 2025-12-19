@@ -63,11 +63,11 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard - kGPT</title>
+	<title>Cluster View - kGPT</title>
 </svelte:head>
 
 <div class="flex flex-col h-full bg-surface-900">
-	<Header title="Cluster Dashboard" subtitle={clusterInfo.connected ? clusterInfo.cluster_id : 'Not connected'}>
+	<Header title="Cluster View" subtitle={clusterInfo.connected ? clusterInfo.cluster_id : 'Not connected'}>
 		{#snippet actions()}
 			<Button variant="ghost" size="sm" onclick={loadClusterData} disabled={loading}>
 				{#if loading}

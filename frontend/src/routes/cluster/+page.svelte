@@ -94,11 +94,11 @@
 </script>
 
 <svelte:head>
-	<title>Cluster - kGPT</title>
+	<title>Cluster Connection - kGPT</title>
 </svelte:head>
 
 <div class="flex flex-col h-full bg-surface-900">
-	<Header title="Cluster" subtitle="Kafka cluster management">
+	<Header title="Cluster Connection" subtitle="Connect & manage Kafka clusters">
 		{#snippet actions()}
 			<button type="button" class="btn btn-ghost btn-sm" onclick={loadData}>
 				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">

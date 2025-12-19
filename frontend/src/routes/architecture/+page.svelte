@@ -37,11 +37,11 @@
 </script>
 
 <svelte:head>
-	<title>Architecture - kGPT</title>
+	<title>Agent Architecture - kGPT</title>
 </svelte:head>
 
 <div class="flex flex-col h-full bg-surface-900">
-	<Header title="Architecture" subtitle="Multi-agent orchestration">
+	<Header title="Agent Architecture" subtitle="Multi-agent RAG orchestration">
 		{#snippet actions()}
 			<div class="flex items-center gap-4 text-xs">
 				<div class="flex items-center gap-2">

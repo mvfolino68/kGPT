@@ -457,12 +457,12 @@
 </script>
 
 <svelte:head>
-	<title>Documents - kGPT</title>
+	<title>Vector Store - kGPT</title>
 </svelte:head>
 
 <div class="flex flex-col h-full bg-surface-900">
 	<!-- Header -->
-	<Header title="Documents" subtitle="Vector Store Management">
+	<Header title="Vector Store" subtitle="RAG Document & Embedding Management">
 		{#snippet actions()}
 			<div class="flex items-center gap-4 text-xs">
 				{#if syncStatus}
