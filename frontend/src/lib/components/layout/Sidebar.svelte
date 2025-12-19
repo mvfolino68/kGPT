@@ -66,9 +66,6 @@
 					<NavLink href={item.href} active={isActive}>
 						<Icon name={item.icon} size="md" />
 						<span class="font-medium">{item.label}</span>
-						{#if isActive}
-							<div class="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-glow-primary"></div>
-						{/if}
 					</NavLink>
 				</Tooltip>
 			{/each}
