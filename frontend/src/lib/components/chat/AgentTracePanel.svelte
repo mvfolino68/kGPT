@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Icon } from '$lib/components/ui';
+	import { Button, Icon, IconButton } from '$lib/components/ui';
 	import {
 		AgentTimelineItem,
 		RoutingDecisionCard,
@@ -58,22 +58,25 @@
 		</div>
 		<div class="flex items-center gap-1">
 			{#if isViewingHistory}
-				<button
-					type="button"
-					class="px-2 py-1 text-[10px] font-medium text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 rounded transition-colors"
+				<Button
+					variant="ghost"
+					size="xs"
+					class="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
 					onclick={() => selectMessageForTrace(null)}
 				>
 					Live
-				</button>
+				</Button>
 			{/if}
-			<button
-				type="button"
-				class="p-1.5 text-text-tertiary hover:text-text-secondary hover:bg-surface-hover rounded transition-colors"
+			<IconButton
+				variant="ghost"
+				size="sm"
+				class="text-text-tertiary hover:text-text hover:bg-surface-700"
 				onclick={onClose}
 				title="Hide panel"
+				ariaLabel="Hide panel"
 			>
 				<Icon name="close" size="sm" />
-			</button>
+			</IconButton>
 		</div>
 	</header>
 

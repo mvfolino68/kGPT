@@ -3,6 +3,7 @@
 	import { groupSourcesByType } from './types';
 	import SourceItem from './SourceItem.svelte';
 	import SourceDrawer from './SourceDrawer.svelte';
+	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		sources: Source[];
@@ -95,11 +96,10 @@
 	<div class="sources-panel {inline ? 'mt-2' : 'mt-4'}">
 		<!-- Collapsed summary bar (hidden in inline mode) -->
 		{#if !inline}
-			<button
-				type="button"
-				class="w-full flex items-center justify-between gap-3 p-3 rounded-lg
-					bg-surface-800/30 hover:bg-surface-800/50 border border-surface-700/50
-					hover:border-surface-600/50 transition-all duration-150 group"
+			<Button
+				variant="ghost"
+				size="lg"
+				class="w-full justify-between gap-3 p-3 rounded-lg bg-surface-800/30 hover:bg-surface-800/50 border border-surface-700/50 hover:border-surface-600/50 transition-all duration-150 group"
 				onclick={toggleExpanded}
 			>
 				<div class="flex items-center gap-3">
@@ -141,7 +141,7 @@
 				>
 					<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
 				</svg>
-			</button>
+			</Button>
 		{/if}
 
 		<!-- Expanded sources list (always shown in inline mode) -->
@@ -154,10 +154,10 @@
 					<div class="rounded-lg border {colors.border} {colors.hover} overflow-hidden
 						transition-colors">
 						<!-- Group header -->
-						<button
-							type="button"
-							class="w-full flex items-center justify-between gap-3 p-3
-								{colors.bg} hover:bg-opacity-70 transition-colors"
+						<Button
+							variant="ghost"
+							size="lg"
+							class="w-full justify-between gap-3 p-3 rounded-none {colors.bg} hover:bg-opacity-70 transition-colors"
 							onclick={() => toggleGroup(group.type)}
 						>
 							<div class="flex items-center gap-2">
@@ -175,7 +175,7 @@
 							>
 								<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
 							</svg>
-						</button>
+						</Button>
 
 						<!-- Group sources -->
 						{#if isGroupExpanded}

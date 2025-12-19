@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { getClusters, connectCluster, disconnectCluster, type KafkaCluster } from '$lib/api';
 	import { onMount } from 'svelte';
+	import { Button, ListItem } from '$lib/components/ui';
 
 	interface Props {
 		currentClusterId?: string | null;
@@ -77,24 +78,27 @@
 
 {#if clusters.length > 0}
 	<div class="cluster-switcher relative">
-		<button
-			type="button"
-			class="flex items-center gap-2 text-xs hover:text-surface-200 transition-colors"
+		<Button
+			variant="ghost"
+			size="sm"
+			class="px-2 py-1 text-xs hover:bg-transparent"
 			onclick={() => (isOpen = !isOpen)}
 		>
-			<span class="text-surface-400 max-w-24 truncate">
-				{activeCluster?.name || 'Select Cluster'}
+			<span class="flex items-center gap-2">
+				<span class="text-surface-400 max-w-24 truncate">
+					{activeCluster?.name || 'Select Cluster'}
+				</span>
+				<svg
+					class="w-3 h-3 text-surface-500 transition-transform {isOpen ? 'rotate-180' : ''}"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					stroke-width="2"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+				</svg>
 			</span>
-			<svg
-				class="w-3 h-3 text-surface-500 transition-transform {isOpen ? 'rotate-180' : ''}"
-				fill="none"
-				stroke="currentColor"
-				viewBox="0 0 24 24"
-				stroke-width="2"
-			>
-				<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-			</svg>
-		</button>
+		</Button>
 
 		{#if isOpen}
 			<div
@@ -108,13 +112,12 @@
 
 				<div class="max-h-64 overflow-y-auto">
 					{#each clusters as cluster}
-						<button
-							type="button"
-							class="w-full text-left px-3 py-2.5 hover:bg-surface-600/50 transition-colors flex items-center justify-between gap-2 {cluster.is_active
-								? 'bg-surface-600/40'
-								: ''}"
-							onclick={() => handleSwitch(cluster)}
+						<ListItem
+							variant="subtle"
+							active={cluster.is_active}
 							disabled={switchingTo !== null}
+							class="px-3 py-2.5 rounded-none hover:bg-surface-600/50"
+							onclick={() => handleSwitch(cluster)}
 						>
 							<div class="min-w-0 flex-1">
 								<div class="flex items-center gap-2">
@@ -155,15 +158,16 @@
 									/>
 								</svg>
 							{/if}
-						</button>
+						</ListItem>
 					{/each}
 				</div>
 
 				{#if activeCluster}
 					<div class="pt-1">
-						<button
-							type="button"
-							class="w-full text-left px-3 py-2.5 hover:bg-surface-600/50 transition-colors text-sm text-surface-300 flex items-center gap-2"
+						<Button
+							variant="ghost"
+							size="md"
+							class="w-full justify-start text-left px-3 py-2.5 text-sm text-surface-300 hover:bg-surface-600/50"
 							onclick={handleDisconnect}
 							disabled={loading}
 						>
@@ -199,7 +203,7 @@
 								</svg>
 							{/if}
 							Disconnect
-						</button>
+						</Button>
 					</div>
 				{/if}
 
@@ -215,3 +219,4 @@
 		{/if}
 	</div>
 {/if}
+

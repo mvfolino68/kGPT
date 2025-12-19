@@ -18,7 +18,7 @@
 		{#each nodes as node}
 			{@const info = nodeInfo[node.name]}
 			{@const nodeColor = getNodeColor(node.name)}
-			<div class="p-4 bg-surface-hover/30 rounded-xl hover:bg-surface-hover/50 transition-colors">
+			<div class="p-4 bg-surface-700/30 rounded-xl hover:bg-surface-700/50 transition-colors cursor-pointer">
 				<div class="flex items-center gap-3 mb-3">
 					<div class="w-10 h-10 rounded-lg bg-bg-elevated flex items-center justify-center">
 						<svg class="w-5 h-5 {nodeColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -35,7 +35,7 @@
 		{/each}
 
 		<!-- Web Search Agent (Exa) -->
-		<div class="p-4 bg-surface-hover/30 rounded-xl hover:bg-surface-hover/50 transition-colors">
+		<div class="p-4 bg-surface-700/30 rounded-xl hover:bg-surface-700/50 transition-colors cursor-pointer">
 			<div class="flex items-center gap-3 mb-3">
 				<div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
 					<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

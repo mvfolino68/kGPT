@@ -1,7 +1,4 @@
 @import 'tailwindcss';
-@import 'tailwindcss/theme' layer(theme);
-@import 'tailwindcss/preflight' layer(base);
-@import 'tailwindcss/utilities' layer(utilities);
 
 @theme {
   /* ========================================================================
@@ -9,44 +6,44 @@
      ======================================================================== */
 
   /* Background - The deepest layer */
-  --color-bg: 5 7 11;                 /* Deep dark background */
-  --color-bg-elevated: 14 18 26;      /* Sidebar, header - slightly lifted */
+  --color-bg: rgb(5 7 11);                 /* Deep dark background */
+  --color-bg-elevated: rgb(14 18 26);      /* Sidebar, header - slightly lifted */
 
   /* Surface Colors - Cards clearly stand out from background */
-  --color-surface: 32 38 54;          /* Card backgrounds - elevated feel */
-  --color-surface-hover: 44 52 72;    /* Hover state - visible change */
-  --color-surface-active: 58 68 92;   /* Active/pressed state */
+  --color-surface: rgb(32 38 54);          /* Card backgrounds - elevated feel */
+  --color-surface-hover: rgb(44 52 72);    /* Hover state - visible change */
+  --color-surface-active: rgb(58 68 92);   /* Active/pressed state */
 
   /* Text Hierarchy */
-  --color-text: 240 243 248;          /* Primary text - crisp white */
-  --color-text-secondary: 170 178 190; /* Secondary */
-  --color-text-tertiary: 120 130 145;  /* Labels, hints */
+  --color-text: rgb(240 243 248);          /* Primary text - crisp white */
+  --color-text-secondary: rgb(170 178 190); /* Secondary */
+  --color-text-tertiary: rgb(120 130 145);  /* Labels, hints */
 
   /* Borders - Very subtle, for inner dividers only */
-  --color-border: 60 68 82;
-  --color-border-subtle: 45 52 65;
+  --color-border: rgb(60 68 82);
+  --color-border-subtle: rgb(45 52 65);
 
   /* Primary/Accent - Blue */
-  --color-primary: 88 166 255;
-  --color-primary-hover: 130 190 255;
-  --color-primary-muted: 56 139 253;
-  --color-primary-bg: 30 45 65;
+  --color-primary: rgb(88 166 255);
+  --color-primary-hover: rgb(130 190 255);
+  --color-primary-muted: rgb(56 139 253);
+  --color-primary-bg: rgb(30 45 65);
 
   /* Status Colors */
-  --color-success: 52 211 153;
-  --color-success-muted: 35 160 85;
-  --color-success-bg: 20 50 40;
+  --color-success: rgb(52 211 153);
+  --color-success-muted: rgb(35 160 85);
+  --color-success-bg: rgb(20 50 40);
 
-  --color-warning: 251 191 36;
-  --color-warning-muted: 200 160 20;
-  --color-warning-bg: 45 40 20;
+  --color-warning: rgb(251 191 36);
+  --color-warning-muted: rgb(200 160 20);
+  --color-warning-bg: rgb(45 40 20);
 
-  --color-error: 251 113 133;
-  --color-error-muted: 220 70 70;
-  --color-error-bg: 50 25 30;
+  --color-error: rgb(251 113 133);
+  --color-error-muted: rgb(220 70 70);
+  --color-error-bg: rgb(50 25 30);
 
-  --color-info: 88 166 255;
-  --color-info-bg: 30 45 65;
+  --color-info: rgb(88 166 255);
+  --color-info-bg: rgb(30 45 65);
 
   /* ========================================================================
      SHADOWS - Key to elevation without borders
@@ -58,49 +55,45 @@
   --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.7), 0 16px 48px rgba(0, 0, 0, 0.5);
 
   /* ========================================================================
-     LEGACY ALIASES - For gradual migration
+     ALIASES - For component compatibility
      ======================================================================== */
 
-  --color-base-900: var(--color-bg);
-  --color-base-800: var(--color-bg-elevated);
+  /* Surface scale (used by components) */
   --color-surface-900: var(--color-bg-elevated);
   --color-surface-800: var(--color-surface);
   --color-surface-700: var(--color-surface-hover);
   --color-surface-600: var(--color-surface-active);
-  --color-surface-500: 78 86 98;
-  --color-surface-400: 110 118 129;
-  --color-surface-300: 139 148 158;
-  --color-surface-200: 173 180 189;
-  --color-surface-100: 230 237 243;
+  --color-surface-500: rgb(78 86 98);
+  --color-surface-400: rgb(110 118 129);
+  --color-surface-300: rgb(139 148 158);
+  --color-surface-200: rgb(173 180 189);
+  --color-surface-100: rgb(230 237 243);
 
+  /* Text aliases */
   --color-foreground: var(--color-text);
   --color-foreground-muted: var(--color-text-secondary);
   --color-foreground-subtle: var(--color-text-tertiary);
   --color-muted: var(--color-text-tertiary);
   --color-muted-foreground: var(--color-text-secondary);
 
+  /* Primary scale */
   --color-primary-700: var(--color-primary);
   --color-primary-600: var(--color-primary-hover);
   --color-primary-400: var(--color-primary);
   --color-primary-500: var(--color-primary-hover);
 
+  /* Status scales */
   --color-success-500: var(--color-success);
   --color-success-400: var(--color-success);
   --color-success-600: var(--color-success-muted);
-
   --color-warning-500: var(--color-warning);
   --color-warning-400: var(--color-warning);
   --color-warning-600: var(--color-warning-muted);
-
   --color-error-500: var(--color-error);
   --color-error-400: var(--color-error);
   --color-error-600: var(--color-error-muted);
-
   --color-info-500: var(--color-info);
   --color-info-400: var(--color-info);
-
-  --color-accent-400: var(--color-primary);
-  --color-accent-500: var(--color-primary);
 
   /* ========================================================================
      TYPOGRAPHY
@@ -158,8 +151,8 @@
    ============================================================================ */
 
 html {
-  background-color: rgb(var(--color-bg));
-  color: rgb(var(--color-text));
+  background-color: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -179,13 +172,13 @@ body {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: rgb(var(--color-text-tertiary));
+  color: var(--color-text-tertiary);
 }
 
 .section-title {
   font-size: var(--font-size-md);
   font-weight: 500;
-  color: rgb(var(--color-text-secondary));
+  color: var(--color-text-secondary);
 }
 
 .font-mono {
@@ -206,26 +199,26 @@ input[type="url"],
 textarea,
 select {
   width: 100%;
-  background-color: rgb(var(--color-surface-hover));
+  background-color: var(--color-surface-hover);
   border: none;
   border-radius: var(--radius-md);
   padding: 0.5rem 0.75rem;
   font-size: var(--font-size-base);
-  color: rgb(var(--color-text));
+  color: var(--color-text);
   transition: all var(--transition-fast);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: rgb(var(--color-text-tertiary));
+  color: var(--color-text-tertiary);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  background-color: rgb(var(--color-surface-active));
-  box-shadow: 0 0 0 1px rgb(var(--color-primary) / 0.5);
+  background-color: var(--color-surface-active);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 50%, transparent);
 }
 
 input:disabled,
@@ -247,16 +240,37 @@ select {
    BUTTON RESET
    ============================================================================ */
 
-button {
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
+@layer base {
+  button {
+    border: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      color var(--transition-fast),
+      box-shadow var(--transition-fast),
+      transform var(--transition-fast),
+      opacity var(--transition-fast);
+  }
 
-button:disabled {
-  cursor: not-allowed;
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Baseline hover/active affordance for any raw <button>.
+     Component/utility-specific hover styles should still win. */
+  button:not(:disabled):not([data-no-hover]):hover {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-border-subtle) 80%, transparent),
+      0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  button:not(:disabled):not([data-no-hover]):active {
+    transform: translateY(1px);
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-border) 70%, transparent);
+  }
 }
 
 /* ============================================================================
@@ -273,17 +287,17 @@ button:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-surface-active));
+  background: var(--color-surface-active);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--color-text-tertiary));
+  background: var(--color-text-tertiary);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(var(--color-surface-active)) transparent;
+  scrollbar-color: var(--color-surface-active) transparent;
 }
 
 /* ============================================================================
@@ -291,12 +305,12 @@ button:disabled {
    ============================================================================ */
 
 *:focus-visible {
-  outline: 2px solid rgb(var(--color-primary-muted));
+  outline: 2px solid var(--color-primary-muted);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: rgb(var(--color-primary) / 0.25);
+  background: color-mix(in oklab, var(--color-primary) 25%, transparent);
   color: inherit;
 }
 

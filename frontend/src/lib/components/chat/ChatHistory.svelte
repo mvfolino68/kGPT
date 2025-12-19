@@ -134,6 +134,7 @@
 	<!-- Resize Handle -->
 	<button
 		type="button"
+		data-no-hover
 		bind:this={resizeHandle}
 		onmousedown={handleMouseDown}
 		class="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/50 transition-colors group"

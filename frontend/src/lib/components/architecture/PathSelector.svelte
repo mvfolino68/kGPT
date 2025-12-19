@@ -19,11 +19,11 @@
 				class="
 					inline-flex items-center justify-center
 					px-3 py-1.5 rounded-md text-xs font-medium
-					transition-all duration-150 ease-out
+					transition-all duration-150 ease-out cursor-pointer
 					focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg
 					{selectedPath === path.id
 						? `${getPathColor(path.color, 'bg')} ${getPathColor(path.color, 'text')} ${getPathColor(path.color, 'border')} border shadow-sm`
-						: 'text-text-tertiary hover:text-text-secondary hover:bg-surface-hover border border-transparent'}
+						: 'text-text-tertiary hover:text-text hover:bg-surface-700 border border-transparent active:bg-surface-active'}
 				"
 			>
 				{path.shortName}

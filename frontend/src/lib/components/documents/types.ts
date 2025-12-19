@@ -90,3 +90,4 @@ export function getStatusColor(status: string): 'active' | 'warning' | 'error' |
 	};
 	return statusMap[status] || 'inactive';
 }
+

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Source } from '$lib/components/sources/types';
+	import { Button } from '$lib/components/ui';
 
 	interface Props {
 		sources: Source[];
@@ -13,9 +14,10 @@
 
 {#if sources.length > 0}
 	<div class="mt-3 pt-3">
-		<button
-			type="button"
-			class="flex items-center gap-2 text-xs text-surface-400 hover:text-cyan-400 transition-colors"
+		<Button
+			variant="ghost"
+			size="xs"
+			class="px-0 py-0 text-xs text-surface-400 hover:text-cyan-400 hover:bg-transparent"
 			onclick={() => expanded = !expanded}
 		>
 			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -28,25 +30,25 @@
 			>
 				<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
 			</svg>
-		</button>
+		</Button>
 
 		{#if expanded}
 			<ul class="mt-2 space-y-1">
 				{#each sources as source, i}
 					<li>
-						<button
-							type="button"
-							class="w-full text-left px-2 py-1.5 rounded text-xs
-								text-surface-300 hover:text-cyan-400 hover:bg-surface-800/50
-								transition-colors flex items-center gap-2"
+						<Button
+							variant="ghost"
+							size="sm"
+							class="w-full justify-start text-left px-2 py-1.5 rounded text-xs text-surface-300 hover:text-cyan-400 hover:bg-surface-800/50"
 							onclick={() => onSourceClick(source)}
 						>
 							<span class="text-cyan-500/70">[{i + 1}]</span>
 							<span class="truncate">{source.title}</span>
-						</button>
+						</Button>
 					</li>
 				{/each}
 			</ul>
 		{/if}
 	</div>
 {/if}
+

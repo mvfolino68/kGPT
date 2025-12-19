@@ -11,6 +11,7 @@
 		type?: 'button' | 'submit' | 'reset';
 		disabled?: boolean;
 		title?: string;
+		ariaLabel?: string;
 		class?: string;
 		children: Snippet;
 		onclick?: (e: MouseEvent) => void;
@@ -22,6 +23,7 @@
 		type = 'button',
 		disabled = false,
 		title,
+		ariaLabel,
 		class: className = '',
 		children,
 		onclick
@@ -30,7 +32,7 @@
 	const buttonSize = $derived(size === 'xs' ? 'icon-sm' : size === 'sm' ? 'icon-md' : 'icon-lg');
 	const variantClass = $derived(
 		variant === 'default' || variant === 'ghost'
-			? 'text-text-secondary hover:text-text hover:bg-surface-hover active:bg-surface-active'
+			? 'text-text-secondary hover:text-text hover:bg-surface-700 active:bg-surface-active'
 			: variant === 'primary'
 				? 'text-primary hover:text-primary-hover hover:bg-primary-bg active:bg-primary/20'
 				: variant === 'danger'
@@ -47,6 +49,7 @@
 	size={buttonSize}
 	disabled={disabled}
 	title={title}
+	ariaLabel={ariaLabel ?? title}
 	onclick={onclick}
 	class="rounded-md {variantClass} {className}"
 >

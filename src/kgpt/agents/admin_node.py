@@ -446,3 +446,4 @@ async def execute_confirmed_operation(operation: str, params: dict) -> dict:
             "operation": operation,
             "error": f"Failed to execute operation: {str(e)}",
         }
+

@@ -57,3 +57,4 @@ export function isPartitionDetailList(
 ): partitions is PartitionDetail[] {
 	return Array.isArray(partitions);
 }
+

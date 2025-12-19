@@ -22,3 +22,4 @@
 		<pre class="mt-2 text-xs font-mono bg-surface-800/80 rounded-lg p-3 overflow-x-auto text-surface-300 border border-surface-700/50">{code}</pre>
 	{/if}
 </div>
+

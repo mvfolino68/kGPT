@@ -83,27 +83,27 @@
 	}
 
 	.formatted-message :global(p) {
-		color: rgb(var(--color-text));
+		color: var(--color-text);
 		margin: 0.75rem 0;
 		line-height: 1.65;
 	}
 
 	.formatted-message :global(a.km-link) {
-		color: rgb(var(--color-primary));
+		color: var(--color-primary);
 		text-decoration: underline;
 		text-underline-offset: 2px;
 	}
 	.formatted-message :global(a.km-link:hover) {
-		color: rgb(var(--color-primary-hover));
+		color: var(--color-primary-hover);
 	}
 
 	.formatted-message :global(code:not(pre code)) {
 		font-family: var(--font-family-mono);
 		font-size: var(--font-size-sm);
-		background: rgba(var(--color-surface), 0.55);
+		background: color-mix(in oklab, var(--color-surface) 55%, transparent);
 		padding: 0.1rem 0.35rem;
 		border-radius: var(--radius-md);
-		color: rgb(var(--color-primary));
+		color: var(--color-primary);
 	}
 
 	.formatted-message :global(.km-codeblock) {
@@ -111,7 +111,7 @@
 		margin: 1rem 0;
 	}
 	.formatted-message :global(.km-codeblock pre) {
-		background: rgb(var(--color-bg-elevated));
+		background: var(--color-bg-elevated);
 		border-radius: var(--radius-xl);
 		padding: 1rem;
 		overflow-x: auto;
@@ -119,7 +119,7 @@
 	.formatted-message :global(.km-codeblock code) {
 		font-family: var(--font-family-mono);
 		font-size: var(--font-size-sm);
-		color: rgb(var(--color-text));
+		color: var(--color-text);
 	}
 	.formatted-message :global(.km-code-lang) {
 		position: absolute;
@@ -127,26 +127,26 @@
 		right: 0.5rem;
 		padding: 0.125rem 0.5rem;
 		border-radius: var(--radius-md);
-		background: rgba(var(--color-surface), 0.55);
-		color: rgb(var(--color-text-tertiary));
+		background: color-mix(in oklab, var(--color-surface) 55%, transparent);
+		color: var(--color-text-tertiary);
 		font-family: var(--font-family-mono);
 		font-size: var(--font-size-2xs);
 	}
 
 	.formatted-message :global(blockquote) {
-		border-left: 4px solid rgba(var(--color-border), 0.5);
-		background: rgba(var(--color-bg-elevated), 0.55);
+		border-left: 4px solid color-mix(in oklab, var(--color-border) 50%, transparent);
+		background: color-mix(in oklab, var(--color-bg-elevated) 55%, transparent);
 		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
 		padding: 0.75rem 1rem;
 		margin: 1rem 0;
-		color: rgb(var(--color-text-secondary));
+		color: var(--color-text-secondary);
 	}
 
 	.formatted-message :global(ul),
 	.formatted-message :global(ol) {
 		margin: 1rem 0;
 		padding-left: 1.25rem;
-		color: rgb(var(--color-text));
+		color: var(--color-text);
 	}
 
 	.formatted-message :global(li) {
@@ -154,13 +154,13 @@
 	}
 
 	.formatted-message :global(::selection) {
-		background: rgba(255, 235, 59, 0.65);
+		background: color-mix(in oklab, var(--color-primary) 30%, transparent);
 		color: inherit;
 		text-shadow: none;
 	}
 
 	.formatted-message :global(::-moz-selection) {
-		background: rgba(255, 235, 59, 0.65);
+		background: color-mix(in oklab, var(--color-primary) 30%, transparent);
 		color: inherit;
 		text-shadow: none;
 	}
@@ -169,7 +169,7 @@
 		margin: 1rem 0;
 		border-radius: var(--radius-lg);
 		overflow: hidden;
-		background: rgba(var(--color-surface), 0.25);
+		background: color-mix(in oklab, var(--color-surface) 25%, transparent);
 	}
 	.formatted-message :global(.km-image img) {
 		display: block;
@@ -183,7 +183,7 @@
 		text-align: center;
 		font-family: var(--font-family-mono);
 		font-size: var(--font-size-xs);
-		color: rgb(var(--color-text-tertiary));
+		color: var(--color-text-tertiary);
 	}
 </style>
 

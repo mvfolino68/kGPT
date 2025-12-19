@@ -497,3 +497,4 @@ def get_write_operations() -> list[KafkaOperation]:
         for op in KAFKA_OPERATIONS.values()
         if op.operation_type in (OperationType.WRITE, OperationType.DESTRUCTIVE)
     ]
+

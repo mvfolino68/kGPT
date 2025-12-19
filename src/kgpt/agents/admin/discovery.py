@@ -334,3 +334,4 @@ def get_operation_examples() -> list[dict]:
             ],
         },
     ]
+

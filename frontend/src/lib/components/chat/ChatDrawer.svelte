@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick, onMount, onDestroy } from 'svelte';
-	import { Button, Badge, Icon } from '$lib/components/ui';
+	import { Button, Badge, Icon, IconButton, ListItem } from '$lib/components/ui';
 	import {
 		chatMessages,
 		currentSessionId,
@@ -254,24 +254,30 @@
 		<header class="flex items-center justify-between px-4 py-3 bg-surface-800">
 			<div class="flex items-center gap-2">
 				<!-- View Toggle -->
-				<div class="flex bg-surface-800 rounded-lg p-0.5">
-					<button
-						type="button"
-						class="btn-segment {currentView === 'chat' ? 'btn-segment-active' : ''}"
+				<div class="flex bg-surface-800 rounded-lg p-0.5 gap-0.5">
+					<Button
+						variant={currentView === 'chat' ? 'secondary' : 'ghost'}
+						size="sm"
+						class="rounded-md px-3"
 						onclick={() => currentView = 'chat'}
 					>
 						Chat
-					</button>
-					<button
-						type="button"
-						class="btn-segment {currentView === 'history' ? 'btn-segment-active' : ''}"
+					</Button>
+					<Button
+						variant={currentView === 'history' ? 'secondary' : 'ghost'}
+						size="sm"
+						class="rounded-md px-3"
 						onclick={() => currentView = 'history'}
 					>
-						History
-						{#if $sessions.length > 0}
-							<span class="text-xs bg-surface-600 px-1.5 rounded">{$sessions.length}</span>
-						{/if}
-					</button>
+						<span class="flex items-center gap-2">
+							History
+							{#if $sessions.length > 0}
+								<span class="text-[10px] bg-surface-600 px-1.5 py-0.5 rounded">
+									{$sessions.length}
+								</span>
+							{/if}
+						</span>
+					</Button>
 				</div>
 			</div>
 
@@ -320,24 +326,30 @@
 						</p>
 
 						<div class="space-y-2 w-full max-w-xs">
-							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
+							<Button
+								variant="secondary"
+								size="lg"
+								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
 								onclick={() => sendMessage('List all topics')}
 							>
 								List all topics
-							</button>
-							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
+							</Button>
+							<Button
+								variant="secondary"
+								size="lg"
+								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
 								onclick={() => sendMessage('Show consumer groups')}
 							>
 								Show consumer groups
-							</button>
-							<button
-								class="w-full text-left px-3 py-2.5 rounded-lg bg-surface-800 hover:bg-surface-700/70 text-sm text-surface-300 transition-colors"
+							</Button>
+							<Button
+								variant="secondary"
+								size="lg"
+								class="w-full justify-start text-left bg-surface-800 hover:bg-surface-700/70 text-surface-300"
 								onclick={() => sendMessage('How do I create a topic?')}
 							>
 								How do I create a topic?
-							</button>
+							</Button>
 						</div>
 					</div>
 				{:else}
@@ -408,10 +420,11 @@
 					<div class="p-2 space-y-1">
 						{#each $sessions as session (session.id)}
 							{@const isActive = session.id === $currentSessionId}
-							<div class="group flex items-center gap-1 rounded-lg transition-colors {isActive ? 'bg-surface-700/50' : 'hover:bg-surface-800/50'}">
-								<button
-									type="button"
-									class="flex-1 min-w-0 text-left px-3 py-3"
+							<div class="group flex items-center gap-1">
+								<ListItem
+									variant="subtle"
+									active={isActive}
+									class="flex-1 min-w-0 px-3 py-3 rounded-lg"
 									onclick={() => handleSelectSession(session.id)}
 								>
 									<div class="flex items-center justify-between gap-2">
@@ -423,17 +436,16 @@
 											<Badge variant="primary" size="sm">Active</Badge>
 										{/if}
 									</div>
-								</button>
-								<button
-									type="button"
-									class="p-1.5 mr-2 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-surface-500 hover:text-red-400 transition-all shrink-0"
-									onclick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
+								</ListItem>
+								<IconButton
+									variant="danger"
+									size="xs"
+									class="mr-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
 									title="Delete session"
+									onclick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
 								>
-									<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-									</svg>
-								</button>
+									<Icon name="trash" size="sm" strokeWidth={2} />
+								</IconButton>
 							</div>
 						{/each}
 					</div>

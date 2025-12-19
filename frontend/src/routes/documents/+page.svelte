@@ -72,6 +72,12 @@
 		goto(url.toString(), { replaceState: true, noScroll: true });
 	}
 
+	// Keep UI in sync with URL (back/forward, manual edits).
+	$effect(() => {
+		const urlTab = getTabFromUrl();
+		if (urlTab !== activeTab) activeTab = urlTab;
+	});
+
 	// =========================================================================
 	// Sources Tab State
 	// =========================================================================
@@ -477,24 +483,53 @@
 	</Header>
 
 	<!-- Tab navigation -->
-	<nav class="px-6 border-b border-white/5 bg-bg-elevated flex gap-1">
-		{#each [
-			{ id: 'sources' as Tab, label: 'Sources' },
-			{ id: 'search' as Tab, label: 'Search' },
-			{ id: 'browse' as Tab, label: 'Browse' },
-			{ id: 'pipeline' as Tab, label: 'RAG Pipeline' }
-		] as tab}
-			<button
-				onclick={() => setActiveTab(tab.id)}
-				class="btn-tab {activeTab === tab.id ? 'btn-tab-active' : ''}"
-			>
-				{tab.label}
-			</button>
-		{/each}
+	<nav
+		class="border-b border-white/5 bg-bg-elevated"
+		aria-label="Vector store sections"
+	>
+		<div class="px-6 max-w-7xl mx-auto">
+			<div class="flex gap-1" role="tablist" aria-orientation="horizontal">
+			{#each [
+				{ id: 'sources' as Tab, label: 'Sources' },
+				{ id: 'search' as Tab, label: 'Search' },
+				{ id: 'browse' as Tab, label: 'Browse' },
+				{ id: 'pipeline' as Tab, label: 'RAG Pipeline' }
+			] as tab}
+				{@const isActive = activeTab === tab.id}
+				<button
+					id={"tab-" + tab.id}
+					type="button"
+					role="tab"
+					aria-selected={isActive}
+					aria-controls={"tabpanel-" + tab.id}
+					tabindex={isActive ? 0 : -1}
+					onclick={() => setActiveTab(tab.id)}
+					class={[
+						'relative px-3 py-2 text-sm font-medium rounded-md transition-all duration-150 select-none cursor-pointer',
+						'text-text-secondary',
+						'hover:text-text hover:bg-surface-700',
+						'active:bg-surface-active active:translate-y-px',
+						'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+						isActive ? 'text-text bg-surface-active shadow-sm' : ''
+					].join(' ')}
+				>
+					<span class="relative z-10">{tab.label}</span>
+					<span
+						aria-hidden="true"
+						class={[
+							'absolute left-2 right-2 -bottom-px h-px rounded-full transition-opacity',
+							'bg-primary',
+							isActive ? 'opacity-100' : 'opacity-0'
+						].join(' ')}
+					></span>
+				</button>
+			{/each}
+			</div>
+		</div>
 	</nav>
 
-	<div class="flex-1 overflow-y-auto p-6">
-		<div class="max-w-6xl mx-auto space-y-6">
+	<div class="flex-1 overflow-y-auto">
+		<div class="p-6 space-y-6 max-w-7xl mx-auto">
 			<!-- Error display -->
 			{#if error}
 				<Card variant="error" padding="sm">
@@ -533,6 +568,12 @@
 
 			<!-- Tab Content -->
 			{#if activeTab === 'sources'}
+				<div
+					id="tabpanel-sources"
+					role="tabpanel"
+					aria-labelledby="tab-sources"
+					tabindex="0"
+				>
 				<IngestionForm
 					{sourceType}
 					{sourceName}
@@ -586,8 +627,15 @@
 					onConfirmDelete={handleConfirmDelete}
 					onCancelDelete={() => confirmingDeleteId = null}
 				/>
+				</div>
 
 			{:else if activeTab === 'search'}
+				<div
+					id="tabpanel-search"
+					role="tabpanel"
+					aria-labelledby="tab-search"
+					tabindex="0"
+				>
 				<SearchTab
 					{searchQuery}
 					{searchResults}
@@ -597,8 +645,15 @@
 					onKChange={(k) => searchK = k}
 					onSearch={handleSearch}
 				/>
+				</div>
 
 			{:else if activeTab === 'browse'}
+				<div
+					id="tabpanel-browse"
+					role="tabpanel"
+					aria-labelledby="tab-browse"
+					tabindex="0"
+				>
 				<BrowseTab
 					{browseResults}
 					{browseLoading}
@@ -608,8 +663,15 @@
 					onToggleVectors={(show) => { showVectors = show; loadVectors(); }}
 					onGoBack={goBack}
 				/>
+				</div>
 
 			{:else if activeTab === 'pipeline'}
+				<div
+					id="tabpanel-pipeline"
+					role="tabpanel"
+					aria-labelledby="tab-pipeline"
+					tabindex="0"
+				>
 				<PipelineTab
 					{pipelineInfo}
 					{pipelineLoading}
@@ -629,6 +691,7 @@
 					onEmbedText2Change={(text) => embedText2 = text}
 					onEmbedCompare={handleEmbedCompare}
 				/>
+				</div>
 			{/if}
 		</div>
 	</div>

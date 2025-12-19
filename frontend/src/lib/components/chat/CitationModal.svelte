@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Icon } from '$lib/components/ui';
+	import { Button, Icon, IconButton } from '$lib/components/ui';
 	import type { CitationObject } from '$lib/api';
 
 	interface Props {
@@ -67,14 +67,16 @@
 							{/if}
 						</div>
 					</div>
-					<button
-						type="button"
-						class="p-1.5 rounded hover:bg-surface-700 transition-colors text-surface-400 hover:text-surface-200"
+					<IconButton
+						variant="ghost"
+						size="sm"
+						class="text-surface-400 hover:text-surface-200 hover:bg-surface-700"
 						onclick={onClose}
-						aria-label="Close modal"
+						ariaLabel="Close modal"
+						title="Close"
 					>
 						<Icon name="close" size="sm" strokeWidth={2} />
-					</button>
+					</IconButton>
 				</div>
 
 				<!-- Body -->

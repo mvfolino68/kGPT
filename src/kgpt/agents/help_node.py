@@ -194,3 +194,4 @@ def format_help_as_text(help_response: dict) -> str:
             lines.append(f'- {action["label"]}: "{action["prompt"]}"')
 
     return "\n".join(lines)
+

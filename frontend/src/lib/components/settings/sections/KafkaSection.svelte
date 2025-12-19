@@ -71,13 +71,9 @@
 		{#if loading}
 			<span class="text-xs text-text-tertiary">Loading...</span>
 		{:else if clusterInfo.connected}
-			<button
-				type="button"
-				class="text-xs text-primary hover:text-primary-hover transition-colors"
-				onclick={ondisconnect}
-			>
+			<Button variant="link" size="xs" class="text-xs" onclick={ondisconnect}>
 				Disconnect
-			</button>
+			</Button>
 		{/if}
 	{/snippet}
 
@@ -142,9 +138,10 @@
 			</form>
 		{:else}
 			<div class="space-y-2">
-				<button
-					type="button"
-					class="w-full p-3 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
+				<Button
+					variant="secondary"
+					size="lg"
+					class="w-full justify-start text-left p-3 rounded-lg bg-surface-hover hover:bg-surface-active"
 					onclick={onconnectdemo}
 				>
 					<div class="flex items-center gap-3">
@@ -157,10 +154,11 @@
 						</div>
 						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 					</div>
-				</button>
-				<button
-					type="button"
-					class="w-full p-3 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors text-left group"
+				</Button>
+				<Button
+					variant="secondary"
+					size="lg"
+					class="w-full justify-start text-left p-3 rounded-lg bg-surface-hover hover:bg-surface-active"
 					onclick={onshowform}
 				>
 					<div class="flex items-center gap-3">
@@ -173,16 +171,17 @@
 						</div>
 						<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 					</div>
-				</button>
+				</Button>
 
 				{#if clusters.length > 0}
 					<div class="pt-3 mt-2">
 						<p class="label mb-2">Saved Clusters</p>
 						<div class="space-y-1.5">
 							{#each clusters as cluster}
-								<button
-									type="button"
-									class="w-full p-2.5 rounded-lg bg-surface hover:bg-surface-hover transition-colors text-left group"
+								<Button
+									variant="secondary"
+									size="lg"
+									class="w-full justify-start text-left p-2.5 rounded-lg bg-surface hover:bg-surface-700 cursor-pointer"
 									onclick={() => onconnect(cluster)}
 									disabled={connecting}
 								>
@@ -193,7 +192,7 @@
 										</div>
 										<Icon name="chevron-right" size="sm" class="text-text-tertiary group-hover:text-text-secondary" />
 									</div>
-								</button>
+								</Button>
 							{/each}
 						</div>
 					</div>

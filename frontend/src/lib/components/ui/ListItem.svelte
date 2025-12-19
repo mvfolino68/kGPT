@@ -30,7 +30,7 @@
 		{active
 			? 'bg-surface-hover text-text'
 			: variant === 'subtle'
-				? 'text-text-secondary hover:bg-surface-hover/60 hover:text-text'
+				? 'text-text-secondary hover:bg-surface-700/60 hover:text-text'
 				: 'text-text-secondary hover:bg-surface hover:text-text'}
 		{className}
 	"
