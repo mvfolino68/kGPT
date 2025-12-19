@@ -1,22 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Terminal-style kGPT logo - Confluent themed -->
-  <!-- Background -->
-  <rect x="2" y="2" width="44" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-  <!-- Terminal bar -->
-  <rect x="2" y="2" width="44" height="10" rx="6" fill="#0f172a"/>
-  <rect x="2" y="8" width="44" height="4" fill="#0f172a"/>
-  <!-- Window controls -->
-  <circle cx="10" cy="7" r="2" fill="#ef4444"/>
-  <circle cx="17" cy="7" r="2" fill="#f59e0b"/>
-  <circle cx="24" cy="7" r="2" fill="#22c55e"/>
-  <!-- K letter - Blue themed -->
-  <path d="M12 18v16M12 26l7-8M12 26l7 8" stroke="#60A5FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Cursor - Blue -->
-  <rect x="28" y="18" width="2" height="16" fill="#60A5FA" opacity="0.8">
-    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="1s" repeatCount="indefinite"/>
-  </rect>
-  <!-- Streaming dots - Blue gradient -->
-  <circle cx="36" cy="20" r="1.5" fill="#60A5FA"/>
-  <circle cx="36" cy="26" r="1.5" fill="#60A5FA" opacity="0.6"/>
-  <circle cx="36" cy="32" r="1.5" fill="#60A5FA" opacity="0.3"/>
+  <defs>
+    <!-- Linear-inspired premium gradients -->
+    <linearGradient id="logoBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0d0d1a"/>
+    </linearGradient>
+    <linearGradient id="logoAccentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="50%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#c4b5fd"/>
+    </linearGradient>
+    <linearGradient id="logoGlowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <!-- Glow filter for premium feel -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Premium rounded square background -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#logoBgGradient)"/>
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="none" stroke="url(#logoAccentGradient)" stroke-width="0.75" opacity="0.4"/>
+
+  <!-- Stylized K with premium gradient stroke -->
+  <g filter="url(#glow)">
+    <path d="M14 10v28" stroke="url(#logoAccentGradient)" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M14 24l12-14" stroke="url(#logoAccentGradient)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14 24l12 14" stroke="url(#logoAccentGradient)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- AI streaming dots with premium glow -->
+  <circle cx="36" cy="14" r="3.5" fill="url(#logoGlowGradient)"/>
+  <circle cx="36" cy="14" r="2" fill="#c4b5fd"/>
+
+  <circle cx="36" cy="24" r="2.8" fill="url(#logoGlowGradient)" opacity="0.7"/>
+  <circle cx="36" cy="24" r="1.6" fill="#a78bfa"/>
+
+  <circle cx="36" cy="34" r="2.2" fill="url(#logoGlowGradient)" opacity="0.4"/>
+  <circle cx="36" cy="34" r="1.2" fill="#8b5cf6"/>
 </svg>
