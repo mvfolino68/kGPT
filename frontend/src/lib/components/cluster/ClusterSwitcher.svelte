@@ -82,23 +82,21 @@
 		<Button
 			variant="ghost"
 			size="sm"
-			class="px-3 py-1.5 h-auto hover:bg-surface-800 border border-transparent hover:border-surface-700/50 transition-all duration-200"
+			class="hover:bg-surface-800 border border-transparent hover:border-surface-700/50 transition-all duration-200 gap-2.5"
 			onclick={() => (isOpen = !isOpen)}
 		>
-			<span class="flex items-center gap-2.5">
-				<span class="relative flex h-2 w-2">
-				  {#if activeCluster}
-					<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-					<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-				  {:else}
-					<span class="relative inline-flex rounded-full h-2 w-2 bg-surface-500"></span>
-				  {/if}
-				</span>
-				<span class="text-sm font-medium text-surface-200 max-w-32 truncate">
-					{activeCluster?.name || 'No Cluster'}
-				</span>
-				<Icon name="chevron-down" size="sm" class="text-surface-500 transition-transform duration-200 {isOpen ? 'rotate-180' : ''}" />
+			<span class="relative flex h-2 w-2 shrink-0">
+				{#if activeCluster}
+				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+				<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+				{:else}
+				<span class="relative inline-flex rounded-full h-2 w-2 bg-surface-500"></span>
+				{/if}
 			</span>
+			<span class="text-xs font-medium text-surface-200 max-w-32 truncate">
+				{activeCluster?.name || 'No Cluster'}
+			</span>
+			<Icon name="chevron-down" size="sm" class="text-surface-500 transition-transform duration-200 {isOpen ? 'rotate-180' : ''}" />
 		</Button>
 
 		{#if isOpen}
