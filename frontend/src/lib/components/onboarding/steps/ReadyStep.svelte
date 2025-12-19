@@ -46,7 +46,7 @@
 			</div>
 
 			<!-- Status summary -->
-			<div class="p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 mb-6">
+			<div class="p-4 rounded-lg bg-surface-800/50 border border-surface-700/50 mb-4">
 				<div class="space-y-2">
 					<div class="flex items-center justify-between text-sm">
 						<span class="text-surface-400">OpenAI API</span>
@@ -69,6 +69,18 @@
 							</span>
 						{/if}
 					</div>
+				</div>
+			</div>
+
+			<!-- Tip about embeddings -->
+			<div class="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 mb-6">
+				<div class="flex items-start gap-2.5">
+					<svg class="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+					</svg>
+					<p class="text-xs text-surface-400">
+						<span class="text-amber-400 font-medium">Tip:</span> To use RAG with custom documents, configure embedding providers and optional API keys (Exa, Cohere) in <a href="/settings" onclick={onComplete} class="text-primary-light hover:underline">Settings</a>.
+					</p>
 				</div>
 			</div>
 

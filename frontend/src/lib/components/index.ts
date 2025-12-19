@@ -34,3 +34,6 @@ export * from './architecture';
 
 // Documents components
 export * from './documents';
+
+// Settings components
+export * from './settings';
