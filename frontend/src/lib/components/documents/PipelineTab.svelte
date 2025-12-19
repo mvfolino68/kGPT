@@ -150,13 +150,13 @@
 			</div>
 
 			<div class="p-4 space-y-4">
-				<form onsubmit={(e) => { e.preventDefault(); onRunDemo(); }} class="flex gap-3">
+				<form onsubmit={(e) => { e.preventDefault(); onRunDemo(); }} class="flex gap-3 items-center">
 					<input
 						type="text"
 						value={demoQuery}
 						oninput={(e) => onDemoQueryChange(e.currentTarget.value)}
 						placeholder="Enter a query to see the RAG pipeline in action..."
-						class="flex-1 input"
+						class="flex-1 min-w-0 input"
 					/>
 					<button
 						type="submit"

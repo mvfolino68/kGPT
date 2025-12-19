@@ -29,7 +29,7 @@
 </script>
 
 {#if icon}
-	<div class="input-icon-wrapper {className}">
+	<div class="input-icon-wrapper w-full {className}">
 		<span class="input-icon">
 			{@render icon()}
 		</span>
@@ -40,7 +40,7 @@
 			{placeholder}
 			{disabled}
 			bind:value
-			class="input"
+			class="input w-full"
 			{oninput}
 			{onkeydown}
 		/>
@@ -53,7 +53,7 @@
 		{placeholder}
 		{disabled}
 		bind:value
-		class="input {className}"
+		class="input w-full {className}"
 		{oninput}
 		{onkeydown}
 	/>

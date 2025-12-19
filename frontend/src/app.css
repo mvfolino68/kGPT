@@ -242,7 +242,6 @@ body {
    ============================================================================ */
 
 .input {
-  width: 100%;
   background: rgb(var(--color-surface-900));
   border: 1px solid rgb(var(--color-surface-700));
   border-radius: var(--radius-md);

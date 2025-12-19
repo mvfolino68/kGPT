@@ -40,13 +40,13 @@
 				<span class="text-emerald-400">How it works:</span> Your query is converted to an embedding vector, then compared against all stored document chunks using cosine similarity.
 			</div>
 
-			<form onsubmit={(e) => { e.preventDefault(); onSearch(); }} class="flex gap-3">
+			<form onsubmit={(e) => { e.preventDefault(); onSearch(); }} class="flex gap-3 items-center">
 				<input
 					type="text"
 					value={searchQuery}
 					oninput={(e) => onQueryChange(e.currentTarget.value)}
 					placeholder="Search for anything..."
-					class="flex-1 input"
+					class="flex-1 min-w-0 input"
 				/>
 				<select
 					value={searchK}
