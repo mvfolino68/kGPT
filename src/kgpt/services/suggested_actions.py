@@ -1,6 +1,57 @@
 """Contextual suggested actions generation based on query and cluster state."""
 
-from kgpt.agents.admin import get_suggested_operations
+# from kgpt.agents.admin import get_suggested_operations
+
+
+def get_suggested_operations(
+    last_operation: str, last_success: bool, cluster_info: dict | None = None
+) -> list[dict]:
+    """
+    Generate suggested follow-up operations based on the last operation.
+    Simplified local implementation since admin module is removed.
+    """
+    suggestions = []
+
+    if not last_success:
+        return []
+
+    op_lower = last_operation.lower()
+
+    if "create" in op_lower and "topic" in op_lower:
+        suggestions.append(
+            {
+                "operation_id": "describe-created-topic",
+                "operation_name": "Describe new topic",
+                "suggested_prompt": "Describe topic [topic_name]",
+            }
+        )
+        suggestions.append(
+            {
+                "operation_id": "list-topics",
+                "operation_name": "List topics",
+                "suggested_prompt": "List all topics",
+            }
+        )
+
+    elif "delete" in op_lower and "topic" in op_lower:
+        suggestions.append(
+            {
+                "operation_id": "list-topics",
+                "operation_name": "Verify deletion",
+                "suggested_prompt": "List all topics to verify deletion",
+            }
+        )
+
+    elif "group" in op_lower:
+        suggestions.append(
+            {
+                "operation_id": "list-groups",
+                "operation_name": "List consumer groups",
+                "suggested_prompt": "List all consumer groups",
+            }
+        )
+
+    return suggestions
 
 
 def generate_suggested_actions(

@@ -67,6 +67,7 @@ class AgentOrchestrator:
             "citations": [],
             "messages": messages,
             "error": None,
+            "trace_events": [],
         }
 
         # Run the graph

@@ -12,7 +12,8 @@
 		TopicsPanel,
 		ConsumerGroupsPanel,
 		QuickActions,
-		ClusterSwitcher
+		ClusterSwitcher,
+		EducationalContext
 	} from '$lib/components/cluster';
 	import { Hint } from '$lib/components/hints';
 
@@ -325,6 +326,9 @@
 		</Card>
 	{/if}
 </Page>
+
+<!-- Educational Overlay -->
+<EducationalContext />
 
 <!-- Contextual Hint -->
 <Hint

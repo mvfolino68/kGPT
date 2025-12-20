@@ -258,38 +258,35 @@ def _create_rerank_query(original_query: str, enhanced_query: str) -> str:
     return f"{enhanced_query} in Apache Kafka"
 
 
-async def retrieval_node(state: AgentState) -> dict:
+async def search_documents(query: str, sub_queries: list[str] | None = None) -> list[Document]:
     """
-    Retrieval node with hybrid search and reranking.
+    Search the knowledge base using hybrid search and reranking.
 
-    Pipeline:
-    1. Enhance queries with domain-specific disambiguation
-    2. Hybrid search - combine dense vector and keyword matching
-    3. Deduplication - remove duplicate chunks from different queries
-    4. Reranking - use Cohere or cross-encoder to improve precision
-    5. Relevance filtering - remove documents below threshold
-    6. Caching - cache results for repeated queries
+    Args:
+        query: Main search query
+        sub_queries: Optional list of related queries to broaden search
+
+    Returns:
+        List of relevant documents
     """
-    logger.info("Retrieval agent fetching documents...")
+    logger.info(f"Searching knowledge base for: {query[:50]}...")
 
     # Check cache first
     cache = get_query_cache()
-    cache_key = f"retrieval:{state['question']}"
+    # Cache key includes sub-queries to be correct
+    cache_key = f"retrieval:{query}:{str(sub_queries)}"
     cached = cache.get(cache_key)
     if cached:
         logger.info("Using cached retrieval results")
-        return {"retrieved_docs": cached}
+        return cached
 
     store = get_vectorstore()
     all_docs: list[Document] = []
     seen_content_hashes: set[int] = set()
 
-    # Use sub_goals from router + main question
-    sub_goals = state.get("sub_goals", [])
-    raw_queries = [state["question"]] + [g for g in sub_goals if g != state["question"]]
+    raw_queries = [query] + (sub_queries or [])
 
     # Enhance queries for domain-specific disambiguation
-    # This transforms "kraft" -> "KRaft" to find correct Kafka documentation
     queries = _enhance_retrieval_queries(raw_queries)
 
     if queries != raw_queries:
@@ -299,14 +296,14 @@ async def retrieval_node(state: AgentState) -> dict:
         # Search across all collections
         collections = store.list_collections()
 
-        for query in queries:
-            logger.debug(f"Searching: {query[:50]}...")
+        for q in queries:
+            logger.debug(f"Searching: {q[:50]}...")
 
             for collection in collections:
                 try:
                     # Hybrid search (combines dense + keyword scoring)
                     results = store.hybrid_search(
-                        query,
+                        q,
                         k=5,
                         collection_name=collection,
                         alpha=0.7,  # Favor dense vectors slightly
@@ -319,14 +316,14 @@ async def retrieval_node(state: AgentState) -> dict:
                             seen_content_hashes.add(content_hash)
                             doc.metadata["relevance_score"] = float(score)
                             doc.metadata["collection"] = collection
-                            doc.metadata["search_query"] = query[:100]
+                            doc.metadata["search_query"] = q[:100]
                             all_docs.append(doc)
 
                 except Exception as e:
                     logger.warning(f"Error searching collection {collection}: {e}")
                     continue
 
-        # Preliminary sort by relevance score (higher = better)
+        # Preliminary sort by relevance score
         all_docs.sort(key=lambda d: d.metadata.get("relevance_score", 0), reverse=True)
 
         # Log initial retrieval scores for debugging
@@ -334,15 +331,14 @@ async def retrieval_node(state: AgentState) -> dict:
             initial_scores = [f"{d.metadata.get('relevance_score', 0):.3f}" for d in all_docs[:5]]
             logger.debug(f"Initial retrieval scores (top 5): [{', '.join(initial_scores)}]")
 
-        # Take top candidates for reranking (more than we need)
+        # Take top candidates for reranking
         candidates = all_docs[:20]
 
-        # Reranking for better precision (includes relevance filtering)
+        # Reranking
         if candidates:
             # Create optimized rerank query with Kafka context
-            # Cohere needs domain context to score Kafka docs correctly
-            enhanced_query = queries[0] if queries else state["question"]
-            rerank_query = _create_rerank_query(state["question"], enhanced_query)
+            enhanced_query = queries[0] if queries else query
+            rerank_query = _create_rerank_query(query, enhanced_query)
             logger.debug(f"Rerank query: {rerank_query}")
 
             reranked_docs = await rerank_documents(
@@ -360,14 +356,19 @@ async def retrieval_node(state: AgentState) -> dict:
         # Cache results
         cache.set(cache_key, reranked_docs)
 
-        return {"retrieved_docs": reranked_docs}
+        return reranked_docs
 
     except Exception as e:
         logger.error(f"Retrieval error: {e}")
-        return {
-            "retrieved_docs": [],
-            "error": f"Retrieval failed: {str(e)}",
-        }
+        # Return empty list on error for resilience
+        return []
+
+
+async def retrieval_node(state: AgentState) -> dict:
+    """Wrapper for graph node that uses search_documents."""
+    sub_goals = [g for g in state.get("sub_goals", []) if g != state["question"]]
+    docs = await search_documents(state["question"], sub_goals)
+    return {"retrieved_docs": docs}
 
 
 def extract_doc_citations(docs: list[Document]) -> list[dict]:

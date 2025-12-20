@@ -1134,3 +1134,35 @@ export async function getOperationSuggestions(
 	if (!response.ok) throw new Error(`Failed to get suggestions: ${response.statusText}`);
 	return response.json();
 }
+
+// ============================================================================
+// Direct Management APIs (New)
+// ============================================================================
+
+export async function createTopic(name: string, partitions: number = 1, replicationFactor: number = 1, config?: Record<string, string>): Promise<any> {
+    const response = await fetch(`${API_BASE}/cluster/topics`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, partitions, replication_factor: replicationFactor, config })
+    });
+    if (!response.ok) throw new Error(`Create topic failed: ${response.statusText}`);
+    return response.json();
+}
+
+export async function deleteTopic(name: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/cluster/topics/${name}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`Delete topic failed: ${response.statusText}`);
+    return response.json();
+}
+
+export async function deleteConsumerGroup(groupId: string): Promise<any> {
+    const response = await fetch(`${API_BASE}/cluster/groups/${groupId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`Delete group failed: ${response.statusText}`);
+    return response.json();
+}
+
+export async function getBrokerConfig(brokerId: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/cluster/brokers/${brokerId}/config`);
+    if (!response.ok) throw new Error(`Get broker config failed: ${response.statusText}`);
+    return response.json();
+}

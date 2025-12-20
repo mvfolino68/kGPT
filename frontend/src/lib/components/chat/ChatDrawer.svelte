@@ -65,10 +65,11 @@
 		}
 	}
 
-	function handleChatAction(event: CustomEvent<{ message: string }>) {
+	function handleChatAction(event: string | CustomEvent<{ message: string }>) {
+		const message = typeof event === 'string' ? event : event.detail.message;
 		currentView = 'chat';
-		inputValue = event.detail.message;
-		sendMessage(event.detail.message);
+		inputValue = message;
+		sendMessage(message);
 	}
 
 	onMount(async () => {
@@ -171,9 +172,12 @@
 					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, content: fullContent } : m));
 					await scrollToBottom();
 				} else if (event.type === 'citations') {
-					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, citations: event.data } : m));
+					const citations = Array.isArray(event.data) ? event.data : (event.data?.citations || []);
+					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, citations } : m));
 				} else if (event.type === 'actions') {
-					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, actions: event.data } : m));
+					// Ensure we have an array for actions too
+					const actions = Array.isArray(event.data) ? event.data : (event.data?.actions || []);
+					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, actions } : m));
 				}
 			}
 

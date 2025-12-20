@@ -55,6 +55,9 @@ class AgentState(TypedDict):
     # Error message if something went wrong
     error: str | None
 
+    # Educational mode trace events
+    trace_events: list[dict]
+
 
 class RouterDecision(TypedDict):
     """Decision output from the router agent."""

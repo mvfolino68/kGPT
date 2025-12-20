@@ -32,23 +32,27 @@ async def lifespan(app: FastAPI):
     # Restore active Kafka cluster context if one was previously connected
     active_cluster = db.get_active_kafka_cluster()
     if active_cluster:
-        from kgpt.agents import KafkaClusterContext, set_cluster_context
+        from kgpt.services.kafka import get_kafka_service
 
         try:
-            context = KafkaClusterContext(
-                bootstrap_servers=active_cluster["bootstrap_servers"],
-                security_protocol=active_cluster.get("security_protocol", "PLAINTEXT"),
-                sasl_mechanism=active_cluster.get("sasl_mechanism"),
-                sasl_username=active_cluster.get("sasl_username"),
-                sasl_password=active_cluster.get("sasl_password"),
-            )
-            # Test connection before setting context
-            connected, msg = context.test_connection()
-            if connected:
-                set_cluster_context(context)
+            config = {
+                "name": active_cluster["name"],
+                "bootstrap_servers": active_cluster["bootstrap_servers"],
+                "security_protocol": active_cluster.get("security_protocol", "PLAINTEXT"),
+                "sasl_mechanism": active_cluster.get("sasl_mechanism"),
+                "sasl_username": active_cluster.get("sasl_username"),
+                "sasl_password": active_cluster.get("sasl_password"),
+            }
+
+            service = get_kafka_service()
+            service.set_config(config)
+
+            # Test connection before considering it restored
+            try:
+                service.test_connection()
                 logger.info(f"Restored Kafka cluster context: {active_cluster['name']}")
-            else:
-                logger.warning(f"Could not restore Kafka cluster: {msg}")
+            except Exception as e:
+                logger.warning(f"Could not restore Kafka cluster: {e}")
         except Exception as e:
             logger.warning(f"Failed to restore Kafka cluster context: {e}")
 
@@ -73,6 +77,7 @@ app.add_middleware(
         "http://localhost:4173",  # Vite preview
         "http://localhost:3000",  # Alternative dev port
         "http://frontend:3000",  # Docker network
+        "http://127.0.0.1:5173",  # Vite dev server (127.0.0.1)
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -89,7 +94,7 @@ app.include_router(settings_router, prefix="/api")
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])
 async def health_check() -> HealthResponse:
     """Check the health of the API and its dependencies."""
-    from kgpt.agents import get_cluster_context
+    from kgpt.services.kafka import get_kafka_service
     from kgpt.vectorstore import get_vectorstore
 
     # Check Qdrant
@@ -101,7 +106,7 @@ async def health_check() -> HealthResponse:
         logger.warning(f"Qdrant health check failed: {e}")
 
     # Check Kafka
-    kafka_connected = get_cluster_context() is not None
+    kafka_connected = get_kafka_service().config is not None
 
     return HealthResponse(
         status="healthy" if qdrant_connected else "degraded",

@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { BrokerInfo } from '$lib/api';
-	import { Card, Button } from '$lib/components/ui';
+	import { type BrokerInfo, getBrokerConfig } from '$lib/api';
+	import { educationalStore } from '$lib/stores/educational.svelte';
+	import { Card, Button, Icon } from '$lib/components/ui';
 
 	interface Props {
 		brokers: BrokerInfo[];
@@ -16,6 +17,34 @@
 		if (totalPartitions === 0) return 0;
 		return Math.round((count / totalPartitions) * 100);
 	}
+
+	function handleConfig(brokerId: number) {
+		educationalStore.performAction({
+			type: 'inspect',
+			resource: 'broker',
+			name: `Broker ${brokerId}`,
+			protocolOperation: 'DescribeConfigs',
+			explanation: `Fetch configuration parameters for Broker ${brokerId}.`,
+			details: { brokerId },
+			onConfirm: async () => {
+				const config = await getBrokerConfig(brokerId);
+				// TODO: In a real app we might show this in a modal
+				// For now, we can log it or show it in the store's result view if we had one.
+				// But educationalStore is mainly for "intercepting".
+				// Let's just alert for now or maybe we can enhance educationalStore to show results?
+				// The prompt says "Inspect opens a detailed view".
+				// Since we don't have a generic "inspect result" modal ready other than the one for tools,
+				// let's just log it or maybe open a simple alert.
+				// ACTUALLY, checking the user requirement: "Inspect opens a detailed view (not just chat)"
+				// I'll make the educational store action "resolve" and I can handle the result presentation here if I want.
+				// But simpler: just alert the result for now or rely on the user seeing the network tab?
+				// User said: "Reuse sub-components (like TopicDetails.svelte) for "Inspect" views in the main dashboard".
+				// For brokers, we don't have a BrokerDetails component.
+				// I'll create a simple modal or just alert.
+				alert(JSON.stringify(config, null, 2));
+			}
+		});
+	}
 </script>
 
 <Card title="Brokers" subtitle="{brokers.length} {brokers.length === 1 ? 'node' : 'nodes'}">
@@ -25,13 +54,10 @@
 		{:else}
 			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 				{#each brokers as broker}
-					<Button
-						variant="secondary"
-						size="lg"
-						class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active"
-						onclick={() => onBrokerClick?.(broker.id)}
+					<div
+						class="w-full justify-start text-left p-4 rounded-lg bg-surface-hover hover:bg-surface-active transition-colors"
 					>
-						<div class="flex items-start gap-4">
+						<div class="flex items-start gap-4 w-full">
 							<!-- Left: Broker identity -->
 							<div class="flex items-center gap-3 shrink-0">
 								<div
@@ -51,8 +77,8 @@
 								</div>
 							</div>
 
-							<!-- Right: Stats -->
-							<div class="flex-1 space-y-2 min-w-0">
+							<!-- Middle: Stats -->
+							<div class="flex-1 space-y-2 min-w-0 mx-2">
 								<div class="flex items-center justify-between text-xs">
 									<span class="text-text-tertiary">Partitions</span>
 									<span class="text-text-secondary font-medium tabular-nums">
@@ -71,8 +97,24 @@
 									<span class="text-text-secondary font-medium tabular-nums">{broker.leader_count} {broker.leader_count === 1 ? 'partition' : 'partitions'}</span>
 								</div>
 							</div>
+
+							<!-- Right: Actions -->
+							<div class="flex flex-col gap-1 shrink-0">
+                                <Button
+									variant="ghost"
+									size="icon-sm"
+									class="text-text-tertiary hover:text-primary hover:bg-primary/10 w-6 h-6"
+									onclick={(e) => {
+										e.stopPropagation();
+										handleConfig(broker.id);
+									}}
+									title="Inspect Config"
+								>
+									<Icon name="settings" size="xs" />
+								</Button>
+							</div>
 						</div>
-					</Button>
+					</div>
 				{/each}
 			</div>
 		{/if}

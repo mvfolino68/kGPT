@@ -1,34 +1,53 @@
 <script lang="ts">
-	import type { ConsumerGroupInfo } from '$lib/api';
-	import { ListItem, Card, Input, Icon } from '$lib/components/ui';
+	import { deleteConsumerGroup, type ConsumerGroupInfo } from '$lib/api';
+	import { educationalStore } from '$lib/stores/educational.svelte';
+	import { Button, Card, Input, Icon, ListItem } from '$lib/components/ui';
 
 	interface Props {
 		groups: ConsumerGroupInfo[];
 		onGroupClick?: (groupId: string) => void;
 	}
 
-	let { groups, onGroupClick }: Props = $props();
+	let { groups = [], onGroupClick }: Props = $props();
 
 	let searchQuery = $state('');
 
-	const filteredGroups = $derived(() => {
+	function filteredGroups() {
 		if (!searchQuery) return groups;
-		return groups.filter((g) => g.group_id.toLowerCase().includes(searchQuery.toLowerCase()));
-	});
-
-	function getStateBadgeClass(state: string): string {
-		const s = state.toLowerCase();
-		if (s.includes('stable')) return 'bg-success/10 text-success';
-		if (s.includes('empty')) return 'bg-surface-hover text-text-tertiary';
-		if (s.includes('preparing') || s.includes('completing')) return 'bg-warning/10 text-warning';
-		if (s.includes('dead')) return 'bg-error/10 text-error';
-		return 'bg-surface-hover text-text-tertiary';
+		const q = searchQuery.toLowerCase();
+		return groups.filter((g) => g.group_id.toLowerCase().includes(q));
 	}
 
-	function formatState(state: string): string {
-		const parts = state.split('.');
-		const stateName = parts[parts.length - 1];
-		return stateName.charAt(0).toUpperCase() + stateName.slice(1).toLowerCase();
+	function getStateBadgeClass(state: string) {
+		switch (state) {
+			case 'Stable':
+				return 'bg-success/20 text-success';
+			case 'Empty':
+				return 'bg-surface-600 text-surface-300';
+			case 'Dead':
+				return 'bg-error/20 text-error';
+			default:
+				return 'bg-warning/20 text-warning';
+		}
+	}
+
+	function formatState(state: string) {
+		return state;
+	}
+
+	async function handleDelete(groupId: string) {
+		await educationalStore.performAction({
+			type: 'delete',
+			resource: 'group',
+			name: groupId,
+			protocolOperation: 'DeleteConsumerGroups',
+			explanation: `This will delete the consumer group "${groupId}". Active consumers will be disconnected.`,
+			details: { group_id: groupId },
+			onConfirm: async () => {
+				await deleteConsumerGroup(groupId);
+				window.location.reload();
+			}
+		});
 	}
 </script>
 
@@ -108,7 +127,21 @@
 									{/if}
 								</div>
 
-								<Icon name="chevron-right" size="sm" class="text-text-tertiary shrink-0 mt-0.5" />
+								<div class="flex items-center gap-2">
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										class="text-text-tertiary hover:text-error hover:bg-error/10 w-6 h-6"
+										onclick={(e) => {
+											e.stopPropagation();
+											handleDelete(group.group_id);
+										}}
+										title="Delete group"
+									>
+										<Icon name="trash" size="xs" />
+									</Button>
+									<Icon name="chevron-right" size="sm" class="text-text-tertiary shrink-0" />
+								</div>
 							</div>
 						</ListItem>
 					{/each}

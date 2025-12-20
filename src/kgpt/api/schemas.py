@@ -223,8 +223,8 @@ class ClusterConnectRequest(BaseModel):
 class ClusterInfo(BaseModel):
     """Information about a connected Kafka cluster."""
 
-    name: str
-    bootstrap_servers: str
+    name: str | None = None
+    bootstrap_servers: str | None = None
     connected: bool
     brokers: int | None = None
     topics: list[str] = []

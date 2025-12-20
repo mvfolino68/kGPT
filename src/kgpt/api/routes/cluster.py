@@ -2,336 +2,224 @@
 
 from fastapi import APIRouter, HTTPException
 from loguru import logger
+from starlette.concurrency import run_in_threadpool
 
-from kgpt.agents.admin import (
-    get_available_operations_for_context,
-    get_operation_examples,
-    get_operations_by_category_dict,
-    get_suggested_operations,
-)
 from kgpt.api.schemas import (
-    BrokerInfo,
     ClusterConnectRequest,
     ClusterDetailsResponse,
     ClusterInfo,
     ClusterResponse,
-    ConsumerGroupInfo,
     KafkaCluster,
-    TopicInfo,
 )
 from kgpt.db import get_db
+from kgpt.services import KafkaService, get_kafka_service
 
 router = APIRouter(prefix="/cluster", tags=["cluster"])
 
 
-def get_cluster_info_from_connection(bootstrap_servers: str, config: dict) -> ClusterInfo | None:
-    """Get cluster information by connecting to Kafka."""
-    try:
-        from confluent_kafka.admin import AdminClient
-
-        admin_config = {"bootstrap.servers": bootstrap_servers}
-
-        # Add security config if needed
-        if config.get("security_protocol") and config["security_protocol"] != "PLAINTEXT":
-            admin_config["security.protocol"] = config["security_protocol"]
-            if config.get("sasl_mechanism"):
-                admin_config["sasl.mechanism"] = config["sasl_mechanism"]
-            if config.get("sasl_username"):
-                admin_config["sasl.username"] = config["sasl_username"]
-            if config.get("sasl_password"):
-                admin_config["sasl.password"] = config["sasl_password"]
-
-        admin = AdminClient(admin_config)
-
-        # Get cluster metadata
-        metadata = admin.list_topics(timeout=10)
-
-        topics = [t for t in metadata.topics if not t.startswith("_")]
-        brokers = len(metadata.brokers)
-        cluster_id = metadata.cluster_id
-
-        return ClusterInfo(
-            name=config.get("name", "Kafka Cluster"),
-            bootstrap_servers=bootstrap_servers,
-            connected=True,
-            brokers=brokers,
-            topics=topics,
-            cluster_id=cluster_id,
-        )
-
-    except Exception as e:
-        logger.error(f"Failed to connect to Kafka: {e}")
-        return None
+def _map_db_to_config(active: dict) -> dict:
+    """Helper to map DB cluster record to KafkaService config."""
+    config = {
+        "name": active.get("name"),
+        "bootstrap_servers": active.get("bootstrap_servers"),
+    }
+    if active.get("security_protocol"):
+        config["security_protocol"] = active["security_protocol"]
+    if active.get("sasl_mechanism"):
+        config["sasl_mechanism"] = active["sasl_mechanism"]
+    if active.get("sasl_username"):
+        config["sasl_username"] = active["sasl_username"]
+    if active.get("sasl_password"):
+        config["sasl_password"] = active["sasl_password"]
+    return config
 
 
 @router.get("", response_model=ClusterResponse)
 async def get_clusters() -> ClusterResponse:
     """Get current Kafka cluster connection status."""
     db = get_db()
-
-    # Get all configured clusters
     clusters = db.get_kafka_clusters()
     available = [KafkaCluster(**c) for c in clusters]
 
-    # Get active cluster
     active = db.get_active_kafka_cluster()
     cluster_info = None
 
     if active:
-        cluster_info = get_cluster_info_from_connection(
-            active["bootstrap_servers"],
-            active,
-        )
-        if cluster_info:
-            cluster_info.name = active["name"]
+        # Use service to check status if we think we are connected
+        service = get_kafka_service()
+        # Ensure service is configured if it wasn't
+        if not service.config:
+            service.set_config(_map_db_to_config(active))
+
+        try:
+            # Lightweight check
+            cluster_info = service.test_connection()
+        except Exception:
+            # Fallback if connection fails but DB thinks it's active
+            cluster_info = ClusterInfo(
+                name=active["name"],
+                bootstrap_servers=active["bootstrap_servers"],
+                connected=False,
+            )
 
     return ClusterResponse(cluster=cluster_info, available_clusters=available)
 
 
-@router.get("/info", response_model=ClusterInfo | dict)
-async def get_cluster_info_endpoint():
-    """Get info about the currently connected cluster."""
-    db = get_db()
-    active = db.get_active_kafka_cluster()
+@router.get("/info", response_model=ClusterInfo)
+async def get_cluster_info():
+    """Get basic cluster info."""
+    service = get_kafka_service()
+    if not service.config:
+        return ClusterInfo(connected=False)
 
-    if not active:
-        return {"connected": False}
-
-    cluster_info = get_cluster_info_from_connection(
-        active["bootstrap_servers"],
-        active,
-    )
-
-    if cluster_info:
-        cluster_info.name = active["name"]
-        return cluster_info
-
-    return {"connected": False}
+    try:
+        await run_in_threadpool(service.get_cluster_details)
+        return ClusterInfo(
+            connected=True,
+            name=service.config.get("name"),
+            version="Unknown",  # Requires specific protocol usage to determine
+        )
+    except Exception:
+        return ClusterInfo(connected=False)
 
 
 @router.get("/details", response_model=ClusterDetailsResponse)
 async def get_cluster_details():
-    """
-    Get comprehensive cluster details for dashboard display.
+    """Get current cluster details."""
+    service = get_kafka_service()
+    if not service.config:
+        # Check if we have an active cluster in DB but not connected in service
+        with get_db() as conn:
+            active = conn.execute("SELECT * FROM clusters WHERE is_active = 1").fetchone()
+            if active:
+                # auto-connect
+                try:
+                    config = _map_db_to_config(active)
+                    # Run connection in thread pool to avoid blocking
+                    await run_in_threadpool(service.connect, config)
+                except Exception as e:
+                    logger.error(f"Failed to auto-connect: {e}")
+                    return ClusterDetailsResponse(
+                        connected=False,
+                        error=f"Failed to connect to {active['name']}: {str(e)}",
+                    )
 
-    Returns enriched information about brokers, topics, and consumer groups.
-    """
-    db = get_db()
-    active = db.get_active_kafka_cluster()
-
-    if not active:
+    if not service.config:
         return ClusterDetailsResponse(connected=False)
 
     try:
-        from confluent_kafka.admin import AdminClient
+        # Run potentially blocking operations in thread pool
+        details = await run_in_threadpool(service.get_cluster_details)
 
-        admin_config = {"bootstrap.servers": active["bootstrap_servers"]}
-
-        if active.get("security_protocol") and active["security_protocol"] != "PLAINTEXT":
-            admin_config["security.protocol"] = active["security_protocol"]
-            if active.get("sasl_mechanism"):
-                admin_config["sasl.mechanism"] = active["sasl_mechanism"]
-            if active.get("sasl_username"):
-                admin_config["sasl.username"] = active["sasl_username"]
-            if active.get("sasl_password"):
-                admin_config["sasl.password"] = active["sasl_password"]
-
-        admin = AdminClient(admin_config)
-        metadata = admin.list_topics(timeout=10)
-
-        # Process brokers
-        brokers: list[BrokerInfo] = []
-        broker_partition_counts: dict[int, int] = {}
-        broker_leader_counts: dict[int, int] = {}
-
-        for broker_id, broker in metadata.brokers.items():
-            broker_partition_counts[broker_id] = 0
-            broker_leader_counts[broker_id] = 0
-            brokers.append(
-                BrokerInfo(
-                    id=broker_id,
-                    host=broker.host,
-                    port=broker.port,
-                    is_controller=(broker_id == metadata.controller_id),
-                )
-            )
-
-        # Process topics
-        topics: list[TopicInfo] = []
-        total_partitions = 0
-        under_replicated_count = 0
-
-        for topic_name, topic_meta in metadata.topics.items():
-            is_internal = topic_name.startswith("_")
-            partition_count = len(topic_meta.partitions)
-            total_partitions += partition_count
-
-            # Calculate replication factor and leader distribution
-            replication_factor = 0
-            leader_distribution: dict[int, int] = {}
-            under_replicated = False
-
-            for partition_id, partition in topic_meta.partitions.items():
-                if replication_factor == 0:
-                    replication_factor = len(partition.replicas)
-
-                # Track leader distribution
-                if partition.leader is not None and partition.leader >= 0:
-                    leader_distribution[partition.leader] = (
-                        leader_distribution.get(partition.leader, 0) + 1
-                    )
-                    broker_leader_counts[partition.leader] = (
-                        broker_leader_counts.get(partition.leader, 0) + 1
-                    )
-
-                # Track partition counts per broker
-                for replica in partition.replicas:
-                    broker_partition_counts[replica] = broker_partition_counts.get(replica, 0) + 1
-
-                # Check for under-replication
-                if len(partition.isrs) < len(partition.replicas):
-                    under_replicated = True
-
-            if under_replicated:
-                under_replicated_count += 1
-
-            topics.append(
-                TopicInfo(
-                    name=topic_name,
-                    partition_count=partition_count,
-                    replication_factor=replication_factor,
-                    leader_distribution=leader_distribution,
-                    is_internal=is_internal,
-                    under_replicated=under_replicated,
-                )
-            )
-
-        # Update broker partition/leader counts
-        for broker in brokers:
-            broker.partition_count = broker_partition_counts.get(broker.id, 0)
-            broker.leader_count = broker_leader_counts.get(broker.id, 0)
-
-        # Sort topics: user topics first, then internal
-        topics.sort(key=lambda t: (t.is_internal, t.name))
-
-        # Get consumer groups
-        consumer_groups: list[ConsumerGroupInfo] = []
-        try:
-            groups_future = admin.list_consumer_groups()
-            groups_result = groups_future.result(timeout=10)
-
-            for group in groups_result.valid:
-                group_info = ConsumerGroupInfo(
-                    group_id=group.group_id,
-                    state=str(group.state) if hasattr(group, "state") else "Unknown",
-                    protocol_type=None,
-                    member_count=0,
-                )
-
-                # Try to get more details
-                try:
-                    describe_future = admin.describe_consumer_groups([group.group_id])
-                    for gid, future in describe_future.items():
-                        result = future.result(timeout=5)
-                        group_info.state = str(result.state)
-                        group_info.protocol_type = result.protocol_type
-                        group_info.member_count = len(result.members)
-                        if result.coordinator:
-                            group_info.coordinator_id = result.coordinator.id
-
-                        # Get subscribed topics
-                        subscribed_topics = set()
-                        for member in result.members:
-                            if hasattr(member, "assignment") and member.assignment:
-                                for tp in member.assignment.topic_partitions:
-                                    subscribed_topics.add(tp.topic)
-                        group_info.topics = sorted(subscribed_topics)
-                except Exception as e:
-                    logger.debug(f"Could not get details for group {group.group_id}: {e}")
-
-                consumer_groups.append(group_info)
-
-        except Exception as e:
-            logger.warning(f"Could not fetch consumer groups: {e}")
+        # Helper to convert potential dict_values/views to list
+        def to_list(val):
+            if val is None:
+                return []
+            if isinstance(val, (list, tuple)):
+                return list(val)
+            return list(val)
 
         return ClusterDetailsResponse(
             connected=True,
-            name=active.get("name"),
-            cluster_id=metadata.cluster_id,
-            controller_id=metadata.controller_id,
-            brokers=brokers,
-            broker_count=len(brokers),
-            topics=topics,
-            topic_count=len([t for t in topics if not t.is_internal]),
-            total_partitions=total_partitions,
-            under_replicated_count=under_replicated_count,
-            consumer_groups=consumer_groups,
-            consumer_group_count=len(consumer_groups),
+            cluster_id=details.get("cluster_id"),
+            controller_id=details.get("controller_id"),
+            brokers=to_list(details.get("brokers", [])),
+            broker_count=details.get("broker_count", 0),
+            topics=to_list(details.get("topics", [])),
+            topic_count=details.get("topic_count", 0),
+            consumer_groups=to_list(details.get("consumer_groups", [])),
+            consumer_group_count=details.get("consumer_group_count", 0),
+            total_partitions=details.get("total_partitions", 0),
+            under_replicated_count=details.get("under_replicated_count", 0),
+            name=service.config.get("name"),
         )
-
     except Exception as e:
-        logger.error(f"Failed to get cluster details: {e}")
-        return ClusterDetailsResponse(connected=False, error=str(e))
-
-
-@router.post("/connect", response_model=ClusterInfo)
-async def connect_cluster(request: ClusterConnectRequest) -> ClusterInfo:
-    """Connect to a Kafka cluster."""
-    db = get_db()
-
-    # Test connection first
-    cluster_info = get_cluster_info_from_connection(
-        request.bootstrap_servers,
-        request.model_dump(),
-    )
-
-    if not cluster_info:
-        raise HTTPException(
-            status_code=400,
-            detail="Failed to connect to Kafka cluster. Check your connection settings.",
+        logger.error(f"Error fetching cluster details: {e}")
+        return ClusterDetailsResponse(
+            connected=False,
+            error=str(e),
+            name=service.config.get("name"),
         )
 
-    # Save to database
-    cluster_id = db.add_kafka_cluster(
-        name=request.name,
-        bootstrap_servers=request.bootstrap_servers,
-        security_protocol=request.security_protocol,
-        sasl_mechanism=request.sasl_mechanism,
-        sasl_username=request.sasl_username,
-        sasl_password=request.sasl_password,
-    )
 
-    # Set as active
-    db.set_active_kafka_cluster(cluster_id)
+@router.post("/connect", response_model=ClusterResponse)
+async def connect_to_cluster(request: ClusterConnectRequest):
+    """Connect to a Kafka cluster."""
+    service = get_kafka_service()
+    try:
+        config = request.model_dump()
+        # Save to DB
+        # Access the connection context manager explicitly, as Database is not a context manager itself
+        with get_db()._get_connection() as conn:
+            # Set all others inactive
+            conn.execute("UPDATE clusters SET is_active = 0")
 
-    # Update the agent's cluster context
-    from kgpt.agents import KafkaClusterContext, set_cluster_context
+            # Check if exists
+            existing = conn.execute(
+                "SELECT id FROM clusters WHERE name = ?", (config["name"],)
+            ).fetchone()
 
-    context = KafkaClusterContext(
-        bootstrap_servers=request.bootstrap_servers,
-        security_protocol=request.security_protocol,
-        sasl_mechanism=request.sasl_mechanism,
-        sasl_username=request.sasl_username,
-        sasl_password=request.sasl_password,
-    )
-    set_cluster_context(context)
+            if existing:
+                conn.execute(
+                    """
+                    UPDATE clusters
+                    SET bootstrap_servers = ?, security_protocol = ?,
+                        sasl_mechanism = ?, sasl_username = ?, sasl_password = ?,
+                        is_active = 1
+                    WHERE name = ?
+                    """,
+                    (
+                        config["bootstrap_servers"],
+                        config.get("security_protocol", "PLAINTEXT"),
+                        config.get("sasl_mechanism"),
+                        config.get("sasl_username"),
+                        config.get("sasl_password"),
+                        config["name"],
+                    ),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO clusters (
+                        name, bootstrap_servers, security_protocol,
+                        sasl_mechanism, sasl_username, sasl_password, is_active
+                    ) VALUES (?, ?, ?, ?, ?, ?, 1)
+                    """,
+                    (
+                        config["name"],
+                        config["bootstrap_servers"],
+                        config.get("security_protocol", "PLAINTEXT"),
+                        config.get("sasl_mechanism"),
+                        config.get("sasl_username"),
+                        config.get("sasl_password"),
+                    ),
+                )
+            conn.commit()
 
-    cluster_info.name = request.name
-    return cluster_info
+        # Connect
+        service_config = config.copy()
+        await run_in_threadpool(service.connect, service_config)
+
+        return ClusterResponse(
+            success=True,
+            message=f"Connected to {config['name']}",
+            cluster_id=service.client.list_topics(timeout=5).cluster_id if service.client else None,
+        )
+    except Exception as e:
+        logger.error(f"Connection error: {e}")
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/disconnect")
 async def disconnect_cluster() -> dict:
     """Disconnect from the current Kafka cluster."""
-    from kgpt.agents import set_cluster_context
-
-    set_cluster_context(None)
+    # Update global service
+    get_kafka_service().set_config(None)
 
     db = get_db()
     active = db.get_active_kafka_cluster()
     if active:
-        # Deactivate but keep the config
-        db.set_active_kafka_cluster(-1)  # This will set all to inactive
+        db.set_active_kafka_cluster(-1)  # Set all inactive
 
     return {"status": "disconnected"}
 
@@ -340,106 +228,99 @@ async def disconnect_cluster() -> dict:
 async def delete_cluster(cluster_id: int) -> dict:
     """Delete a saved Kafka cluster configuration."""
     db = get_db()
+
+    # If deleting active cluster, disconnect first
+    active = db.get_active_kafka_cluster()
+    if active and active.get("id") == cluster_id:
+        get_kafka_service().set_config(None)
+
     db.delete_kafka_cluster(cluster_id)
     return {"status": "deleted", "cluster_id": cluster_id}
 
 
 @router.post("/connect/demo")
 async def connect_demo_cluster() -> ClusterInfo:
-    """Connect to the demo Kafka cluster (if running)."""
-    # Try common demo cluster addresses
+    """Connect to the demo Kafka cluster."""
     demo_servers = ["kafka:9092", "localhost:9094", "localhost:9092"]
 
     for servers in demo_servers:
-        cluster_info = get_cluster_info_from_connection(
-            servers,
-            {"name": "Demo Kafka Cluster"},
-        )
-        if cluster_info:
-            # Save and activate
+        config = {"name": "Demo Kafka Cluster", "bootstrap_servers": servers}
+        temp_service = KafkaService(config)
+
+        try:
+            cluster_info = temp_service.test_connection()
+
+            # If successful, save and activate
             db = get_db()
             cluster_id = db.add_kafka_cluster(
                 name="Demo Kafka Cluster",
                 bootstrap_servers=servers,
             )
             db.set_active_kafka_cluster(cluster_id)
-
-            # Set agent context
-            from kgpt.agents import KafkaClusterContext, set_cluster_context
-
-            context = KafkaClusterContext(bootstrap_servers=servers)
-            set_cluster_context(context)
+            get_kafka_service().set_config(config)
 
             return cluster_info
-
-    raise HTTPException(
-        status_code=404,
-        detail="Demo Kafka cluster not found. Make sure to run with --profile demo",
-    )
-
-
-# ============================================================================
-# Operations Discovery Endpoints
-# ============================================================================
-
-
-@router.get("/operations")
-async def get_operations() -> dict:
-    """
-    Get all available Kafka admin operations.
-
-    Returns operations grouped by category with availability status
-    based on whether a cluster is connected.
-    """
-    return get_available_operations_for_context()
-
-
-@router.get("/operations/by-category")
-async def get_operations_grouped() -> dict:
-    """Get operations grouped by category."""
-    return {
-        "categories": get_operations_by_category_dict(),
-    }
-
-
-@router.get("/operations/examples")
-async def get_examples() -> dict:
-    """Get example prompts for each operation category."""
-    return {
-        "examples": get_operation_examples(),
-    }
-
-
-@router.get("/operations/suggestions")
-async def get_suggestions(
-    last_operation: str | None = None,
-    last_success: bool = True,
-) -> dict:
-    """
-    Get suggested next operations based on context.
-
-    Args:
-        last_operation: ID of the last executed operation
-        last_success: Whether the last operation succeeded
-    """
-    # Get cluster info if connected
-    from kgpt.agents.kafka_agent import get_cluster_context
-
-    cluster_info = None
-    context = get_cluster_context()
-    if context:
-        try:
-            cluster_info = context.get_cluster_metadata()
         except Exception:
-            pass
+            continue
 
-    suggestions = get_suggested_operations(
-        last_operation=last_operation,
-        last_success=last_success,
-        cluster_info=cluster_info,
-    )
 
-    return {
-        "suggestions": suggestions,
-        "cluster_connected": context is not None,
-    }
+@router.post("/topics")
+async def create_kafka_topic(request: dict):
+    """Create a Kafka topic."""
+    service = get_kafka_service()
+    topic_name = request.get("name")
+    if not topic_name:
+        raise HTTPException(status_code=400, detail="Topic name required")
+
+    try:
+        return await run_in_threadpool(
+            service.create_topic,
+            topic_name,
+            num_partitions=request.get("partitions", 1),
+            replication_factor=request.get("replication_factor", 1),
+            config=request.get("config"),
+        )
+    except Exception as e:
+        logger.error(f"Error creating topic {topic_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create topic: {str(e)}") from e
+
+
+@router.delete("/topics/{topic_name}")
+async def delete_kafka_topic(topic_name: str):
+    """Delete a Kafka topic."""
+    service = get_kafka_service()
+    try:
+        result = await run_in_threadpool(service.delete_topic, topic_name)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        logger.error(f"Error deleting topic {topic_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete topic: {str(e)}") from e
+
+
+@router.get("/brokers/{broker_id}/config")
+async def get_broker_config(broker_id: int):
+    """Get configuration for a specific broker."""
+    service = get_kafka_service()
+    try:
+        return await run_in_threadpool(service.describe_broker_config, broker_id)
+    except Exception as e:
+        logger.error(f"Error fetching config for broker {broker_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get broker config: {str(e)}") from e
+
+
+@router.delete("/groups/{group_id}")
+async def delete_consumer_group(group_id: str):
+    """Delete a consumer group."""
+    service = get_kafka_service()
+    try:
+        result = await run_in_threadpool(service.delete_consumer_group, group_id)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        logger.error(f"Error deleting consumer group {group_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete consumer group: {str(e)}"
+        ) from e
