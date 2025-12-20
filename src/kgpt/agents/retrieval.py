@@ -27,9 +27,9 @@ MIN_RERANK_SCORE_COHERE = 0.01
 # This ensures we always have some context for synthesis
 MIN_DOCS_TO_KEEP = 3
 
-# Cross-encoder scores are different (can be negative)
-# Keep docs with score > 0 (positive relevance signal)
-MIN_RERANK_SCORE_CROSS_ENCODER = 0.0
+# Cross-encoder scores are different and can be very low/negative
+# Using a more permissive threshold to avoid empty results
+MIN_RERANK_SCORE_CROSS_ENCODER = -1.0
 
 
 async def rerank_documents(
@@ -110,7 +110,7 @@ async def rerank_documents(
             # This prevents returning empty results when scores are low
             if len(reranked_docs) < MIN_DOCS_TO_KEEP and len(all_scored_docs) > len(reranked_docs):
                 # Add more docs from the scored list (they're already sorted by score)
-                for doc, score in all_scored_docs:
+                for doc, _ in all_scored_docs:
                     if doc not in reranked_docs:
                         reranked_docs.append(doc)
                         if len(reranked_docs) >= MIN_DOCS_TO_KEEP:
@@ -149,24 +149,41 @@ async def rerank_documents(
             else MIN_RERANK_SCORE_CROSS_ENCODER
         )
 
-        # Sort by cross-encoder score and filter
-        scored_docs = list(zip(documents, scores))
-        scored_docs.sort(key=lambda x: x[1], reverse=True)
+        # Reorder and filter documents based on reranking
+        scored_docs = sorted(zip(documents, scores, strict=False), key=lambda x: x[1], reverse=True)
 
         reranked_docs = []
+        all_scored_docs = []
         filtered_count = 0
-        for doc, score in scored_docs:
-            doc.metadata["rerank_score"] = float(score)
+        scores_preview = []
+
+        for doc, score_val in scored_docs:
+            score_float = float(score_val)
+            doc.metadata["rerank_score"] = score_float
             doc.metadata["reranking_model"] = "ms-marco-MiniLM"
-            if score >= threshold:
+            scores_preview.append(f"{score_float:.2f}")
+            all_scored_docs.append((doc, score_float))
+
+            if score_float >= threshold:
                 reranked_docs.append(doc)
-                if len(reranked_docs) >= top_k:
-                    break
             else:
                 filtered_count += 1
 
+        # Ensure we keep at least MIN_DOCS_TO_KEEP even if below threshold
+        # This prevents returning empty results when scores are low
+        if len(reranked_docs) < MIN_DOCS_TO_KEEP and len(all_scored_docs) > len(reranked_docs):
+            for doc, _ in all_scored_docs:
+                if doc not in reranked_docs:
+                    reranked_docs.append(doc)
+                    if len(reranked_docs) >= MIN_DOCS_TO_KEEP:
+                        break
+
+        # Limit to top_k
+        reranked_docs = reranked_docs[:top_k]
+
         logger.info(
-            f"Reranked {len(reranked_docs)} docs using cross-encoder, "
+            f"Reranked {len(reranked_docs)} docs using cross-encoder. "
+            f"Scores: [{', '.join(scores_preview[:5])}], "
             f"filtered {filtered_count} below {threshold:.1f}"
         )
         return reranked_docs
@@ -227,13 +244,17 @@ def _create_rerank_query(original_query: str, enhanced_query: str) -> str:
     Returns:
         Query optimized for Cohere reranking with Kafka context
     """
-    # If query already has Kafka context, use the enhanced version as-is
+    # Truncate query for reranking to avoid model confusion and truncation
+    # Cross-encoders perform best with concise queries
+    if len(enhanced_query) > 300:
+        enhanced_query = enhanced_query[:300].rsplit(" ", 1)[0] + "..."
+
+    # If query already has Kafka context, use it as is
     query_lower = enhanced_query.lower()
-    if "kafka" in query_lower or "confluent" in query_lower:
+    if "kafka" in query_lower or "confluent" in query_lower or "kraft" in query_lower:
         return enhanced_query
 
-    # Add Kafka context for reranking (critical for Cohere to score correctly)
-    # This is different from vector search - rerankers need explicit context
+    # Add Kafka context for reranking
     return f"{enhanced_query} in Apache Kafka"
 
 
