@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, StatusPill } from '$lib/components/ui';
+	import { Card, StatusPill, StatCard } from '$lib/components/ui';
 
 	interface Props {
 		connected: boolean;
@@ -45,35 +45,21 @@
 	{/snippet}
 	{#snippet children()}
 		<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-			<!-- Brokers -->
-			<div class="text-center p-4 bg-surface-hover rounded-lg">
-				<div class="text-2xl font-bold text-text tabular-nums">{brokerCount}</div>
-				<div class="text-xs text-text-tertiary mt-1">Brokers</div>
+			<StatCard label="Brokers" value={brokerCount.toString()}>
 				{#if controllerId !== null}
 					<div class="text-[10px] text-text-tertiary mt-0.5">Controller: B{controllerId}</div>
 				{/if}
-			</div>
+			</StatCard>
 
-			<!-- Topics -->
-			<div class="text-center p-4 bg-surface-hover rounded-lg">
-				<div class="text-2xl font-bold text-text tabular-nums">{topicCount}</div>
-				<div class="text-xs text-text-tertiary mt-1">Topics</div>
-			</div>
+			<StatCard label="Topics" value={topicCount.toString()} />
 
-			<!-- Partitions -->
-			<div class="text-center p-4 bg-surface-hover rounded-lg">
-				<div class="text-2xl font-bold text-text tabular-nums">{totalPartitions}</div>
-				<div class="text-xs text-text-tertiary mt-1">Partitions</div>
+			<StatCard label="Partitions" value={totalPartitions.toString()}>
 				{#if underReplicatedCount > 0}
-					<div class="text-[10px] text-warning mt-0.5">{underReplicatedCount} under-replicated</div>
+					<div class="text-[10px] text-warning mt-0.5 font-medium">{underReplicatedCount} under-replicated</div>
 				{/if}
-			</div>
+			</StatCard>
 
-			<!-- Consumer Groups -->
-			<div class="text-center p-4 bg-surface-hover rounded-lg">
-				<div class="text-2xl font-bold text-text tabular-nums">{consumerGroupCount}</div>
-				<div class="text-xs text-text-tertiary mt-1">Consumer Groups</div>
-			</div>
+			<StatCard label="Consumer Groups" value={consumerGroupCount.toString()} />
 		</div>
 	{/snippet}
 </Card>

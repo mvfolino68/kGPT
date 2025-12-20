@@ -3,7 +3,7 @@
 	import { groupSourcesByType } from './types';
 	import SourceItem from './SourceItem.svelte';
 	import SourceDrawer from './SourceDrawer.svelte';
-	import { Button } from '$lib/components/ui';
+	import { Button, Icon, ExpandableGroup } from '$lib/components/ui';
 
 	interface Props {
 		sources: Source[];
@@ -148,57 +148,28 @@
 		{#if isExpanded || inline}
 			<div class="mt-3 space-y-3 animate-fade-in">
 				{#each groups as group}
-					{@const colors = getGroupColorClasses(group.color)}
-					{@const isGroupExpanded = expandedGroups[group.type] ?? false}
-
-					<div class="rounded-lg border {colors.border} {colors.hover} overflow-hidden
-						transition-colors">
-						<!-- Group header -->
-						<Button
-							variant="ghost"
-							size="lg"
-							class="w-full justify-between gap-3 p-3 rounded-none {colors.bg} hover:bg-opacity-70 transition-colors"
-							onclick={() => toggleGroup(group.type)}
-						>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 {colors.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d={group.icon} />
-								</svg>
-								<span class="text-sm font-medium {colors.text}">{group.label}</span>
-								<span class="text-xs text-surface-500">({group.sources.length})</span>
-							</div>
-
-							<svg
-								class="w-4 h-4 text-surface-500 transition-transform duration-150
-									{isGroupExpanded ? 'rotate-180' : ''}"
-								fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-							</svg>
-						</Button>
-
-						<!-- Group sources -->
-						{#if isGroupExpanded}
-							<div class="p-2 space-y-2 bg-surface-900/30">
-								{#each group.sources as source}
-									<SourceItem
-										{source}
-										index={getSourceIndex(source)}
-										isExpanded={true}
-										onSelect={handleSourceSelect}
-									/>
-								{/each}
-							</div>
-						{/if}
-					</div>
+					<ExpandableGroup
+						title={group.label}
+						count={group.sources.length}
+						color={group.color === 'emerald' ? 'blue' : group.color as 'blue' | 'amber' | 'emerald' | 'default'}
+						iconPath={group.icon}
+						bind:expanded={expandedGroups[group.type]}
+					>
+						{#each group.sources as source}
+							<SourceItem
+								{source}
+								index={getSourceIndex(source)}
+								isExpanded={true}
+								onSelect={handleSourceSelect}
+							/>
+						{/each}
+					</ExpandableGroup>
 				{/each}
 
 				<!-- Educational footer -->
 				<div class="p-3 rounded-lg bg-surface-800/20 border border-dashed border-surface-700/50">
 					<div class="flex items-start gap-2">
-						<svg class="w-4 h-4 text-surface-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
+						<Icon name="info" size="sm" class="text-surface-500 mt-0.5 flex-shrink-0" />
 						<div>
 							<p class="text-xs text-surface-400 leading-relaxed">
 								<strong class="text-surface-300">How sources work:</strong>

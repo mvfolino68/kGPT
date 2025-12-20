@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, Panel, LoadingState, Input, Textarea } from '$lib/components/ui';
+	import { Button, Panel, LoadingState, Input, Textarea, ConfigRow, StatCard, SectionHeader, InfoCard } from '$lib/components/ui';
 	import { getSimilarityColor, type RAGPipelineInfo, type RAGDemoResponse, type ChunkAnalytics } from './types';
 
 	interface Props {
@@ -55,53 +55,31 @@
 
 			<div class="p-4">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-					<div class="inner-card p-4">
-						<h3 class="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80 mb-3">Current Configuration</h3>
+					<InfoCard title="Current Configuration" variant="highlight">
 						<div class="space-y-2 text-xs">
-							<div class="flex justify-between">
-								<span class="text-surface-500">Embedding Model:</span>
-								<span class="text-surface-300">{pipelineInfo.embedding_config.model}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Dimensions:</span>
-								<span class="text-surface-300">{pipelineInfo.embedding_config.dimensions}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Hybrid Search:</span>
-								<span class={pipelineInfo.hybrid_search_enabled ? 'text-emerald-400/80' : 'text-surface-500'}>
-									{pipelineInfo.hybrid_search_enabled ? 'enabled' : 'disabled'}
-								</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Reranking:</span>
-								<span class={pipelineInfo.reranking_available ? 'text-emerald-400/80' : 'text-surface-400'}>
-									{pipelineInfo.reranking_available ? 'available' : 'not configured'}
-								</span>
-							</div>
+							<ConfigRow label="Embedding Model" value={pipelineInfo.embedding_config.model} />
+							<ConfigRow label="Dimensions" value={pipelineInfo.embedding_config.dimensions} />
+							<ConfigRow
+								label="Hybrid Search"
+								value={pipelineInfo.hybrid_search_enabled ? 'enabled' : 'disabled'}
+								variant={pipelineInfo.hybrid_search_enabled ? 'success' : 'muted'}
+							/>
+							<ConfigRow
+								label="Reranking"
+								value={pipelineInfo.reranking_available ? 'available' : 'not configured'}
+								variant={pipelineInfo.reranking_available ? 'success' : 'muted'}
+							/>
 						</div>
-					</div>
+					</InfoCard>
 
-					<div class="inner-card p-4">
-						<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-3">Retrieval Settings</h3>
+					<InfoCard title="Retrieval Settings">
 						<div class="space-y-2 text-xs">
-							<div class="flex justify-between">
-								<span class="text-surface-500">Initial Candidates:</span>
-								<span class="text-surface-300">{pipelineInfo.retrieval_config.top_k_initial}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Final Results:</span>
-								<span class="text-surface-300">{pipelineInfo.retrieval_config.top_k_final}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Hybrid Alpha:</span>
-								<span class="text-surface-300">{pipelineInfo.retrieval_config.hybrid_alpha}</span>
-							</div>
-							<div class="flex justify-between">
-								<span class="text-surface-500">Query Expansions:</span>
-								<span class="text-surface-300">{pipelineInfo.retrieval_config.query_expansion_count}</span>
-							</div>
+							<ConfigRow label="Initial Candidates" value={pipelineInfo.retrieval_config.top_k_initial} />
+							<ConfigRow label="Final Results" value={pipelineInfo.retrieval_config.top_k_final} />
+							<ConfigRow label="Hybrid Alpha" value={pipelineInfo.retrieval_config.hybrid_alpha} />
+							<ConfigRow label="Query Expansions" value={pipelineInfo.retrieval_config.query_expansion_count} />
 						</div>
-					</div>
+					</InfoCard>
 				</div>
 			</div>
 		{/snippet}
@@ -197,32 +175,19 @@
 				{#snippet children()}
 					<div class="p-4">
 					<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-						<div class="inner-card p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Total Vectors</div>
-							<div class="text-xl text-surface-200">{chunkAnalytics.total_vectors.toLocaleString()}</div>
-						</div>
-						<div class="inner-card p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Avg Chunk Size</div>
-							<div class="text-xl text-surface-200">
-								{chunkAnalytics.chunk_size_stats.avg_chars.toLocaleString()}
-								<span class="text-xs text-surface-500">chars</span>
-							</div>
-						</div>
-						<div class="inner-card p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Est. Tokens/Chunk</div>
-							<div class="text-xl text-surface-200">~{chunkAnalytics.chunk_size_stats.avg_tokens_estimate}</div>
-						</div>
-						<div class="inner-card p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Index Health</div>
-							<div class="text-xl {chunkAnalytics.index_health.optimizer_status === 'ok' ? 'text-emerald-400/80' : 'text-amber-400/80'}">
-								{chunkAnalytics.index_health.optimizer_status}
-							</div>
-						</div>
+						<StatCard label="Total Vectors" value={chunkAnalytics.total_vectors.toLocaleString()} />
+						<StatCard label="Avg Chunk Size" value={chunkAnalytics.chunk_size_stats.avg_chars.toLocaleString()} unit="chars" />
+						<StatCard label="Est. Tokens/Chunk" value={`~${chunkAnalytics.chunk_size_stats.avg_tokens_estimate}`} />
+						<StatCard
+							label="Index Health"
+							value={chunkAnalytics.index_health.optimizer_status}
+							variant={chunkAnalytics.index_health.optimizer_status === 'ok' ? 'success' : 'warning'}
+						/>
 					</div>
 
 					<!-- Size Distribution -->
 					<div class="mb-6">
-						<h4 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">Chunk Size Distribution</h4>
+						<SectionHeader>Chunk Size Distribution</SectionHeader>
 						<div class="flex gap-2 h-24">
 							{#each Object.entries(chunkAnalytics.size_distribution) as [range, count]}
 								{@const maxCount = Math.max(...Object.values(chunkAnalytics.size_distribution))}
@@ -242,7 +207,7 @@
 
 					<!-- Source Breakdown -->
 					<div>
-						<h4 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">Source Breakdown (sampled)</h4>
+						<SectionHeader>Source Breakdown (sampled)</SectionHeader>
 						<div class="space-y-2">
 							{#each Object.entries(chunkAnalytics.sources).slice(0, 5) as [source, count]}
 								{@const percentage = (count / chunkAnalytics.total_sampled) * 100}

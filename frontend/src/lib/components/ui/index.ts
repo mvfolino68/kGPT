@@ -12,6 +12,19 @@ export { default as Tooltip } from './Tooltip.svelte';
 export { default as NavLink } from './NavLink.svelte';
 export { default as ListItem } from './ListItem.svelte';
 export { default as Icon } from './Icon.svelte';
+export { default as ConfigRow } from './ConfigRow.svelte';
+export { default as StatCard } from './StatCard.svelte';
+export { default as SectionHeader } from './SectionHeader.svelte';
+export { default as ExpandableGroup } from './ExpandableGroup.svelte';
+
+// Atoms - Building blocks
+export { default as InnerCard } from './InnerCard.svelte';
+export { default as Divider } from './Divider.svelte';
+
+// Molecules - Composite patterns
+export { default as InfoCard } from './InfoCard.svelte';
+export { default as DrawerSection } from './DrawerSection.svelte';
+export { default as ActionCard } from './ActionCard.svelte';
 
 // Common UI Patterns (formerly in common)
 export { default as LoadingSpinner } from './LoadingSpinner.svelte';

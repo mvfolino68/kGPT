@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, IconButton, Icon } from '$lib/components/ui';
+	import { Button, IconButton, Icon, SectionHeader, ConfigRow, DrawerSection } from '$lib/components/ui';
 	import type { Source } from './types';
 
 	interface Props {
@@ -147,10 +147,7 @@
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto">
 				<!-- How this source was found -->
-				<section class="p-4 border-b border-surface-700/50">
-					<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-2">
-						How This Source Was Found
-					</h3>
+				<DrawerSection title="How This Source Was Found">
 					<p class="text-sm text-surface-300 leading-relaxed">
 						{typeConfig.description}
 					</p>
@@ -161,7 +158,7 @@
 							<p class="text-sm text-surface-300 mt-1">"{source.metadata.search_query}"</p>
 						</div>
 					{/if}
-				</section>
+				</DrawerSection>
 
 				<!-- Highlights (for web sources) -->
 				{#if source.highlights && source.highlights.length > 0}
@@ -188,51 +185,33 @@
 
 				<!-- Content preview -->
 				{#if source.content_preview || source.content}
-					<section class="p-4 border-b border-surface-700/50">
-						<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">
-							Content Preview
-						</h3>
+					<DrawerSection title="Content Preview">
 						<div class="prose prose-sm prose-invert max-w-none">
 							<p class="text-sm text-surface-300 leading-relaxed whitespace-pre-wrap">
 								{source.content || source.content_preview}
 							</p>
 						</div>
-					</section>
+					</DrawerSection>
 				{/if}
 
 				<!-- Metadata -->
 				{#if source.metadata && Object.keys(source.metadata).length > 0}
-					<section class="p-4">
-						<h3 class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-3">
-							Source Details
-						</h3>
-						<dl class="space-y-2">
+					<DrawerSection title="Source Details" border={false}>
+						<div class="space-y-2">
 							{#if source.metadata.collection}
-								<div class="flex justify-between text-sm">
-									<dt class="text-surface-500">Collection</dt>
-									<dd class="text-surface-300">{source.metadata.collection}</dd>
-								</div>
+								<ConfigRow label="Collection" value={source.metadata.collection} />
 							{/if}
 							{#if source.metadata.similarity_score != null}
-								<div class="flex justify-between text-sm">
-									<dt class="text-surface-500">Similarity Score</dt>
-									<dd class="text-surface-300">{formatScore(source.metadata.similarity_score)}</dd>
-								</div>
+								<ConfigRow label="Similarity Score" value={formatScore(source.metadata.similarity_score)} />
 							{/if}
 							{#if source.metadata.rerank_score != null}
-								<div class="flex justify-between text-sm">
-									<dt class="text-surface-500">Rerank Score</dt>
-									<dd class="text-surface-300">{Number(source.metadata.rerank_score).toFixed(3)}</dd>
-								</div>
+								<ConfigRow label="Rerank Score" value={Number(source.metadata.rerank_score).toFixed(3)} />
 							{/if}
 							{#if source.metadata.published_date}
-								<div class="flex justify-between text-sm">
-									<dt class="text-surface-500">Published</dt>
-									<dd class="text-surface-300">{source.metadata.published_date}</dd>
-								</div>
+								<ConfigRow label="Published" value={source.metadata.published_date} />
 							{/if}
-						</dl>
-					</section>
+						</div>
+					</DrawerSection>
 				{/if}
 			</div>
 

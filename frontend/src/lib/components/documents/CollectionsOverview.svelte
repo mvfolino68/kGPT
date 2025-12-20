@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Panel, StatusDot, StatusPill } from '$lib/components/ui';
+	import { Panel, StatusDot, StatusPill, StatCard, InnerCard, SectionHeader, ConfigRow } from '$lib/components/ui';
 	import { estimateStorageSize, type CollectionsResponse } from './types';
 
 	interface Props {
@@ -21,73 +21,45 @@
 		{#snippet children()}
 			<div class="p-4 space-y-4">
 			{#each collections.collections as col}
-				<div class="inner-card p-4">
+				<InnerCard padding="md">
 					<!-- Header -->
 					<div class="flex items-center justify-between mb-4">
 						<div class="flex items-center gap-3">
-							<span class="text-lg text-surface-100">{col.name}</span>
+							<span class="text-lg font-medium text-surface-500">{col.name}</span>
 							<StatusPill status={collectionStatus(col.status).pillStatus} label={collectionStatus(col.status).label} size="sm" />
 							{#if col.optimizer_status === 'ok'}
 								<StatusPill status="success" label="Optimizer" sublabel="OK" size="sm" />
 							{/if}
 						</div>
-						<span class="text-2xl text-surface-200">
+						<span class="text-2xl font-light text-surface-200">
 							{col.vectors_count.toLocaleString()}
-							<span class="text-sm text-surface-500">vectors</span>
+							<span class="text-sm text-surface-500 font-normal">vectors</span>
 						</span>
 					</div>
 
 					<!-- Stats Grid -->
-					<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-						<div class="bg-surface-900/50 rounded p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Dimensions</div>
-							<div class="text-lg text-surface-200">{col.dimensions}</div>
-						</div>
-						<div class="bg-surface-900/50 rounded p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Distance</div>
-							<div class="text-lg text-surface-200">{col.distance_metric}</div>
-						</div>
-						<div class="bg-surface-900/50 rounded p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Est. Size</div>
-							<div class="text-lg text-surface-300">~{estimateStorageSize(col.vectors_count, col.dimensions)}</div>
-						</div>
-						<div class="bg-surface-900/50 rounded p-3">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-1">Segments</div>
-							<div class="text-lg text-surface-300">{col.segments_count || 0}</div>
-						</div>
+					<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+						<StatCard label="Dimensions" value={col.dimensions.toString()} size="sm" />
+						<StatCard label="Distance" value={col.distance_metric} size="sm" />
+						<StatCard label="Est. Size" value="~{estimateStorageSize(col.vectors_count, col.dimensions)}" size="sm" />
+						<StatCard label="Segments" value={(col.segments_count || 0).toString()} size="sm" />
 					</div>
 
 					<!-- HNSW Config -->
 					{#if col.hnsw_config}
-						<div class="pt-4 mt-4">
-							<div class="text-[10px] font-bold uppercase tracking-wider text-surface-500 mb-2">
-								HNSW Index Configuration
-							</div>
-							<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-								<div class="flex justify-between">
-									<span class="text-surface-500">m:</span>
-									<span class="text-surface-300">{col.hnsw_config.m ?? 16}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-surface-500">ef_construct:</span>
-									<span class="text-surface-300">{col.hnsw_config.ef_construct ?? 100}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-surface-500">full_scan_threshold:</span>
-									<span class="text-surface-300">{col.hnsw_config.full_scan_threshold?.toLocaleString() ?? '10k'}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-surface-500">on_disk:</span>
-									<span class="text-surface-300">
-										{col.hnsw_config.on_disk ? 'yes' : 'no (RAM)'}
-									</span>
-								</div>
+						<div class="pt-2 border-t border-white/5">
+							<SectionHeader spacing="md">HNSW Index Configuration</SectionHeader>
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-1">
+								<ConfigRow label="m" value={col.hnsw_config.m ?? 16} variant="minimal" />
+								<ConfigRow label="ef_construct" value={col.hnsw_config.ef_construct ?? 100} variant="minimal" />
+								<ConfigRow label="full_scan_threshold" value={col.hnsw_config.full_scan_threshold?.toLocaleString() ?? '10k'} variant="minimal" />
+								<ConfigRow label="on_disk" value={col.hnsw_config.on_disk ? 'yes' : 'no (RAM)'} variant="minimal" />
 							</div>
 						</div>
 					{/if}
 
 					<!-- Storage Mode -->
-					<div class="flex gap-4 mt-4 text-xs flex-wrap">
+					<div class="flex gap-4 mt-4 text-xs flex-wrap pt-2 border-t border-white/5">
 						<div class="flex items-center gap-2">
 							<StatusDot status={col.on_disk_vectors === true ? 'warning' : 'success'} size="sm" />
 							<span class="text-surface-400">vectors: {col.on_disk_vectors === true ? 'disk' : 'RAM'}</span>
@@ -98,19 +70,26 @@
 						</div>
 						{#if col.quantization_config}
 							<div class="flex items-center gap-2">
-								<span class="w-2 h-2 rounded-full bg-surface-400"></span>
+								<span class="w-1.5 h-1.5 rounded-full bg-surface-400"></span>
 								<span class="text-surface-400">quantization: {col.quantization_config.type}</span>
 							</div>
 						{:else}
 							<div class="flex items-center gap-2">
-								<span class="w-2 h-2 rounded-full bg-surface-600"></span>
+								<span class="w-1.5 h-1.5 rounded-full bg-surface-600"></span>
 								<span class="text-surface-500">no quantization</span>
 							</div>
 						{/if}
 					</div>
-				</div>
+				</InnerCard>
 			{/each}
 			</div>
 		{/snippet}
+	</Panel>
+{:else}
+	<Panel title="Collections" subtitle="Qdrant collections">
+		<div class="p-8 text-center">
+			<Icon name="search" size="lg" class="text-surface-600 mb-2" />
+			<p class="text-surface-500">No collections found</p>
+		</div>
 	</Panel>
 {/if}

@@ -1,38 +1,38 @@
 <script lang="ts">
-	import { Button, EmptyState } from '$lib/components/ui';
+	import { Button, Icon } from '$lib/components/ui';
 
 	interface Props {
-		onQuickAction: (value: string) => void;
+		onAction: (message: string) => void;
 	}
 
-	let { onQuickAction }: Props = $props();
+	let { onAction }: Props = $props();
 
-	const quickActions = [
-		{ label: 'Cluster status', value: 'Show me my Kafka cluster status' },
-		{ label: 'List topics', value: 'List all topics in my cluster' },
-		{ label: 'Consumer lag', value: 'Show consumer group lag' },
-		{ label: 'What can you do?', value: 'What admin operations can you perform?' }
+	const suggestions = [
+		{ label: 'List all topics', value: 'List all topics' },
+		{ label: 'Show consumer groups', value: 'Show consumer groups' },
+		{ label: 'How do I create a topic?', value: 'How do I create a topic?' }
 	];
 </script>
 
-<EmptyState
-	title="Ready"
-	description="Query your Kafka cluster, search documentation, or perform admin operations"
-	class="bg-surface-800 rounded-lg"
->
-	{#snippet iconSnippet()}
-		<div class="w-20 h-20 rounded-xl bg-surface-700/50 flex items-center justify-center mb-6 mx-auto">
-			<svg class="w-10 h-10 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-				<path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-			</svg>
-		</div>
-	{/snippet}
+<div class="flex flex-col items-center justify-center h-full text-center py-8">
+	<div class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+		<Icon name="sparkles" size="lg" class="text-primary-light" />
+	</div>
+	<h3 class="text-lg font-semibold text-surface-200 mb-2">How can I help?</h3>
+	<p class="text-sm text-surface-500 max-w-xs mb-6">
+		Ask me to manage topics, describe consumer groups, or help with Kafka configuration.
+	</p>
 
-	<div class="flex flex-wrap justify-center gap-2 mt-6">
-		{#each quickActions as action}
-			<Button variant="ghost" size="sm" onclick={() => onQuickAction(action.value)}>
-				{action.label}
+	<div class="space-y-2 w-full max-w-xs">
+		{#each suggestions as suggestion}
+			<Button
+				variant="secondary"
+				size="sm"
+				class="w-full justify-start text-left text-surface-300"
+				onclick={() => onAction(suggestion.value)}
+			>
+				{suggestion.label}
 			</Button>
 		{/each}
 	</div>
-</EmptyState>
+</div>

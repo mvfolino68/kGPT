@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Card } from '$lib/components/ui';
+	import TopologyNode from './TopologyNode.svelte';
+	import TopologyConnection from './TopologyConnection.svelte';
 
 	interface Props {
 		brokers: number;
@@ -15,11 +17,9 @@
 	let width = $state(800);
 	let height = $state(400);
 
-	// Calculate positions for the topology
 	const centerX = $derived(width / 2);
 	const centerY = $derived(height / 2);
 
-	// Broker positions (center cluster)
 	const brokerNodes = $derived(() => {
 		const nodes = [];
 		const brokerRadius = 60;
@@ -36,7 +36,6 @@
 		return nodes;
 	});
 
-	// Topic positions (left side)
 	const topicNodes = $derived(() => {
 		const displayTopics = topics.slice(0, 8);
 		const spacing = Math.min(40, (height - 80) / Math.max(displayTopics.length, 1));
@@ -45,14 +44,12 @@
 		return displayTopics.map((topic, i) => ({
 			id: `topic-${i}`,
 			label: topic.length > 15 ? topic.slice(0, 12) + '...' : topic,
-			fullLabel: topic,
 			x: 120,
 			y: startY + i * spacing,
 			type: 'topic' as const
 		}));
 	});
 
-	// Consumer group positions (right side)
 	const consumerNodes = $derived(() => {
 		const displayGroups = consumerGroups.slice(0, 6);
 		const spacing = Math.min(50, (height - 80) / Math.max(displayGroups.length, 1));
@@ -61,21 +58,18 @@
 		return displayGroups.map((group, i) => ({
 			id: `consumer-${i}`,
 			label: group.length > 15 ? group.slice(0, 12) + '...' : group,
-			fullLabel: group,
 			x: width - 120,
 			y: startY + i * spacing,
 			type: 'consumer' as const
 		}));
 	});
 
-	// Generate connections
 	const connections = $derived(() => {
 		const lines: Array<{x1: number; y1: number; x2: number; y2: number; type: string}> = [];
 		const brokerList = brokerNodes();
 		const topicList = topicNodes();
 		const consumerList = consumerNodes();
 
-		// Connect topics to brokers
 		topicList.forEach((topic, ti) => {
 			const brokerIndex = ti % Math.max(brokerList.length, 1);
 			if (brokerList[brokerIndex]) {
@@ -89,7 +83,6 @@
 			}
 		});
 
-		// Connect brokers to consumers
 		consumerList.forEach((consumer, ci) => {
 			const brokerIndex = ci % Math.max(brokerList.length, 1);
 			if (brokerList[brokerIndex]) {
@@ -113,7 +106,6 @@
 				height = Math.max(300, Math.min(500, entry.contentRect.height));
 			}
 		});
-
 		observer.observe(container);
 		return () => observer.disconnect();
 	});
@@ -134,7 +126,6 @@
 			{:else}
 				<svg {width} {height} class="w-full h-full">
 					<defs>
-						<!-- Gradient for connections -->
 						<linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
 							<stop offset="0%" style="stop-color:rgb(139 92 246);stop-opacity:0.6" />
 							<stop offset="100%" style="stop-color:rgb(59 130 246);stop-opacity:0.6" />
@@ -145,113 +136,32 @@
 						</linearGradient>
 					</defs>
 
-			<!-- Connection lines -->
-			{#each connections() as conn}
-				<path
-					d="M {conn.x1} {conn.y1} C {(conn.x1 + conn.x2) / 2} {conn.y1}, {(conn.x1 + conn.x2) / 2} {conn.y2}, {conn.x2} {conn.y2}"
-					fill="none"
-					stroke={conn.type === 'topic-broker' ? 'url(#connectionGradient)' : 'url(#consumerGradient)'}
-					stroke-width="2"
-					opacity="0.5"
-				/>
-			{/each}
+					{#each connections() as conn}
+						<TopologyConnection {...conn} />
+					{/each}
 
-			<!-- Topic nodes -->
-			{#each topicNodes() as node}
-				<g transform="translate({node.x}, {node.y})">
-					<rect
-						x="-55"
-						y="-14"
-						width="110"
-						height="28"
-						rx="6"
-						fill="rgb(139 92 246 / 0.15)"
-						stroke="rgb(139 92 246 / 0.4)"
-						stroke-width="1"
-					/>
-					<text
-						x="0"
-						y="4"
-						text-anchor="middle"
-						fill="rgb(196 181 253)"
-						font-size="11"
-						font-family="JetBrains Mono, monospace"
-					>
-						{node.label}
-					</text>
-				</g>
-			{/each}
+					{#each topicNodes() as node}
+						<TopologyNode {...node} />
+					{/each}
 
-			<!-- Broker nodes (center) -->
-			{#each brokerNodes() as node}
-				<g transform="translate({node.x}, {node.y})">
-					<circle
-						r="18"
-						fill="rgb(59 130 246 / 0.2)"
-						stroke="rgb(59 130 246 / 0.6)"
-						stroke-width="2"
-					/>
-					<text
-						x="0"
-						y="4"
-						text-anchor="middle"
-						fill="rgb(147 197 253)"
-						font-size="10"
-						font-weight="600"
-					>
-						B{node.label.split(' ')[1]}
-					</text>
-				</g>
-			{/each}
+					{#each brokerNodes() as node}
+						<TopologyNode {...node} />
+					{/each}
 
-			<!-- Consumer group nodes -->
-			{#each consumerNodes() as node}
-				<g transform="translate({node.x}, {node.y})">
-					<rect
-						x="-55"
-						y="-14"
-						width="110"
-						height="28"
-						rx="6"
-						fill="rgb(251 191 36 / 0.15)"
-						stroke="rgb(251 191 36 / 0.4)"
-						stroke-width="1"
-					/>
-					<text
-						x="0"
-						y="4"
-						text-anchor="middle"
-						fill="rgb(253 224 71)"
-						font-size="11"
-						font-family="JetBrains Mono, monospace"
-					>
-						{node.label}
-					</text>
-				</g>
-			{/each}
+					{#each consumerNodes() as node}
+						<TopologyNode {...node} />
+					{/each}
 
-			<!-- Labels -->
-			<text x="120" y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">
-				TOPICS
-			</text>
-			<text x={centerX} y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">
-				BROKERS
-			</text>
-			<text x={width - 120} y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">
-				CONSUMERS
-			</text>
+					<text x="120" y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">TOPICS</text>
+					<text x={centerX} y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">BROKERS</text>
+					<text x={width - 120} y="30" text-anchor="middle" fill="rgb(148 163 184)" font-size="11" font-weight="500">CONSUMERS</text>
 
-			<!-- Overflow indicators -->
-			{#if topics.length > 8}
-				<text x="120" y={height - 20} text-anchor="middle" fill="rgb(100 116 139)" font-size="10">
-					+{topics.length - 8} more topics
-				</text>
-			{/if}
-			{#if consumerGroups.length > 6}
-				<text x={width - 120} y={height - 20} text-anchor="middle" fill="rgb(100 116 139)" font-size="10">
-					+{consumerGroups.length - 6} more groups
-				</text>
-			{/if}
+					{#if topics.length > 8}
+						<text x="120" y={height - 20} text-anchor="middle" fill="rgb(100 116 139)" font-size="10">+{topics.length - 8} more topics</text>
+					{/if}
+					{#if consumerGroups.length > 6}
+						<text x={width - 120} y={height - 20} text-anchor="middle" fill="rgb(100 116 139)" font-size="10">+{consumerGroups.length - 6} more groups</text>
+					{/if}
 				</svg>
 			{/if}
 		</div>
