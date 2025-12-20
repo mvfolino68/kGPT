@@ -59,7 +59,7 @@ reranking = [
 ]
 
 [project.scripts]
-kgpt = "kgpt.cli:main"
+
 kgpt-api = "kgpt.api.main:run"
 
 [build-system]
