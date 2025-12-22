@@ -82,18 +82,25 @@ async def query_stream_with_stages(
             if kind == "on_tool_start":
                 tool_name = name
                 agent_type = "unknown"
-                description = f"Running {tool_name}"
+                tool_input = data.get("input", {})
 
+                # Format a concise description of the input
+                input_desc = ""
+                if isinstance(tool_input, dict):
+                    input_desc = f" ({', '.join([f'{k}={v}' for k, v in tool_input.items()])})"
+                elif tool_input:
+                    input_desc = f" ({tool_input})"
+
+                description = f"Running {tool_name}{input_desc}"
+
+                # Map tools to "agents" for frontend UI compatibility
                 # Map tools to "agents" for frontend UI compatibility
                 if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
                     agent_type = "kafka"
-                    description = f"Executing {tool_name}..."
-                elif "search_knowledge" in tool_name:
+                elif tool_name in ["search", "search_tool", "search_knowledge_base_tool"]:
                     agent_type = "retrieval"
-                    description = "Searching documentation..."
                 elif "search_web" in tool_name:
                     agent_type = "web_search"
-                    description = "Searching the web..."
 
                 yield {
                     "agent_event": {
@@ -139,7 +146,7 @@ async def query_stream_with_stages(
                 agent_type = "unknown"
                 if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
                     agent_type = "kafka"
-                elif "search_knowledge" in tool_name:
+                elif tool_name in ["search", "search_tool", "search_knowledge_base_tool"]:
                     agent_type = "retrieval"
                     if artifacts:
                         citations.extend(artifacts)
@@ -150,15 +157,20 @@ async def query_stream_with_stages(
                         citations.extend(artifacts)
                         yield {"citations": citations}
 
+                # Richer summary for the tracer
+                summary = "Done"
+                if output_content:
+                    summary = output_content[:500] + ("..." if len(output_content) > 500 else "")
+
                 yield {
                     "agent_event": {
                         "agent": agent_type,
                         "status": "completed",
                         "result": {
-                            "output": str(output_content)[:200] + "..."
-                            if output_content
-                            else "Done"
-                        },  # Summary
+                            "tool": tool_name,
+                            "output": summary,
+                            "artifact_count": len(artifacts) if artifacts else 0,
+                        },
                         "timestamp": datetime.now().isoformat(),
                     }
                 }

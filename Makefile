@@ -142,6 +142,11 @@ install-frontend:
 # Start everything for development (with Kafka demo cluster)
 dev: check-venv dev-infra-kafka
 	@echo ""
+	@echo "Clearing Python cache..."
+	@find src -name "*.pyc" -delete 2>/dev/null || true
+	@find src -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	@echo "Reinstalling kgpt package..."
+	@uv sync --reinstall-package kgpt --quiet 2>/dev/null || true
 	@echo "Starting development servers..."
 	@echo "  Backend:  http://localhost:8000"
 	@echo "  Frontend: http://localhost:5173"

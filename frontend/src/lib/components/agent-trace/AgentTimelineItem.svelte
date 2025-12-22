@@ -45,17 +45,23 @@
 			</svg>
 		</div>
 
-		<!-- Label -->
-		<span
-			class="font-medium text-surface-300 flex-1 text-left
-				{compact ? 'text-xs' : 'text-sm'}"
-		>
-			{config.label}
-		</span>
+		<!-- Label and Description -->
+		<div class="flex-1 min-w-0 pr-2">
+			<div class="font-medium text-surface-300 text-left
+				{compact ? 'text-xs' : 'text-sm'}">
+				{config.label}
+			</div>
+			{#if activity.description}
+				<div class="text-surface-500 truncate text-left
+					{compact ? 'text-[10px]' : 'text-xs'}">
+					{activity.description}
+				</div>
+			{/if}
+		</div>
 
 		<!-- Duration -->
 		{#if duration}
-			<span class="text-surface-500 font-mono {compact ? 'text-[10px]' : 'text-xs'}">
+			<span class="text-surface-500 font-mono {compact ? 'text-[10px]' : 'text-xs'} flex-shrink-0">
 				{duration}
 			</span>
 		{/if}
