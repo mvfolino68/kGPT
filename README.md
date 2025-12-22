@@ -4,8 +4,8 @@
 
 I built kGPT because documentation search sucks. You're debugging at 2am, you know the answer is *somewhere* in the docs, and you end up with 47 browser tabs open. kGPT fixes that. Ask a question in plain English, get a real answer with sources.
 
-<!-- Quick Demo Video -->
-![kGPT Demo](assets/demo.mp4)
+<!-- Quick Demo GIF -->
+![kGPT Demo](assets/demo.gif)
 
 ## What it does
 
