@@ -71,7 +71,7 @@ export {
 	AgentTracePanel,
 	AgentActivitySidebar,
 } from './chat';
-export { ThinkingIndicator, MessageActions, SourcesList } from './chat/message';
+export { ThinkingIndicator, MessageActions } from './chat/message';
 
 // Source components
 export { SourcesPanel, SourceItem, SourceDrawer } from './sources';

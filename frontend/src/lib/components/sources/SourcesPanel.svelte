@@ -2,8 +2,9 @@
 	import type { Source, SourceGroup } from './types';
 	import { groupSourcesByType } from './types';
 	import SourceItem from './SourceItem.svelte';
-	import SourceDrawer from './SourceDrawer.svelte';
+	// SourceDrawer removed from here, hoisted to layout
 	import { Button, Icon, ExpandableGroup } from '$lib/components/ui';
+	import { openSourceDrawer } from '$lib/stores/chat';
 
 	interface Props {
 		sources: Source[];
@@ -16,20 +17,29 @@
 
 	// State - start expanded by default for better discoverability
 	let isExpanded = $state(true);
-	let expandedGroups = $state<Record<string, boolean>>({});
-	let selectedSource = $state<Source | null>(null);
-	let hasInitialized = $state(false);
+	let expandedGroups = $state<Record<string, boolean>>(
+		Object.fromEntries(groupSourcesByType(sources).map((g, i) => [g.type, i === 0]))
+	);
+	let hasInitialized = $state(true);
 
 	// Derived
 	const groups = $derived(groupSourcesByType(sources));
 	const totalSources = $derived(sources.length);
 	const hasMultipleTypes = $derived(groups.length > 1);
 
-	// Auto-expand first group on initial render
-	$effect(() => {
-		if (!hasInitialized && groups.length > 0) {
-			expandedGroups = { [groups[0].type]: true };
-			hasInitialized = true;
+	// Auto-initialize group states before render to avoid undefined bindings
+	$effect.pre(() => {
+		if (groups.length > 0) {
+			groups.forEach(g => {
+				if (expandedGroups[g.type] === undefined) {
+					expandedGroups[g.type] = false;
+				}
+			});
+
+			if (!hasInitialized) {
+				expandedGroups[groups[0].type] = true;
+				hasInitialized = true;
+			}
 		}
 	});
 
@@ -46,11 +56,7 @@
 	}
 
 	function handleSourceSelect(source: Source) {
-		selectedSource = source;
-	}
-
-	function closeDrawer() {
-		selectedSource = null;
+		openSourceDrawer(source);
 	}
 
 	function getGroupColorClasses(color: string) {
@@ -183,9 +189,6 @@
 		{/if}
 	</div>
 {/if}
-
-<!-- Source detail drawer -->
-<SourceDrawer source={selectedSource} onClose={closeDrawer} />
 
 <style>
 	@keyframes fade-in {

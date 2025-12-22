@@ -111,19 +111,30 @@ async def query_stream_with_stages(
 
                 # Check for string output with embedded artifacts
                 artifacts = []
-                output_content = output
 
-                if isinstance(output, str) and "__ARTIFACTS__" in output:
-                    import json
+                # If it's a ToolMessage (standard for langchain tool events), get the content
+                if hasattr(output, "content"):
+                    output_str = str(output.content)
+                else:
+                    output_str = str(output)
 
+                output_content = output_str
+
+                if "__ARTIFACTS__" in output_str:
                     try:
-                        content_part, artifacts_part = output.split("__ARTIFACTS__")
-                        output_content = content_part.strip()
-                        artifacts = json.loads(artifacts_part)
-                        # The tool node presumably returns the full string to the LLM.
-                        # That's fine, the LLM will see the JSON block. It might even use it for citation.
+                        import json
+
+                        # Robust splitting - take the last occurrence if somehow multiple exist
+                        parts = output_str.split("__ARTIFACTS__")
+                        if len(parts) >= 2:
+                            content_part = "__ARTIFACTS__".join(parts[:-1])
+                            artifacts_part = parts[-1].strip()
+                            output_content = content_part.strip()
+                            artifacts = json.loads(artifacts_part)
+                        else:
+                            pass  # Artifact tag found but split failed
                     except Exception as e:
-                        logger.error(f"Failed to parse artifacts from tool output: {e}")
+                        logger.error(f"Failed to parse artifacts: {e}")
 
                 agent_type = "unknown"
                 if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
@@ -132,7 +143,6 @@ async def query_stream_with_stages(
                     agent_type = "retrieval"
                     if artifacts:
                         citations.extend(artifacts)
-                        logger.info(f"Yielding {len(citations)} citations for retrieval")
                         yield {"citations": citations}
                 elif "search_web" in tool_name:
                     agent_type = "web_search"

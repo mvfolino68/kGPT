@@ -1,5 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import type { Message, ChatSession, ChatSessionMessage, SuggestedAction, ClusterOperationResult, Citation, CitationObject } from '$lib/api';
+import type { Source } from '$lib/components/sources/types';
 import {
 	getChatSessions,
 	createChatSession,
@@ -202,6 +203,17 @@ export const selectedMessageId = writable<string | null>(null);
 export const currentAgentTrace = writable<MessageAgentTrace>({
 	agentTimeline: []
 });
+
+// Global Source Drawer State
+export const selectedGlobalSource = writable<Source | null>(null);
+
+export function openSourceDrawer(source: Source): void {
+	selectedGlobalSource.set(source);
+}
+
+export function closeSourceDrawer(): void {
+	selectedGlobalSource.set(null);
+}
 
 // Derived store: the trace to display in sidebar (selected message's trace or current streaming trace)
 export const displayedAgentTrace = derived(

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { StatusIndicator, Button } from '$lib/components';
 	import { AdminResultCard } from '$lib/components/admin';
-	import { SourceDrawer } from '$lib/components/sources';
 	import { normalizeCitation, type Source } from '$lib/components/sources/types';
 	import { renderMarkdown } from '$lib/utils/markdown';
-	import { selectedMessageId, selectMessageForTrace, updateMessage, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
-	import { ThinkingIndicator, MessageActions, SourcesList } from './message';
+	import { selectedMessageId, selectMessageForTrace, updateMessage, openSourceDrawer, type MessageAgentTrace, type AdminOperationResult } from '$lib/stores/chat';
+	import { ThinkingIndicator, MessageActions } from './message';
+	import { SourcesPanel } from '$lib/components';
 
 	interface Props {
 		message: {
@@ -60,13 +60,9 @@
 		if (target.classList.contains('citation-ref')) {
 			const index = parseInt(target.dataset.citationIndex || '0', 10);
 			if (index > 0 && index <= sources.length) {
-				selectedSource = sources[index - 1];
+				openSourceDrawer(sources[index - 1]);
 			}
 		}
-	}
-
-	function closeDrawer() {
-		selectedSource = null;
 	}
 </script>
 
@@ -82,7 +78,7 @@
 	</div>
 {:else}
 	<!-- Assistant Message -->
-	<div class="flex justify-start animate-fade-in">
+	<div class="flex justify-start animate-fade-in" data-message-id={message.id}>
 		<div class="max-w-[85%] space-y-3">
 			<!-- Thinking indicator -->
 			{#if message.isThinking && !message.content}
@@ -128,7 +124,7 @@
 
 						<!-- Sources section -->
 						{#if !message.isStreaming}
-							<SourcesList {sources} onSourceClick={(s) => selectedSource = s} />
+							<SourcesPanel {sources} />
 						{/if}
 					</div>
 				</div>
@@ -146,8 +142,6 @@
 		</div>
 	</div>
 {/if}
-
-<SourceDrawer source={selectedSource} onClose={closeDrawer} />
 
 <style>
 	/* Prose styling for markdown content */

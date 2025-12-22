@@ -5,6 +5,8 @@
 	import { checkOnboarding, getOnboardingState, completeOnboarding } from '$lib/stores/onboarding.svelte';
 	import { Sidebar } from '$lib/components/layout';
 	import { OnboardingWizard } from '$lib/components/onboarding';
+	import { SourceDrawer } from '$lib/components/sources';
+	import { selectedGlobalSource, closeSourceDrawer, chatMessages } from '$lib/stores/chat';
 
 	let { children } = $props();
 
@@ -31,7 +33,35 @@
 	function handleOnboardingComplete() {
 		completeOnboarding();
 	}
+
+	// Global click handler for citations
+	function handleGlobalClick(event: MouseEvent) {
+		const target = event.target as HTMLElement;
+		if (target.classList.contains('citation-ref')) {
+			const index = parseInt(target.dataset.citationIndex || '0', 10);
+			// Find the message that contains this citation
+			// We look for the closest message container to know which message's sources to use
+			const messageEl = target.closest('[data-message-id]');
+			if (messageEl && messageEl instanceof HTMLElement) {
+				const messageId = messageEl.dataset.messageId;
+				const message = $chatMessages.find(m => m.id === messageId);
+				if (message && message.citations && index > 0 && index <= message.citations.length) {
+					const citation = message.citations[index - 1];
+					// Import normalizeCitation dynamically or move it to a shared util that we can import here?
+					// Ideally we should have normalized sources available.
+					// For now, let's assume specific structure or import the helper.
+					// We'll trust the SourceDrawer to handle the citation object, or normalizing it here.
+					// Better: use the helper.
+					import('$lib/components/sources/types').then(({ normalizeCitation }) => {
+						selectedGlobalSource.set(normalizeCitation(citation));
+					});
+				}
+			}
+		}
+	}
 </script>
+
+<svelte:window onclick={handleGlobalClick} />
 
 <svelte:head>
 	<title>kGPT - Kafka Management Platform</title>
@@ -50,3 +80,6 @@
 {#if onboardingState.showWizard}
 	<OnboardingWizard onComplete={handleOnboardingComplete} />
 {/if}
+
+<!-- Global Source Drawer -->
+<SourceDrawer source={$selectedGlobalSource} onClose={closeSourceDrawer} />

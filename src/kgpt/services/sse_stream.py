@@ -156,11 +156,21 @@ async def generate_sse_stream(
                     yield f"data: {json.dumps({'admin_result': admin_result})}\n\n"
                     continue
 
-                # Final chunk with citations or end marker
-                if chunk.get("citations") is not None or chunk.get("done"):
-                    citations = chunk.get("citations", [])
+                # Handle mid-stream citations (don't break, just accumulate and send)
+                if chunk.get("citations") is not None and not chunk.get("done"):
+                    new_citations = chunk.get("citations", [])
+                    if new_citations:
+                        # Accumulate citations for saving to DB later
+                        citations = new_citations  # Replace with latest
+                        logger.info(f"[SSE DEBUG] Mid-stream citations: {len(citations)} items")
+                        yield f"data: {json.dumps({'citations': citations})}\n\n"
+                    continue
 
-                    # Send citations to frontend (now structured with title, url, type)
+                # Final chunk / done marker
+                if chunk.get("done"):
+                    logger.info(f"[SSE DEBUG] Stream done, final citations: {len(citations)} items")
+
+                    # Send final citations if not already sent
                     if citations:
                         yield f"data: {json.dumps({'citations': citations})}\n\n"
 

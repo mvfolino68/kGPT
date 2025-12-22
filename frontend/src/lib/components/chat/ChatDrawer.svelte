@@ -173,6 +173,7 @@
 					await scrollToBottom();
 				} else if (event.type === 'citations') {
 					const citations = Array.isArray(event.data) ? event.data : (event.data?.citations || []);
+					console.log('[kGPT DEBUG] Received citations:', citations);
 					chatMessages.update(msgs => msgs.map(m => m.id === assistantId ? { ...m, citations } : m));
 				} else if (event.type === 'actions') {
 					// Ensure we have an array for actions too

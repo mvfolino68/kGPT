@@ -44,5 +44,9 @@ async def search_knowledge_base_tool(query: str, sub_queries: list[str] | None =
 
     import json
 
+    from loguru import logger
+
     # Append artifacts as hidden JSON for the streaming handler to pick up
-    return "\n".join(content_parts) + "\n\n__ARTIFACTS__\n" + json.dumps(artifacts)
+    result = "\n".join(content_parts) + "\n\n__ARTIFACTS__\n" + json.dumps(artifacts)
+    logger.info(f"[TOOL DEBUG] search_knowledge_base_tool returning string length {len(result)}")
+    return result

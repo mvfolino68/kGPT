@@ -10,12 +10,15 @@ from langgraph.prebuilt import ToolNode
 from kgpt.agents.state import AgentState
 from kgpt.llm import get_llm
 from kgpt.tools.kafka_tools import get_kafka_tools
-from kgpt.tools.search_tool import search_knowledge_base_tool
-from kgpt.tools.web_search_tool import search_web_tool
+
+# Move tool imports inside functions to avoid circularity with retrieval agents
 
 
 def get_tools():
     """Get all tools available to the agent."""
+    from kgpt.tools.search_tool import search_knowledge_base_tool
+    from kgpt.tools.web_search_tool import search_web_tool
+
     return get_kafka_tools() + [search_knowledge_base_tool, search_web_tool]
 
 
@@ -34,6 +37,8 @@ def call_model(state: AgentState):
             "Use the available tools to verify cluster state before making changes or answering questions. "
             "When performing operations, be precise and verify the result. "
             "ALWAYS uses the 'search_knowledge_base_tool' to find information about Kafka concepts (like KRaft, controllers, etc) or kGPT features. Do not answer from memory. "
+            "When you use information from tools (retrieval or web search), ALWAYS include inline citations in the format [1], [2], etc., referring to the source index provided in the tool output. "
+            "Provide a clear, technical response using the retrieved information. "
             "You should effectively use multiple tools in parallel to gather comprehensive information when needed. "
             "Always be helpful, concise, and professional."
         )
