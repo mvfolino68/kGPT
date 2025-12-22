@@ -1,9 +1,7 @@
 """RAG pipeline information and demo endpoints for educational purposes."""
 
-from fastapi import APIRouter, HTTPException, Query
-from loguru import logger
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
-
 
 router = APIRouter()
 
@@ -197,7 +195,7 @@ async def rag_demo(query: str = Query(..., description="Demo query")) -> dict:
     This endpoint shows what happens at each stage of retrieval,
     making it educational for understanding how RAG works.
     """
-    from kgpt.agents.retrieval import expand_queries
+    from kgpt.tools.query_enhancer import enhance_query_for_web_search
     from kgpt.vectorstore import get_vectorstore
 
     store = get_vectorstore()
@@ -206,14 +204,17 @@ async def rag_demo(query: str = Query(..., description="Demo query")) -> dict:
 
     # Step 1: Query expansion
     try:
-        expanded = await expand_queries(query)
+        # Renamed to "Query Enhancement" to match the new tool behavior
+        enhanced = await enhance_query_for_web_search(query)
+        # Wrap in list to maintain compatibility with existing frontend expectations
+        expanded = [enhanced]
         steps.append(
             {
                 "step": 1,
-                "name": "Query Expansion",
+                "name": "Query Enhancement",
                 "input": query,
                 "output": expanded,
-                "description": "Generated alternative phrasings to improve search coverage",
+                "description": "Enhanced query with domain context to improve search relevance",
             }
         )
     except Exception as e:
@@ -221,7 +222,7 @@ async def rag_demo(query: str = Query(..., description="Demo query")) -> dict:
         steps.append(
             {
                 "step": 1,
-                "name": "Query Expansion",
+                "name": "Query Enhancement",
                 "input": query,
                 "output": [query],
                 "error": str(e),
