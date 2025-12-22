@@ -125,6 +125,19 @@ def describe_cluster_tool() -> dict:
     }
 
 
+@tool
+def get_kafka_logs_tool(lines: int = 50) -> list[str]:
+    """
+    Get recent debug logs from the Kafka service.
+    Use this to diagnose connection issues or check the status of operations.
+
+    Args:
+        lines: Number of recent log lines to retrieve (default: 50).
+    """
+    service = get_kafka_service()
+    return service.get_recent_logs(lines=lines)
+
+
 def get_kafka_tools():
     """Get list of all Kafka tools."""
     return [
@@ -135,4 +148,5 @@ def get_kafka_tools():
         list_consumer_groups_tool,
         describe_consumer_group_tool,
         describe_cluster_tool,
+        get_kafka_logs_tool,
     ]

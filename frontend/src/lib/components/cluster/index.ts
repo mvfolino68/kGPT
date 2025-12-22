@@ -17,3 +17,8 @@ export { default as QuickConnect } from './QuickConnect.svelte';
 export { default as SavedClusters } from './SavedClusters.svelte';
 export { default as TopicsChips } from './TopicsChips.svelte';
 export { default as EducationalContext } from './EducationalContext.svelte';
+
+// New Modals
+export { default as CreateTopicModal } from './CreateTopicModal.svelte';
+export { default as TopicsListModal } from './TopicsListModal.svelte';
+export { default as ConsumerGroupsModal } from './ConsumerGroupsModal.svelte';

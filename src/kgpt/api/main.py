@@ -8,7 +8,13 @@ from loguru import logger
 # Load environment variables immediately before local imports
 load_dotenv()
 
-from kgpt.api.routes import chat_router, cluster_router, documents_router, settings_router
+from kgpt.api.routes import (
+    chat_router,
+    cluster_router,
+    documents_router,
+    logs_router,
+    settings_router,
+)
 from kgpt.api.schemas import HealthResponse
 from kgpt.logging_config import setup_logging
 
@@ -91,6 +97,7 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(cluster_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(logs_router, prefix="/api")
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])

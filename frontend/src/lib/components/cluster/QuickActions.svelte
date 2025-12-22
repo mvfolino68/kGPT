@@ -12,7 +12,8 @@
 		{ id: 'list_topics', label: 'List Topics', icon: 'folder' as const },
 		{ id: 'describe_topic', label: 'Describe Topic', icon: 'info' as const },
 		{ id: 'create_topic', label: 'Create Topic', icon: 'plus' as const },
-		{ id: 'list_consumer_groups', label: 'Consumer Groups', icon: 'users' as const }
+		{ id: 'list_consumer_groups', label: 'Consumer Groups', icon: 'users' as const },
+		{ id: 'view_logs', label: 'Debug Logs', icon: 'terminal' as const }
 	];
 </script>
 

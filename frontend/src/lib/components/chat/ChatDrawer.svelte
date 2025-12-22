@@ -21,7 +21,8 @@
 		finalizeAgentTrace,
 		displayedAgentTrace,
 		selectedMessageId,
-		selectMessageForTrace
+		selectMessageForTrace,
+		pendingChatAction
 	} from '$lib/stores/chat';
 	import type { AgentEvent, RoutingDecision, RetrievalResults, ValidationResults, WebSearchResults } from '$lib/stores/chat';
 	import { processSSEStream, fetchWithAbort } from '$lib/utils/chat-stream';
@@ -65,11 +66,18 @@
 		}
 	}
 
-	function handleChatAction(event: string | CustomEvent<{ message: string }>) {
+	async function handleChatAction(event: string | CustomEvent<{ message: string; newSession?: boolean }>) {
 		const message = typeof event === 'string' ? event : event.detail.message;
+		const newSession = typeof event === 'string' ? false : (event.detail.newSession ?? false);
+
+		if (newSession) {
+			handleNewChat();
+			await tick();
+		}
+
 		currentView = 'chat';
 		inputValue = message;
-		sendMessage(message);
+		await sendMessage(message);
 	}
 
 	onMount(async () => {
@@ -83,6 +91,15 @@
 		if (currentAbort) {
 			currentAbort();
 			currentAbort = null;
+		}
+	});
+
+	// Execute pending action if it exists
+	$effect(() => {
+		if ($pendingChatAction) {
+			const action = $pendingChatAction;
+			pendingChatAction.set(null); // Clear first to avoid loops
+			handleChatAction(new CustomEvent('chat-action', { detail: action }));
 		}
 	});
 

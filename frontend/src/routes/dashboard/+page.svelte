@@ -5,7 +5,14 @@
 		connectCluster,
 		type ClusterDetailsResponse
 	} from '$lib/api';
-	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState, StatusMessage, Page } from '$lib/components';
+	import { Header, HeaderStatus, Card, Button, StatusDot, Input, Select, Icon, LoadingState, StatusMessage, Page, Modal } from '$lib/components';
+	import { KafkaLogViewer } from '$lib/components/settings/sections';
+	import {
+		chatMessages,
+		currentSessionId,
+		sessions,
+		pendingChatAction
+	} from '$lib/stores/chat';
 	import {
 		ClusterHealthCard,
 		BrokersGrid,
@@ -13,7 +20,10 @@
 		ConsumerGroupsPanel,
 		QuickActions,
 		ClusterSwitcher,
-		EducationalContext
+		EducationalContext,
+		CreateTopicModal,
+		TopicsListModal,
+		ConsumerGroupsModal
 	} from '$lib/components/cluster';
 	import { Hint } from '$lib/components/hints';
 
@@ -36,9 +46,20 @@
 	let showChat = $state(false);
 	let connecting = $state(false);
 	let showConnectForm = $state(false);
+	let showLogsModal = $state(false);
+	let showTopicCreate = $state(false);
+	let showTopicList = $state(false);
+	let showGroupList = $state(false);
 	let formName = $state('');
 	let formBootstrap = $state('');
 	let formProtocol = $state('PLAINTEXT');
+
+	// Auto-open chat if there's a pending action
+	$effect(() => {
+		if ($pendingChatAction) {
+			showChat = true;
+		}
+	});
 
 	// Auto-refresh interval
 	let refreshInterval: ReturnType<typeof setInterval> | null = null;
@@ -91,12 +112,26 @@
 	}
 
 	function handleQuickAction(action: string) {
+		if (action === 'view_logs') {
+			showLogsModal = true;
+			return;
+		}
+		if (action === 'create_topic') {
+			showTopicCreate = true;
+			return;
+		}
+		if (action === 'list_topics') {
+			showTopicList = true;
+			return;
+		}
+		if (action === 'list_consumer_groups') {
+			showGroupList = true;
+			return;
+		}
+
 		showChat = true;
 		const actionMessages: Record<string, string> = {
-			list_topics: 'List all topics in the cluster',
 			describe_topic: 'Describe a topic',
-			create_topic: 'Create a new topic',
-			list_consumer_groups: 'List all consumer groups'
 		};
 		window.dispatchEvent(
 			new CustomEvent('chat-action', {
@@ -326,6 +361,39 @@
 		</Card>
 	{/if}
 </Page>
+
+<!-- Logs Modal -->
+<Modal
+	isOpen={showLogsModal}
+	onClose={() => showLogsModal = false}
+	title="Kafka Debug Logs"
+	size="xl"
+>
+	<KafkaLogViewer />
+</Modal>
+
+<CreateTopicModal
+	isOpen={showTopicCreate}
+	onClose={() => showTopicCreate = false}
+	onSuccess={() => {
+		loadClusterData();
+		showTopicCreate = false;
+	}}
+/>
+
+<TopicsListModal
+	isOpen={showTopicList}
+	topics={clusterDetails.topics}
+	onClose={() => showTopicList = false}
+	onTopicClick={handleTopicClick}
+/>
+
+<ConsumerGroupsModal
+	isOpen={showGroupList}
+	groups={clusterDetails.consumer_groups}
+	onClose={() => showGroupList = false}
+	onGroupClick={handleGroupClick}
+/>
 
 <!-- Educational Overlay -->
 <EducationalContext />

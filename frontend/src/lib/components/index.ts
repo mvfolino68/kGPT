@@ -24,6 +24,7 @@ export {
 	Panel,
 	ClickableCard,
 	Tabs, // New component
+	Modal,
 	// Merged from root
 	CodeBlock,
 	FormattedMessage,

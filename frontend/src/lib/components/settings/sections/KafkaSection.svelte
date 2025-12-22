@@ -5,6 +5,7 @@
 	import KafkaCurrentConnection from './KafkaCurrentConnection.svelte';
 	import KafkaConnectionForm from './KafkaConnectionForm.svelte';
 	import KafkaSavedClusters from './KafkaSavedClusters.svelte';
+	import KafkaLogViewer from './KafkaLogViewer.svelte';
 
 	interface Props {
 		clusterInfo: Partial<ClusterInfo> & { connected: boolean };
@@ -47,6 +48,8 @@
 		onformprotocolchange,
 		ondelete
 	}: Props = $props();
+
+	let showLogs = $state(false);
 </script>
 
 <SettingsCard
@@ -118,5 +121,23 @@
 				/>
 			{/if}
 		{/if}
+
+
+		<!-- Debug Logs -->
+		<div class="pt-4 border-t border-border">
+			<button
+				class="flex items-center gap-2 text-sm text-text-secondary hover:text-text transition-colors w-full"
+				onclick={() => showLogs = !showLogs}
+			>
+				<Icon name={showLogs ? 'chevron-down' : 'chevron-right'} size="sm" />
+				<span class="font-medium">Debug Logs</span>
+			</button>
+
+			{#if showLogs}
+				<div class="mt-3">
+					<KafkaLogViewer />
+				</div>
+			{/if}
+		</div>
 	</div>
 </SettingsCard>

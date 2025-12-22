@@ -529,6 +529,25 @@ class KafkaService:
         except Exception as e:
             raise RuntimeError(f"Failed to describe broker config: {e}")
 
+    def get_recent_logs(self, lines: int = 50) -> list[str]:
+        """
+        Get the most recent lines from the Kafka debug log.
+        """
+        if not os.path.exists(KAFKA_DEBUG_LOG):
+            return []
+
+        try:
+            # Simple tail implementation
+            with open(KAFKA_DEBUG_LOG) as f:
+                # Read all lines and take the last N
+                # For very large files, a seek-based tail would be better,
+                # but this log is likely small enough for this use case.
+                all_lines = f.readlines()
+                return [line.strip() for line in all_lines[-lines:]]
+        except Exception as e:
+            logger.error(f"Failed to read debug log: {e}")
+            return [f"Error reading logs: {e}"]
+
 
 # Global instance management (replaces the old set_cluster_context)
 _kafka_service: KafkaService | None = None

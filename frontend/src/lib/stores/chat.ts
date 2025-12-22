@@ -199,6 +199,9 @@ export const showAgentActivity = writable(false);
 // Selected message ID for viewing its trace (null = show current/streaming trace)
 export const selectedMessageId = writable<string | null>(null);
 
+// Pending chat action to be handled when drawer mounts
+export const pendingChatAction = writable<{ message: string; newSession?: boolean } | null>(null);
+
 // Current agent activity (for the active message being streamed)
 export const currentAgentTrace = writable<MessageAgentTrace>({
 	agentTimeline: []
