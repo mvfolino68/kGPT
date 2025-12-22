@@ -8,6 +8,7 @@
 		getClusterInfo,
 		connectCluster,
 		disconnectCluster,
+		deleteCluster,
 		type Settings,
 		type KafkaCluster,
 		type ClusterInfo
@@ -262,7 +263,7 @@
 	}
 
 	async function handleClusterDelete(clusterId: number) {
-		if (!confirm('Are you sure you want to delete this cluster connection?')) return;
+		// Confirmation is handled in the UI component
 		try {
 			await deleteCluster(clusterId);
 			await loadClusterData();

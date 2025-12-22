@@ -99,9 +99,6 @@
 	let selectedFile = $state<File | null>(null);
 	let urlDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-	// Delete confirmation
-	let confirmingDeleteId = $state<number | null>(null);
-
 	// Ingestion tracking
 	let activeIngestions = $state<Map<number, IngestionProgress>>(new Map());
 	let ingestionStartTimes = $state<Map<number, number>>(new Map());
@@ -355,8 +352,6 @@
 			await loadAll();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to delete';
-		} finally {
-			confirmingDeleteId = null;
 		}
 	}
 
@@ -581,12 +576,9 @@
 			{activeIngestions}
 			{ingestionStartTimes}
 			{currentTime}
-			{confirmingDeleteId}
 			onRefresh={loadAll}
 			onCancel={handleCancel}
-			onDeleteClick={(id) => confirmingDeleteId = id}
 			onConfirmDelete={handleConfirmDelete}
-			onCancelDelete={() => confirmingDeleteId = null}
 		/>
 		</div>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Panel, LoadingState, EmptyState, StatusPill, Button, IconButton, DeleteButton } from '$lib/components/ui';
+	import { Panel, LoadingState, EmptyState, StatusPill, Button, IconButton, DeleteConfirmButton } from '$lib/components/ui';
 	import { getStatusColor, type DocumentSource, type IngestionProgress } from './types';
 
 	interface Props {
@@ -8,12 +8,9 @@
 		activeIngestions: Map<number, IngestionProgress>;
 		ingestionStartTimes: Map<number, number>;
 		currentTime: number;
-		confirmingDeleteId: number | null;
 		onRefresh: () => void;
 		onCancel: (id: number) => void;
-		onDeleteClick: (id: number) => void;
 		onConfirmDelete: (id: number, name: string) => void;
-		onCancelDelete: () => void;
 	}
 
 	let {
@@ -22,12 +19,9 @@
 		activeIngestions,
 		ingestionStartTimes,
 		currentTime,
-		confirmingDeleteId,
 		onRefresh,
 		onCancel,
-		onDeleteClick,
-		onConfirmDelete,
-		onCancelDelete
+		onConfirmDelete
 	}: Props = $props();
 
 	function formatElapsedTime(startTime: number): string {
@@ -111,11 +105,11 @@
 								Cancel
 							</Button>
 						{/if}
-						<DeleteButton
+						<DeleteConfirmButton
 							size="sm"
-							itemName={doc.name}
+							itemId={doc.id}
+							title="Delete source"
 							onConfirm={() => onConfirmDelete(doc.id, doc.name)}
-							onCancel={onCancelDelete}
 						/>
 					</div>
 				</div>

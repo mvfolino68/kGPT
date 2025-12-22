@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, SectionHeader, Icon } from '$lib/components/ui';
+	import { Button, SectionHeader, Icon, DeleteConfirmButton } from '$lib/components/ui';
 	import type { KafkaCluster } from '$lib/api';
 
 	interface Props {
@@ -35,16 +35,12 @@
 						>
 							Connect
 						</Button>
-						{#if ondelete}
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								class="h-7 w-7 text-surface-500 hover:text-red-400 hover:bg-red-400/10"
-								onclick={() => ondelete(cluster.id!)}
+						{#if ondelete && cluster.id}
+							<DeleteConfirmButton
+								itemId={cluster.id}
+								onConfirm={(id) => ondelete!(id)}
 								title="Delete cluster"
-							>
-								<Icon name="trash" size="xs" />
-							</Button>
+							/>
 						{/if}
 					{:else}
 						<Button

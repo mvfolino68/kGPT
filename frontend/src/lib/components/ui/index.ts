@@ -37,6 +37,7 @@ export { default as Backdrop } from './Backdrop.svelte';
 // Specialized Components
 export { default as IconButton } from './IconButton.svelte';
 export { default as DeleteButton } from './DeleteButton.svelte';
+export { default as DeleteConfirmButton } from './DeleteConfirmButton.svelte';
 export { default as CardButton } from './CardButton.svelte';
 export { default as ResizeHandle } from './ResizeHandle.svelte';
 
