@@ -66,7 +66,7 @@ export function resetHints(): void {
  */
 export function dismissAllHints(): void {
 	// Add all known hint IDs
-	const allHints = ['dashboard', 'architecture', 'documents', 'settings'];
+	const allHints = ['dashboard', 'documents', 'settings'];
 	allHints.forEach((id) => state.dismissedHints.add(id));
 	saveHints();
 }

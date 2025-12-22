@@ -19,12 +19,6 @@
 			tooltip: 'Chat with your Kafka cluster using natural language AI'
 		},
 		{
-			href: '/architecture',
-			label: 'Architecture',
-			icon: 'cpu',
-			tooltip: 'See how multi-agent RAG orchestration routes your queries'
-		},
-		{
 			href: '/documents',
 			label: 'Vector Store',
 			icon: 'database',

@@ -7,7 +7,6 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from loguru import logger
-from pydantic import BaseModel
 
 from kgpt.api.schemas import (
     AdminOperationRequest,
@@ -252,88 +251,3 @@ async def execute_admin_operation(request: AdminOperationRequest) -> AdminOperat
             operation=request.operation,
             error=str(e),
         )
-
-
-# ============================================================================
-# Agent Graph Structure (Educational)
-# ============================================================================
-
-
-class AgentGraphNode(BaseModel):
-    """Represents a node in the agent graph."""
-
-    name: str
-    label: str
-    description: str
-    icon: str
-    color: str
-
-
-class AgentGraphEdge(BaseModel):
-    """Represents an edge in the agent graph."""
-
-    from_node: str
-    to_node: str
-    condition: str | None = None
-
-
-class AgentGraphInfo(BaseModel):
-    """Complete agent graph structure information."""
-
-    nodes: list[AgentGraphNode]
-    edges: list[AgentGraphEdge]
-    entry_point: str
-    description: str
-
-
-@router.get("/graph", response_model=AgentGraphInfo)
-async def get_agent_graph() -> AgentGraphInfo:
-    """
-    Get the structure of the multi-agent graph.
-    """
-    from kgpt.services.kafka import get_kafka_service
-
-    # Check if cluster is connected
-    service = get_kafka_service()
-    cluster_connected = service.config is not None
-
-    # Define the ReAct graph structure
-    nodes = [
-        AgentGraphNode(
-            name="agent",
-            label="Agent",
-            description="Core ReAct agent that reasons and calls tools",
-            icon="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
-            color="text-violet-400",
-        ),
-        AgentGraphNode(
-            name="tools",
-            label="Tools",
-            description="Execution of Kafka operations and search tools",
-            icon="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z",
-            color="text-emerald-400",
-        ),
-    ]
-
-    edges = [
-        AgentGraphEdge(from_node="START", to_node="agent", condition=None),
-        AgentGraphEdge(from_node="agent", to_node="tools", condition="calls tool"),
-        AgentGraphEdge(from_node="tools", to_node="agent", condition="returns result"),
-        AgentGraphEdge(from_node="agent", to_node="END", condition="final answer"),
-    ]
-
-    description = f"""ReAct Agent Architecture.
-
-The system uses a flexible reasoning loop:
-- **Agent**: The core LLM that plans actions and calls tools.
-- **Tools**: A suite of capabilities including Kafka operations ({("connected" if cluster_connected else "not connected")}), documentation search, and web search.
-
-The agent loops between reasoning and tool execution until it arrives at a final answer.
-"""
-
-    return AgentGraphInfo(
-        nodes=nodes,
-        edges=edges,
-        entry_point="agent",
-        description=description,
-    )

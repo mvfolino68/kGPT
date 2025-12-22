@@ -97,20 +97,7 @@ export {
 	SavedClusters
 } from './cluster';
 
-// Architecture components
-export {
-	PathSelector,
-	SelectedPathInfo,
-	QueryFlowGraph,
-	AgentNode,
-	ParallelNodes,
-	FlowArrow,
-	AllAgentsOverview,
-	TechnologyStack,
-	GraphStats,
-	CallToAction
-} from './architecture';
-export * from './architecture/types';
+
 
 // Documents components
 export {

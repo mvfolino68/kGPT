@@ -17,12 +17,6 @@
 			description: 'Chat with your Kafka cluster'
 		},
 		{
-			href: '/architecture',
-			icon: 'architecture',
-			title: 'Architecture',
-			description: 'See how agents work together'
-		},
-		{
 			href: '/documents',
 			icon: 'documents',
 			title: 'Vector Store',
@@ -89,10 +83,6 @@
 							{#if link.icon === 'dashboard'}
 								<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z" />
-								</svg>
-							{:else if link.icon === 'architecture'}
-								<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z" />
 								</svg>
 							{:else if link.icon === 'documents'}
 								<svg class="w-4 h-4 text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
