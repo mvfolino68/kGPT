@@ -4,8 +4,8 @@
 
 I built kGPT because documentation search sucks. You're debugging at 2am, you know the answer is *somewhere* in the docs, and you end up with 47 browser tabs open. kGPT fixes that. Ask a question in plain English, get a real answer with sources.
 
-<!-- TODO: Add demo GIF/video here -->
-![Demo of kGPT in action](placeholder-for-demo.gif)
+<!-- Quick Demo Video -->
+![kGPT Demo](assets/demo.mp4)
 
 ## What it does
 
@@ -179,7 +179,7 @@ Frontend: [http://localhost:3000](http://localhost:3000)
 
 ## Project structure
 
-```
+```text
 kgpt/
 ├── frontend/                    # Svelte 5 + Tailwind
 │   └── src/
