@@ -100,6 +100,7 @@
 								isLoading={cleanupLoading}
 								onConfirm={onCleanupOrphans}
 								onCancel={onCancelDestructiveOp}
+								onInput={onConfirmTextChange}
 							/>
 						</div>
 					{/if}
@@ -147,6 +148,7 @@
 								isLoading={cleanupLoading}
 								onConfirm={onCleanupStale}
 								onCancel={onCancelDestructiveOp}
+								onInput={onConfirmTextChange}
 							/>
 						</div>
 					{/if}
@@ -179,6 +181,7 @@
 							isLoading={cleanupLoading}
 							onConfirm={onPurgeAll}
 							onCancel={onCancelDestructiveOp}
+							onInput={onConfirmTextChange}
 						/>
 					</div>
 				{/if}

@@ -12,6 +12,7 @@
     isLoading?: boolean;
     onConfirm: () => void;
     onCancel: () => void;
+    onInput?: (val: string) => void;
   }
 
   let {
@@ -23,11 +24,16 @@
     variant = 'danger',
     isLoading = false,
     onConfirm,
-    onCancel
+    onCancel,
+    onInput
   }: Props = $props();
 
   let confirmInput = $state('');
   let isConfirmDisabled = $derived(confirmText ? confirmInput !== confirmText : false);
+
+  $effect(() => {
+    onInput?.(confirmInput);
+  });
 </script>
 
 <div class="space-y-4">
