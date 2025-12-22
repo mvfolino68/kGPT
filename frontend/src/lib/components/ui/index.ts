@@ -9,6 +9,7 @@ export { default as Badge } from './Badge.svelte';
 export { default as StatusDot } from './StatusDot.svelte';
 export { default as StatusPill } from './StatusPill.svelte';
 export { default as Tooltip } from './Tooltip.svelte';
+export { default as Modal } from './Modal.svelte';
 export { default as NavLink } from './NavLink.svelte';
 export { default as ListItem } from './ListItem.svelte';
 export { default as Icon } from './Icon.svelte';

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { type BrokerInfo, getBrokerConfig } from '$lib/api';
-	import { educationalStore } from '$lib/stores/educational.svelte';
+	import { type BrokerInfo } from '$lib/api';
 	import { Card, Button, Icon } from '$lib/components/ui';
+	import BrokerConfigModal from './BrokerConfigModal.svelte';
 
 	interface Props {
 		brokers: BrokerInfo[];
@@ -9,6 +9,8 @@
 	}
 
 	let { brokers, onBrokerClick }: Props = $props();
+
+	let selectedBrokerId = $state<number | null>(null);
 
 	// Calculate total partitions for percentage
 	const totalPartitions = $derived(brokers.reduce((sum, b) => sum + b.partition_count, 0));
@@ -19,31 +21,7 @@
 	}
 
 	function handleConfig(brokerId: number) {
-		educationalStore.performAction({
-			type: 'inspect',
-			resource: 'broker',
-			name: `Broker ${brokerId}`,
-			protocolOperation: 'DescribeConfigs',
-			explanation: `Fetch configuration parameters for Broker ${brokerId}.`,
-			details: { brokerId },
-			onConfirm: async () => {
-				const config = await getBrokerConfig(brokerId);
-				// TODO: In a real app we might show this in a modal
-				// For now, we can log it or show it in the store's result view if we had one.
-				// But educationalStore is mainly for "intercepting".
-				// Let's just alert for now or maybe we can enhance educationalStore to show results?
-				// The prompt says "Inspect opens a detailed view".
-				// Since we don't have a generic "inspect result" modal ready other than the one for tools,
-				// let's just log it or maybe open a simple alert.
-				// ACTUALLY, checking the user requirement: "Inspect opens a detailed view (not just chat)"
-				// I'll make the educational store action "resolve" and I can handle the result presentation here if I want.
-				// But simpler: just alert the result for now or rely on the user seeing the network tab?
-				// User said: "Reuse sub-components (like TopicDetails.svelte) for "Inspect" views in the main dashboard".
-				// For brokers, we don't have a BrokerDetails component.
-				// I'll create a simple modal or just alert.
-				alert(JSON.stringify(config, null, 2));
-			}
-		});
+		selectedBrokerId = brokerId;
 	}
 </script>
 
@@ -118,6 +96,11 @@
 				{/each}
 			</div>
 		{/if}
+
+		<BrokerConfigModal
+			brokerId={selectedBrokerId}
+			onClose={() => selectedBrokerId = null}
+		/>
 	{/snippet}
 </Card>
 
