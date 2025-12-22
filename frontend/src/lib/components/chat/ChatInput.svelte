@@ -12,11 +12,11 @@
 	let inputRef: HTMLTextAreaElement | null = $state(null);
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (onKeydown) {
-			onKeydown(event);
-		} else if (event.key === 'Enter' && !event.shiftKey) {
+		if (event.key === 'Enter' && !event.shiftKey) {
 			event.preventDefault();
 			onSend(value);
+		} else if (onKeydown) {
+			onKeydown(event);
 		}
 	}
 

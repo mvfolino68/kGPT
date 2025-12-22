@@ -16,9 +16,9 @@
 	let { sources, isStreaming = false, inline = false }: Props = $props();
 
 	// State - start expanded by default for better discoverability
-	let isExpanded = $state(true);
+	let isExpanded = $state(false);
 	let expandedGroups = $state<Record<string, boolean>>(
-		Object.fromEntries(groupSourcesByType(sources).map((g, i) => [g.type, i === 0]))
+		Object.fromEntries(groupSourcesByType(sources).map((g) => [g.type, false]))
 	);
 	let hasInitialized = $state(true);
 
@@ -45,10 +45,6 @@
 
 	function toggleExpanded() {
 		isExpanded = !isExpanded;
-		// Auto-expand first group when opening
-		if (isExpanded && groups.length > 0 && Object.keys(expandedGroups).length === 0) {
-			expandedGroups = { [groups[0].type]: true };
-		}
 	}
 
 	function toggleGroup(type: string) {
@@ -123,15 +119,7 @@
 								{totalSources} {totalSources === 1 ? 'Source' : 'Sources'}
 							</span>
 							<!-- Type pills -->
-							<div class="flex gap-1">
-								{#each groups as group}
-									{@const colors = getGroupColorClasses(group.color)}
-									<span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase
-										{colors.bg} {colors.text}">
-										{group.sources.length} {group.type}
-									</span>
-								{/each}
-							</div>
+							<!-- Type pills removed for collapsed view -->
 						</div>
 						<p class="text-[11px] text-surface-500 mt-0.5">
 							{isExpanded ? 'Click to collapse' : 'Click to view sources used in this response'}

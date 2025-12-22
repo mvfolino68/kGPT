@@ -45,7 +45,7 @@
 	// Chat state
 	let inputValue = $state('');
 	let messagesContainer: HTMLDivElement | null = $state(null);
-	let inputRef: HTMLTextAreaElement | null = $state(null);
+	let inputRef: ReturnType<typeof ChatInput> | null = $state(null);
 	let currentAbort: (() => void) | null = null;
 
 	// Derived
@@ -236,7 +236,7 @@
 <!-- Main Container - Side by side layout -->
 <div class="fixed top-0 right-0 bottom-0 z-50 flex animate-slide-in-right shadow-2xl">
 	<!-- Chat Panel -->
-	<div class="w-[480px] bg-surface-900 flex flex-col">
+	<div class="w-[640px] bg-surface-900 flex flex-col">
 		<!-- Header -->
 		<header class="flex items-center justify-between px-4 py-3 bg-surface-800">
 			<div class="flex items-center gap-2">
@@ -313,6 +313,7 @@
 
 			<!-- Input -->
 			<ChatInput
+				bind:this={inputRef}
 				bind:value={inputValue}
 				isProcessing={$isProcessing}
 				onSend={sendMessage}
