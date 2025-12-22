@@ -47,7 +47,7 @@
 			{disabled}
 			bind:value
 			class="
-				w-full bg-surface-800 rounded-md px-3 py-2 text-sm text-text pl-10
+				w-full bg-surface-800 rounded-md pr-3 py-2 text-sm text-text !pl-10
 				border border-surface-700
 				placeholder:text-text-tertiary
 				transition-colors duration-150
