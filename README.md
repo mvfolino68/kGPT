@@ -1,201 +1,83 @@
 # kGPT
 
-**Your AI-powered docs assistant for Kafka and Confluent—built to actually help.**
+**AI-powered Kafka Assistant**
 
-I built kGPT because documentation search sucks. You're debugging at 2am, you know the answer is *somewhere* in the docs, and you end up with 47 browser tabs open. kGPT fixes that. Ask a question in plain English, get a real answer with sources.
+I built kGPT because I wanted to blend Kafka and AI. I wanted to be able to ask questions about my Kafka cluster and get answers. I also wanted to be able to ask questions about Kafka in general and get answers grounded in the official docs.
 
 <!-- Quick Demo GIF -->
 ![kGPT Demo](assets/demo.gif)
 
-## What it does
+## 2022 RAG to 2025 Agentic
 
-- **Actually answers questions** – not just links you to docs. Ask "how do I increase partition count?" and get a step-by-step answer with the exact commands.
-- **Knows your cluster** – connect your real Kafka cluster and get context-aware answers about *your* topics, configs, and consumer groups.
-- **Bring your own docs** – index Confluent docs, Apache Kafka docs, or your company's internal wikis.
-- **Works with any LLM** – OpenAI, Anthropic, OpenRouter, or run fully local with Ollama.
+In 2022, I built the first version of kGPT as a simple RAG application. It used LangChain to vectorize Confluent docs into a FAISS store. It worked, but it was a static search. If the docs changed, the project broke until I re-indexed everything.
 
-## Quick demo
-
-```bash
-git clone https://github.com/mvfolino68/kGPT.git
-cd kGPT
-docker compose up
-```
-
-Open [http://localhost:3000](http://localhost:3000), add your API key in Settings, and start asking questions.
-
-For development (hot-reload, faster iteration):
-
-```bash
-make install && make dev
-```
+The 2025 version is a complete rethink. I swapped manual indexing for Exa (live web search) and built a UI to store custom documents in Qdrant. Now, the agent doesn't just look for stale data. It searches the entire internet in real time to find the latest blog posts, forum discussions, and official release notes.
 
 ## How it works
 
-Under the hood, kGPT uses a multi-agent pipeline. When you ask a question, it goes through several steps:
+kGPT uses a **LangGraph-powered ReAct architecture**. Instead of a linear chain, the agent thinks in loops and chooses the right tools for the job.
 
 ```mermaid
-flowchart LR
-    Q[Your Question] --> R[Router]
-    R --> |Docs query| RET[Retriever]
-    R --> |Cluster query| KS[Kafka Service]
-    RET --> VAL[Validator]
-    KS --> SYN
-    VAL --> SYN[Synthesizer]
-    SYN --> A[Answer + Sources]
+flowchart TD
+    Start((Start)) --> Agent[Core Agent]
+    Agent --> Decision{Needs Tools?}
+    Decision -- Yes --> Tools[Tool Node]
+    Tools --> Kafka[Kafka Tools]
+    Tools --> Search[Hybrid Search: Exa + Qdrant]
+    Tools --> Query[Query Enhancer]
+    Kafka --> Agent
+    Search --> Agent
+    Query --> Agent
+    Decision -- No --> End((Final Answer))
 ```
 
-**Router** figures out what you're asking—is this a docs question? Do we need cluster context? Should we run an admin operation?
+1. **Strategic Routing**: The agent analyzes your query to decide if it needs docs, real-time web data, or live cluster metadata.
+2. **Hybrid Search**: The `search` tool executes parallel queries across indexed docs and the live web, merging results with Reciprocal Rank Fusion (RRF).
+3. **Cluster Introspection**: If the question is about your own brokers, the agent uses live Kafka tools to pull real-time topic, config, and consumer group data.
+4. **Contextual Synthesis**: The agent synthesizes all evidence into a definitive answer with inline citations.
 
-**Retriever** searches the vector database for relevant documentation chunks using semantic search.
+## Cool Features
 
-**Kafka Service** connects to your cluster (if configured) to pull real metadata about topics, configs, consumer groups, etc.
+- **Agent Trace View**: Watch the agent's thought process in real time. See exactly when it decides to search the web, check a Kafka topic, and how it builds the final answer.
+- **Real Kafka Introspection**: Connect directly to your brokers. List topics, check consumer group lag, and see your cluster topology right in the app.
+- **Hybrid Web/Doc Search**: Search internal docs and the live internet at the same time. This keeps answers grounded in official docs while staying aware of current events.
+- **Sitemap Crawler**: Point kGPT at any document site or GitHub repo. It will ingest, chunk, and embed the whole thing into Qdrant in seconds with a real-time progress bar.
+- **Cluster Topology Maps**: A visual view of your brokers and how they are connected. Makes debugging cluster health more intuitive.
 
-**Validator** checks retrieved docs for relevance and filters out noise.
-
-**Synthesizer** pulls everything together into a coherent answer with proper citations.
-
-## Architecture
-
-Here's the full picture of how the pieces fit together:
-
-```mermaid
-graph TB
-    subgraph Frontend["Frontend (Svelte 5)"]
-        Chat[Chat Page]
-        Docs[Documents Page]
-        Cluster[Cluster Page]
-        Settings[Settings Page]
-    end
-
-    subgraph Backend["Backend (FastAPI)"]
-        API[API Routes]
-        Orchestrator[Agent Orchestrator]
-
-        subgraph Agents["Agent Pipeline"]
-            Router[Router]
-            QueryEnhancer[Query Enhancer]
-            Retrieval[Retrieval Agent]
-            WebSearch[Web Search]
-        end
-
-        subgraph Services["Services"]
-            KafkaService[Kafka Service]
-            Ingestion[Doc Ingestion]
-        end
-    end
-
-    subgraph Infra["Infrastructure"]
-        Qdrant[(Qdrant Vector DB)]
-        SQLite[(SQLite)]
-        LLM[LLM Provider]
-        Kafka[Kafka Cluster]
-    end
-
-    Chat --> API
-    Docs --> API
-    Cluster --> API
-    Settings --> API
-
-    API --> Orchestrator
-    Orchestrator --> Router
-    Router --> QueryEnhancer
-    Router --> Retrieval
-    Router --> WebSearch
-
-    API --> KafkaService
-    API --> Ingestion
-
-    Retrieval --> Qdrant
-    Ingestion --> Qdrant
-    KafkaService --> Kafka
-    Orchestrator --> LLM
-    API --> SQLite
-```
-
-## Features I'm proud of
-
-### Document ingestion
-
-Point kGPT at a sitemap and it'll crawl, chunk, and embed the whole thing. Watch progress in real-time.
-
-```mermaid
-flowchart LR
-    Source[Sitemap/GitHub/URL] --> Fetch[Fetch Pages]
-    Fetch --> Load[Parse Content]
-    Load --> Chunk[Smart Chunking]
-    Chunk --> Embed[Generate Embeddings]
-    Embed --> Store[(Qdrant)]
-```
-
-### Real Kafka integration
-
-This isn't just reading docs—kGPT can actually look at your cluster. The `KafkaService` class handles all the admin operations under the hood.
-
-- List topics with partition counts and configs
-- Describe consumer groups and their lag
-- Create/delete topics (with confirmation prompts, obviously)
-- Get broker configs
-
-### Flexible LLM support
-
-Use whatever model fits your budget and privacy needs:
-
-| Provider | Local? | Notes |
-|----------|--------|-------|
-| Ollama | ✅ | Fully offline, great for sensitive data |
-| OpenAI | ❌ | GPT-4o for best quality |
-| Anthropic | ❌ | Claude is solid for technical docs |
-| OpenRouter | ❌ | Access to all models, pay-per-token |
-
-## Setup
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 20+
-- Docker (for Qdrant, or run standalone)
-- An API key (unless using Ollama)
+- Docker (for Qdrant)
 
-### Development mode (recommended)
-
-```bash
-make install   # Install Python + Node dependencies
-make dev       # Start everything with hot-reload
-```
-
-Frontend: [http://localhost:5173](http://localhost:5173)
-API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-### Docker mode
+### Run with Make
 
 ```bash
-docker compose up                           # Basic stack
-docker compose --profile ollama up          # + local LLM
-docker compose --profile demo up            # + demo Kafka cluster
+make install   # Install all dependencies
+make dev       # Start the full environment
 ```
 
-Frontend: [http://localhost:3000](http://localhost:3000)
+Visit the dashboard at [http://localhost:5173](http://localhost:5173).
 
-## Project structure
+## Project Structure
 
 ```text
 kgpt/
 ├── frontend/                    # Svelte 5 + Tailwind
 │   └── src/
-│       ├── routes/              # Pages (chat, documents, cluster, settings)
-│       └── lib/                 # Components and utilities
+│       ├── routes/              # Pages (chat, docs, cluster, settings)
+│       └── lib/                 # UI Components
 └── src/kgpt/
     ├── api/                     # FastAPI routes
-    ├── agents/                  # LangGraph multi-agent system
-    │   └── orchestrator/        # Graph builder and streaming
-    ├── services/                # Kafka service
-    ├── ingestion/               # Document loaders
-    ├── vectorstore/             # Qdrant integration
-    └── llm/                     # LLM provider abstraction
+    ├── agents/                  # LangGraph multi-agent logic
+    ├── services/                # Kafka cluster service
+    ├── ingestion/               # Sitemap and doc loaders
+    └── vectorstore/             # Qdrant integration
 ```
 
-## Make commands
+## Make Commands
 
 | Command | What it does |
 |---------|-------------|
@@ -206,36 +88,6 @@ kgpt/
 | `make build` | Build Docker images |
 
 Run `make help` for the complete list.
-
-## Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `LLM_PROVIDER` | `openai` | `openai`, `anthropic`, `openrouter`, or `ollama` |
-| `LLM_MODEL` | `gpt-4o` | Model to use |
-| `OPENAI_API_KEY` | — | Your OpenAI key |
-| `QDRANT_URL` | `http://localhost:6333` | Vector database URL |
-
-See `.env.example` for all options.
-
-## Why I built this
-
-I've spent way too many hours digging through Kafka documentation. The official docs are thorough but hard to navigate when you're troubleshooting. I wanted something that could:
-
-1. Actually understand my question
-2. Search the docs intelligently
-3. Give me a synthesized answer, not just links
-4. Know about *my* cluster when relevant
-
-This project is my attempt at solving that. It's also a chance to play with LangGraph, FastAPI, and Svelte 5—tech I genuinely enjoy working with.
-
-## Contributing
-
-PRs welcome! Check out [DEVELOPMENT.md](DEVELOPMENT.md) for setup details and contribution guidelines.
-
-## License
-
-MIT—do whatever you want with it.
 
 ---
 
