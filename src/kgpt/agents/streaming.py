@@ -7,6 +7,43 @@ from langchain_core.messages import AIMessage, HumanMessage
 from loguru import logger
 
 from kgpt.agents.graph import AgentState
+from kgpt.tools.kafka_tools import get_kafka_tools
+
+# Get set of Kafka tool names for robust matching
+KAFKA_TOOL_NAMES = {t.name for t in get_kafka_tools()}
+
+
+def _resolve_agent_type(tool_name: str) -> tuple[str, str]:
+    """Resolve agent type and description based on tool name."""
+    if tool_name in KAFKA_TOOL_NAMES:
+        return "kafka", f"Running {tool_name}"
+
+    if tool_name == "enhance_query":
+        return "retrieval", "Formulating search strategy..."
+
+    if tool_name == "search":
+        return "retrieval", "Searching Knowledge Base & Web..."
+
+    return "unknown", f"Running {tool_name}"
+
+
+def _parse_artifacts(output_str: str) -> tuple[str, list]:
+    """Extract embedded artifacts from tool output."""
+    if "__ARTIFACTS__" not in output_str:
+        return output_str, []
+
+    try:
+        import json
+
+        parts = output_str.split("__ARTIFACTS__")
+        if len(parts) >= 2:
+            content_part = "__ARTIFACTS__".join(parts[:-1])
+            artifacts_part = parts[-1].strip()
+            return content_part.strip(), json.loads(artifacts_part)
+    except Exception as e:
+        logger.error(f"Failed to parse artifacts: {e}")
+
+    return output_str, []
 
 
 async def query_stream_with_stages(
@@ -39,66 +76,30 @@ async def query_stream_with_stages(
         "messages": messages,
         "trace_events": [],
         "citations": [],
-        # Legacy fields initialized to avoid errors if referenced
-        "sub_goals": [],
-        "needs_cluster_context": False,
-        "retrieved_docs": [],
-        "web_results": [],
-        "cluster_context": None,
-        "admin_result": None,
+        "answer": "",
         "error": None,
-        "route": "direct",
     }
 
     citations = []
-
     yield {"stage": "Thinking..."}
 
     try:
-        # Simulate Router Event (for UI "Pipeline" visualization)
-        yield {
-            "agent_event": {
-                "agent": "router",
-                "status": "completed",
-                "description": "Routing to appropriate agents",
-                "timestamp": datetime.now().isoformat(),
-                "result": {"route": "dynamic"},
-            }
-        }
-
         has_emitted_synthesis = False
 
-        # Use astream_events to catch real-time execution details
-        # version="v1" required for reliable formatting in current LangGraph versions
+        # version="v1" required for stable LangGraph streaming
         async for event in compiled_graph.astream_events(initial_state, version="v1"):
             kind = event["event"]
             name = event["name"]
             data = event["data"]
 
-            # Log ALL events for debugging
-            logger.info(f"Event: kind={kind}, name={name}")
-
-            # Tool Execution Start
+            # 1. Tool Start
             if kind == "on_tool_start":
-                tool_name = name
-                agent_type = "unknown"
+                agent_type, description = _resolve_agent_type(name)
+
+                # Append input details if available
                 tool_input = data.get("input", {})
-
-                # Format a concise description of the input
-                input_desc = ""
-                if isinstance(tool_input, dict):
-                    input_desc = f" ({', '.join([f'{k}={v}' for k, v in tool_input.items()])})"
-                elif tool_input:
-                    input_desc = f" ({tool_input})"
-
-                description = f"Running {tool_name}{input_desc}"
-
-                # Map tools to "agents" for frontend UI compatibility
-                # Map tools to "agents" for frontend UI compatibility
-                if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
-                    agent_type = "kafka"
-                elif tool_name in ["search", "enhance_query"]:
-                    agent_type = "retrieval"
+                if isinstance(tool_input, dict) and tool_input:
+                    description += f" ({', '.join([f'{k}={v}' for k, v in tool_input.items()])})"
 
                 yield {
                     "agent_event": {
@@ -109,112 +110,69 @@ async def query_stream_with_stages(
                     }
                 }
 
-            # Tool Execution End
+            # 2. Tool End
             elif kind == "on_tool_end":
-                tool_name = name
                 output = data.get("output")
+                output_str = str(output.content) if hasattr(output, "content") else str(output)
 
-                # Check for string output with embedded artifacts
-                artifacts = []
+                content, artifacts = _parse_artifacts(output_str)
+                agent_type, _ = _resolve_agent_type(name)
 
-                # If it's a ToolMessage (standard for langchain tool events), get the content
-                if hasattr(output, "content"):
-                    output_str = str(output.content)
-                else:
-                    output_str = str(output)
-
-                output_content = output_str
-
-                if "__ARTIFACTS__" in output_str:
-                    try:
-                        import json
-
-                        # Robust splitting - take the last occurrence if somehow multiple exist
-                        parts = output_str.split("__ARTIFACTS__")
-                        if len(parts) >= 2:
-                            content_part = "__ARTIFACTS__".join(parts[:-1])
-                            artifacts_part = parts[-1].strip()
-                            output_content = content_part.strip()
-                            artifacts = json.loads(artifacts_part)
-                        else:
-                            pass  # Artifact tag found but split failed
-                    except Exception as e:
-                        logger.error(f"Failed to parse artifacts: {e}")
-
-                if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
-                    agent_type = "kafka"
-                elif tool_name in ["search", "enhance_query"]:
-                    agent_type = "retrieval"
-                    if artifacts:
-                        citations.extend(artifacts)
-                        yield {"citations": citations}
-
-                # Richer summary for the tracer
-                summary = "Done"
-                if output_content:
-                    summary = output_content[:500] + ("..." if len(output_content) > 500 else "")
+                # Add citations if this was a retrieval tool
+                if agent_type == "retrieval" and artifacts:
+                    citations.extend(artifacts)
+                    yield {"citations": citations}
 
                 yield {
                     "agent_event": {
                         "agent": agent_type,
                         "status": "completed",
                         "result": {
-                            "tool": tool_name,
-                            "output": summary,
-                            "artifact_count": len(artifacts) if artifacts else 0,
+                            "tool": name,
+                            "output": content[:500] + ("..." if len(content) > 500 else ""),
+                            "artifact_count": len(artifacts),
                         },
                         "timestamp": datetime.now().isoformat(),
                     }
                 }
 
-                # If we got a real object back (like dict from Kafka tools), we can show it
-                if isinstance(output, dict) and agent_type == "kafka":
-                    # Frontend might expect specific "admin_result" or "cluster_context"
-                    # We can map it to "admin_result" for detailed cards
+                # For Kafka tools, return the raw object for detailed UI cards
+                if agent_type == "kafka" and isinstance(output, dict):
                     yield {"admin_result": output}
 
-            # LLM Streaming (Content)
+            # 3. LLM Content Stream
             elif kind == "on_chat_model_stream":
-                if not has_emitted_synthesis:
-                    has_emitted_synthesis = True
-                    yield {
-                        "agent_event": {
-                            "agent": "synthesis",
-                            "status": "started",
-                            "description": "Synthesizing answer...",
-                            "timestamp": datetime.now().isoformat(),
-                        }
-                    }
-
                 chunk = data.get("chunk")
-                # Log chunk details
-                if chunk:
-                    logger.info(
-                        f"Chunk: content='{chunk.content[:50] if chunk.content else ''}', tool_calls={getattr(chunk, 'tool_calls', [])}"
-                    )
                 if chunk and chunk.content:
-                    # If we are getting content, we are likely in the final answer retrieval phase
-                    # unless it's a thought trace (which is rare to stream as content in standard chat models)
+                    if not has_emitted_synthesis:
+                        has_emitted_synthesis = True
+                        yield {
+                            "agent_event": {
+                                "agent": "synthesis",
+                                "status": "started",
+                                "description": "Synthesizing answer...",
+                                "timestamp": datetime.now().isoformat(),
+                            }
+                        }
                     yield chunk.content
 
-        # Mark synthesis as complete
+        # Final Synthesis Completion
         if has_emitted_synthesis:
             yield {
                 "agent_event": {
                     "agent": "synthesis",
                     "status": "completed",
+                    "result": {"output": "Response generated"},
                     "timestamp": datetime.now().isoformat(),
                 }
             }
 
-        # Final Citations
         if citations:
             yield {"citations": citations}
 
         yield {"done": True}
 
     except Exception as e:
-        error_msg = str(e)
-        logger.error(f"Streaming error: {error_msg}")
-        yield f"Error: {error_msg}"
+        logger.error(f"Streaming error: {e}")
+        yield f"Error: {str(e)}"
         yield {"done": True}

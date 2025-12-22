@@ -4,7 +4,6 @@ from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Annotated, Literal, TypedDict
 
-from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -35,21 +34,6 @@ class AgentState(TypedDict):
     error: str | None
     # Educational mode trace events
     trace_events: list[dict]
-
-    # --- Legacy / Future Use (Reserved) ---
-    sub_goals: list[str]
-    needs_cluster_context: bool
-    needs_retrieval: bool
-    needs_web_search: bool
-    needs_admin_operation: bool
-    route: str
-    admin_operation: dict | None
-    retrieved_docs: list[Document]
-    web_results: list[dict]
-    cluster_context: dict | None
-    admin_result: dict | None
-    help_response: dict | None
-    suggested_prompts: list[str]
 
 
 # --- Graph Construction (formerly graph_builder.py) ---
@@ -189,25 +173,11 @@ class AgentOrchestrator:
 
         initial_state: AgentState = {
             "question": question,
-            "sub_goals": [],
-            "needs_cluster_context": False,
-            "needs_retrieval": True,
-            "needs_admin_operation": False,
-            "route": "retrieval",
-            "admin_operation": None,
-            "retrieved_docs": [],
-            "web_results": [],
-            "cluster_context": None,
-            "admin_result": None,
+            "messages": messages,
             "answer": "",
             "citations": [],
-            "messages": messages,
             "error": None,
             "trace_events": [],
-            # Legacy fields required by TypedDict but unused in simple graph
-            "suggested_prompts": [],
-            "help_response": None,
-            "validated_docs": [],  # Actually this one might not be in the definition exactly, let's checking
         }
 
         # Run the graph

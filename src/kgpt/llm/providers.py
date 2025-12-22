@@ -96,7 +96,7 @@ def get_llm(
     Settings are read from DB first, then fall back to env vars.
     """
     # Get model from DB or env
-    model_name = model or _get_db_setting("openai_model", settings.openai_model) or "gpt-4o"
+    model_name = model or _get_db_setting("openai_model", settings.openai_model)
     temp = temperature if temperature is not None else settings.llm_temperature
 
     # Get API key
