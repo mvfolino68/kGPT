@@ -67,7 +67,7 @@
 		</div>
 	{:else if documents.length === 0}
 		<EmptyState
-			icon="file-text"
+			icon="document"
 			title="No sources indexed"
 			description="Add documentation above to get started"
 		/>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Panel, StatusDot, StatusPill, StatCard, InnerCard, SectionHeader, ConfigRow } from '$lib/components/ui';
+	import { Panel, StatusDot, StatusPill, StatCard, InnerCard, SectionHeader, ConfigRow, Icon } from '$lib/components/ui';
 	import { estimateStorageSize, type CollectionsResponse } from './types';
 
 	interface Props {

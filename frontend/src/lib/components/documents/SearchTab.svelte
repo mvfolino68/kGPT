@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { Button, Panel, Card, Icon, Input, Select } from '$lib/components/ui';
-	import { StatusPill } from '$lib/components';
+	import { Button, Panel, Card, Icon, Input, Select, StatusPill } from '$lib/components/ui';
 	import { getSimilarityColor, type VectorSearchResponse, type ChunkResult } from './types';
 
 	interface Props {
@@ -105,7 +104,7 @@
 											{chunk.similarity_percent}% match
 										</span>
 										<div class="flex items-center gap-1.5 text-surface-400 text-xs">
-											<Icon name="file-text" size="xs" />
+											<Icon name="document" size="xs" />
 											<span class="truncate max-w-[200px]">{chunk.source_name}</span>
 										</div>
 									</div>
@@ -136,7 +135,7 @@
 													{#if chunk.source.startsWith('http')}
 														<a href={chunk.source} target="_blank" class="text-primary hover:underline flex items-center gap-1">
 															{chunk.source}
-															<Icon name="external-link" size="xs" />
+															<Icon name="external" size="xs" />
 														</a>
 													{:else}
 														<span class="text-surface-200">{chunk.source}</span>
@@ -157,7 +156,7 @@
 			{:else}
 				<div class="text-center py-12 bg-surface-800/30 rounded-xl border border-dashed border-surface-700/50">
 					<div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-surface-800/50 mb-4 text-surface-500">
-						<Icon name="search-x" size="md" />
+						<Icon name="search" size="md" />
 					</div>
 					<h3 class="text-sm font-medium text-surface-200">No results found</h3>
 					<p class="text-xs text-surface-400 mt-1">Try adjusting your search terms or lowering the match threshold.</p>
