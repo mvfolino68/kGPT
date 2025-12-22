@@ -1,10 +1,12 @@
-"""FastAPI application entry point for kGPT."""
-
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+
+# Load environment variables immediately before local imports
+load_dotenv()
 
 from kgpt.api.routes import chat_router, cluster_router, documents_router, settings_router
 from kgpt.api.schemas import HealthResponse

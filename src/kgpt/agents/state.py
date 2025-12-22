@@ -12,51 +12,35 @@ class AgentState(TypedDict):
     # The user's original question
     question: str
 
-    # Decomposed sub-goals from the router
-    sub_goals: list[str]
-
-    # Routing decisions
-    needs_cluster_context: bool
-    needs_retrieval: bool
-    needs_web_search: bool  # Whether to search the web for current info
-    needs_admin_operation: bool  # Whether this is an admin operation request
-    route: str  # "retrieval", "kafka", "admin", "both", "help", or "direct"
-
-    # Admin operation details (parsed from question)
-    admin_operation: dict | None  # {"type": "delete_topic", "params": {...}}
-
-    # Retrieved documents from the retrieval agent
-    retrieved_docs: list[Document]
-
-    # Web search results from Exa
-    web_results: list[dict]
-
-    # Cluster context from the Kafka agent (if applicable)
-    cluster_context: dict | None
-
-    # Admin operation result (if an operation was executed)
-    admin_result: dict | None
-
-    # Help response (from help node)
-    help_response: dict | None
-
-    # Suggested prompts for follow-up actions
-    suggested_prompts: list[str]
-
-    # The final synthesized answer
-    answer: str
-
-    # Source citations (now includes both doc and web sources)
-    citations: list[dict]
-
-    # Conversation history (for context)
+    # Message history (standard ReAct)
     messages: Annotated[list, add_messages]
 
+    # --- Core Output Fields ---
+    # The final synthesized answer
+    answer: str
+    # Source citations
+    citations: list[dict]
     # Error message if something went wrong
     error: str | None
-
     # Educational mode trace events
     trace_events: list[dict]
+
+    # --- Legacy / Future Use (Complex Routing) ---
+    # These fields are preserved for future multi-agent expansion
+    # but are not actively used by the current simple Agent->Tools graph.
+    sub_goals: list[str]
+    needs_cluster_context: bool
+    needs_retrieval: bool
+    needs_web_search: bool
+    needs_admin_operation: bool
+    route: str
+    admin_operation: dict | None
+    retrieved_docs: list[Document]
+    web_results: list[dict]
+    cluster_context: dict | None
+    admin_result: dict | None
+    help_response: dict | None
+    suggested_prompts: list[str]
 
 
 class RouterDecision(TypedDict):
