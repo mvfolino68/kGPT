@@ -89,20 +89,20 @@ async def get_cluster_details():
     service = get_kafka_service()
     if not service.config:
         # Check if we have an active cluster in DB but not connected in service
-        with get_db() as conn:
-            active = conn.execute("SELECT * FROM clusters WHERE is_active = 1").fetchone()
-            if active:
-                # auto-connect
-                try:
-                    config = _map_db_to_config(active)
-                    # Run connection in thread pool to avoid blocking
-                    await run_in_threadpool(service.connect, config)
-                except Exception as e:
-                    logger.error(f"Failed to auto-connect: {e}")
-                    return ClusterDetailsResponse(
-                        connected=False,
-                        error=f"Failed to connect to {active['name']}: {str(e)}",
-                    )
+        db = get_db()
+        active = db.get_active_kafka_cluster()
+        if active:
+            # auto-connect
+            try:
+                config = _map_db_to_config(active)
+                # Run connection in thread pool to avoid blocking
+                service.set_config(config)
+            except Exception as e:
+                logger.error(f"Failed to auto-connect: {e}")
+                return ClusterDetailsResponse(
+                    connected=False,
+                    error=f"Failed to connect to {active['name']}: {str(e)}",
+                )
 
     if not service.config:
         return ClusterDetailsResponse(connected=False)
@@ -148,62 +148,31 @@ async def connect_to_cluster(request: ClusterConnectRequest):
     service = get_kafka_service()
     try:
         config = request.model_dump()
-        # Save to DB
-        # Access the connection context manager explicitly, as Database is not a context manager itself
-        with get_db()._get_connection() as conn:
-            # Set all others inactive
-            conn.execute("UPDATE clusters SET is_active = 0")
+        db = get_db()
 
-            # Check if exists
-            existing = conn.execute(
-                "SELECT id FROM clusters WHERE name = ?", (config["name"],)
-            ).fetchone()
+        # Add or update cluster in database
+        cluster_id = db.add_kafka_cluster(
+            name=config["name"],
+            bootstrap_servers=config["bootstrap_servers"],
+            security_protocol=config.get("security_protocol", "PLAINTEXT"),
+            sasl_mechanism=config.get("sasl_mechanism"),
+            sasl_username=config.get("sasl_username"),
+            sasl_password=config.get("sasl_password"),
+        )
 
-            if existing:
-                conn.execute(
-                    """
-                    UPDATE clusters
-                    SET bootstrap_servers = ?, security_protocol = ?,
-                        sasl_mechanism = ?, sasl_username = ?, sasl_password = ?,
-                        is_active = 1
-                    WHERE name = ?
-                    """,
-                    (
-                        config["bootstrap_servers"],
-                        config.get("security_protocol", "PLAINTEXT"),
-                        config.get("sasl_mechanism"),
-                        config.get("sasl_username"),
-                        config.get("sasl_password"),
-                        config["name"],
-                    ),
-                )
-            else:
-                conn.execute(
-                    """
-                    INSERT INTO clusters (
-                        name, bootstrap_servers, security_protocol,
-                        sasl_mechanism, sasl_username, sasl_password, is_active
-                    ) VALUES (?, ?, ?, ?, ?, ?, 1)
-                    """,
-                    (
-                        config["name"],
-                        config["bootstrap_servers"],
-                        config.get("security_protocol", "PLAINTEXT"),
-                        config.get("sasl_mechanism"),
-                        config.get("sasl_username"),
-                        config.get("sasl_password"),
-                    ),
-                )
-            conn.commit()
+        # Set as active
+        db.set_active_kafka_cluster(cluster_id)
 
-        # Connect
-        service_config = config.copy()
-        await run_in_threadpool(service.connect, service_config)
+        # Connect the service
+        service.set_config(config)
+
+        # Test the connection
+        cluster_info = await run_in_threadpool(service.test_connection)
 
         return ClusterResponse(
             success=True,
             message=f"Connected to {config['name']}",
-            cluster_id=service.client.list_topics(timeout=5).cluster_id if service.client else None,
+            cluster=cluster_info,
         )
     except Exception as e:
         logger.error(f"Connection error: {e}")

@@ -3,6 +3,8 @@ Unified Kafka Service handling all cluster interactions.
 Replaces the legacy KafkaClusterContext and AdminNode logic.
 """
 
+import os
+from datetime import datetime
 from typing import Any
 
 from confluent_kafka.admin import (
@@ -13,6 +15,19 @@ from confluent_kafka.admin import (
     ResourceType,
 )
 from loguru import logger
+
+# Additional file-based logging for debugging when we can't see the console
+KAFKA_DEBUG_LOG = "kafka_debug.log"
+if not os.path.exists(KAFKA_DEBUG_LOG):
+    with open(KAFKA_DEBUG_LOG, "w") as f:
+        f.write("Kafka Debug Log initialized\n")
+
+
+def debug_log(msg):
+    with open(KAFKA_DEBUG_LOG, "a") as f:
+        f.write(f"{datetime.now()} | {msg}\n")
+    logger.debug(msg)
+
 
 from kgpt.api.schemas import (
     BrokerInfo,
@@ -51,7 +66,9 @@ class KafkaService:
             raise ValueError("Kafka configuration not set. Please connect to a cluster first.")
 
         # Build confluent_kafka configuration
-        conf = {"bootstrap.servers": self.config.get("bootstrap_servers")}
+        bootstrap_servers = self.config.get("bootstrap_servers")
+        logger.info(f"Creating AdminClient with bootstrap.servers: {bootstrap_servers}")
+        conf = {"bootstrap.servers": bootstrap_servers}
 
         # Add security config if present
         security_protocol = self.config.get("security_protocol")
@@ -109,7 +126,28 @@ class KafkaService:
         client = self._get_admin_client()
         metadata = client.list_topics(timeout=10)
 
-        # Process Brokers
+        # First pass: Calculate partition and leader counts per broker
+        broker_partition_counts: dict[int, int] = {}
+        broker_leader_counts: dict[int, int] = {}
+
+        for name, topic in metadata.topics.items():
+            if name.startswith("_"):
+                continue  # Skip internal topics for broker stats
+
+            for partition in topic.partitions.values():
+                # Count partitions per broker (replicas)
+                for replica_id in partition.replicas:
+                    broker_partition_counts[replica_id] = (
+                        broker_partition_counts.get(replica_id, 0) + 1
+                    )
+
+                # Count leader partitions per broker
+                if partition.leader is not None and partition.leader >= 0:
+                    broker_leader_counts[partition.leader] = (
+                        broker_leader_counts.get(partition.leader, 0) + 1
+                    )
+
+        # Process Brokers with partition/leader counts
         brokers = []
         broker_ids = sorted(metadata.brokers.keys())
         for bid in broker_ids:
@@ -120,6 +158,8 @@ class KafkaService:
                     host=b.host,
                     port=b.port,
                     is_controller=(int(bid) == int(metadata.controller_id)),
+                    partition_count=broker_partition_counts.get(int(bid), 0),
+                    leader_count=broker_leader_counts.get(int(bid), 0),
                 )
             )
 
@@ -160,18 +200,64 @@ class KafkaService:
             )
 
         # Process Consumer Groups (list only)
+        # Force a fresh client for consumer groups - the cached client may have stale connections
         groups = []
         try:
-            group_future = client.list_consumer_groups()
+            # Refresh the client to ensure consumer groups are fetched properly
+            debug_log("Refreshing AdminClient for consumer groups list...")
+            self._admin_client = None
+            fresh_client = self._get_admin_client()
+            debug_log(f"Using servers: {self.config.get('bootstrap_servers')}")
+            group_future = fresh_client.list_consumer_groups()
             group_results = group_future.result(timeout=10)
+            debug_log(
+                f"Consumer groups API returned: valid={len(group_results.valid)}, errors={group_results.errors}"
+            )
+            group_ids = [g.group_id for g in group_results.valid]
+            description_futures = {}
+            if group_ids:
+                description_futures = fresh_client.describe_consumer_groups(group_ids)
+
             for g in group_results.valid:
-                groups.append(
-                    ConsumerGroupInfo(
-                        group_id=g.group_id, state=str(g.state), protocol_type=g.protocol_type
+                debug_log(f"Found consumer group: {g.group_id} state={g.state}")
+
+                try:
+                    # Try to get full details
+                    g_desc = description_futures[g.group_id].result()
+                    member_count = len(g_desc.members)
+                    group_topics = set()
+                    for m in g_desc.members:
+                        if m.assignment:
+                            for tp in m.assignment.topic_partitions:
+                                group_topics.add(tp.topic)
+
+                    groups.append(
+                        ConsumerGroupInfo(
+                            group_id=g.group_id,
+                            state=str(g.state),
+                            protocol_type=getattr(g_desc, "protocol_type", None),
+                            member_count=member_count,
+                            coordinator_id=g_desc.coordinator.id if g_desc.coordinator else None,
+                            topics=list(group_topics),
+                        )
                     )
-                )
+                except Exception as e:
+                    debug_log(f"Fallback for group {g.group_id}: {e}")
+                    # Fallback to basic info if describe fails
+                    groups.append(
+                        ConsumerGroupInfo(
+                            group_id=g.group_id,
+                            state=str(g.state),
+                            protocol_type=getattr(g, "protocol_type", None),
+                        )
+                    )
         except Exception as e:
+            import traceback
+
+            debug_log(f"Failed to list consumer groups: {e}")
+            debug_log(f"Traceback: {traceback.format_exc()}")
             logger.warning(f"Failed to list consumer groups: {e}")
+            logger.warning(f"Traceback: {traceback.format_exc()}")
 
         return {
             "connected": True,
@@ -324,18 +410,48 @@ class KafkaService:
     # ========================================================================
 
     def list_consumer_groups(self) -> list[ConsumerGroupInfo]:
-        """List all consumer groups."""
+        """List all consumer groups with full details."""
         client = self._get_admin_client()
         group_future = client.list_consumer_groups()
         group_results = group_future.result(timeout=10)
 
+        if not group_results.valid:
+            return []
+
+        # Describe all groups to get member counts and topics
+        group_ids = [g.group_id for g in group_results.valid]
+        description_futures = client.describe_consumer_groups(group_ids)
+
         valid_groups = []
         for g in group_results.valid:
-            valid_groups.append(
-                ConsumerGroupInfo(
-                    group_id=g.group_id, state=str(g.state), protocol_type=g.protocol_type
+            try:
+                g_desc = description_futures[g.group_id].result()
+                member_count = len(g_desc.members)
+                group_topics = set()
+                for m in g_desc.members:
+                    if m.assignment:
+                        for tp in m.assignment.topic_partitions:
+                            group_topics.add(tp.topic)
+
+                valid_groups.append(
+                    ConsumerGroupInfo(
+                        group_id=g.group_id,
+                        state=str(g.state),
+                        protocol_type=getattr(g_desc, "protocol_type", None),
+                        member_count=member_count,
+                        coordinator_id=g_desc.coordinator.id if g_desc.coordinator else None,
+                        topics=list(group_topics),
+                    )
                 )
-            )
+            except Exception:
+                # Fallback to basic info if describe fails
+                valid_groups.append(
+                    ConsumerGroupInfo(
+                        group_id=g.group_id,
+                        state=str(g.state),
+                        protocol_type=getattr(g, "protocol_type", None),
+                    )
+                )
         return valid_groups
 
     def describe_consumer_group(self, group_id: str) -> dict[str, Any]:
@@ -368,7 +484,7 @@ class KafkaService:
             return {
                 "group_id": g.group_id,
                 "state": str(g.state),
-                "protocol_type": g.protocol_type,
+                "protocol_type": getattr(g, "protocol_type", None),
                 "coordinator": {"id": g.coordinator.id, "host": g.coordinator.host}
                 if g.coordinator
                 else None,

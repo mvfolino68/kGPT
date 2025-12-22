@@ -24,6 +24,7 @@
 		onformnamechange: (value: string) => void;
 		onformbootstrapchange: (value: string) => void;
 		onformprotocolchange: (value: string) => void;
+		ondelete: (clusterId: number) => void;
 	}
 
 	let {
@@ -43,7 +44,8 @@
 		onhideform,
 		onformnamechange,
 		onformbootstrapchange,
-		onformprotocolchange
+		onformprotocolchange,
+		ondelete
 	}: Props = $props();
 </script>
 
@@ -112,6 +114,7 @@
 					{connecting}
 					onconnect={onconnect}
 					ondisconnect={ondisconnect}
+					ondelete={ondelete}
 				/>
 			{/if}
 		{/if}

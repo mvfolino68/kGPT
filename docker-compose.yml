@@ -58,7 +58,11 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     healthcheck:
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/6333 && echo -e \"GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/localhost/6333 && echo -e \"GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,97 +82,183 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
-    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 10 && ollama pull llama3.2 && wait"]
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        "ollama serve & sleep 10 && ollama pull llama3.2 && wait",
+      ]
     restart: unless-stopped
 
   # ===========================================
-  # OPTIONAL: Demo Kafka Cluster
+  # OPTIONAL: Demo Kafka Cluster (3-Broker)
   # Start with: docker compose --profile demo up
+  #
+  # Features:
+  #   - 3-broker KRaft cluster (no ZooKeeper)
+  #   - Continuous data production
+  #   - Multiple consumer groups simulating microservices
+  #   - External ports: 9094, 9095, 9096
   # ===========================================
 
-  kafka:
+  kafka-1:
     profiles: ["demo"]
     image: confluentinc/cp-kafka:7.7.1
-    hostname: kafka
+    hostname: kafka-1
     ports:
       - "9092:9092"
       - "9094:9094"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:9094
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_LOG_DIRS: /var/lib/kafka/data
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - kafka_data_1:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
       interval: 10s
       timeout: 10s
       retries: 10
     restart: unless-stopped
 
-  # Demo data generator - creates topics and produces sample events
+  kafka-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka-2
+    ports:
+      - "9095:9095"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data_2:/var/lib/kafka/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  kafka-3:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka-3
+    ports:
+      - "9096:9096"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9096
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,EXTERNAL://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data_3:/var/lib/kafka/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "kafka-topics",
+          "--bootstrap-server",
+          "localhost:9092",
+          "--list",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  # Topic setup - creates demo topics with replication
   kafka-demo-setup:
     profiles: ["demo"]
     image: confluentinc/cp-kafka:7.7.1
     depends_on:
-      kafka:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
         condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
-        echo "Setting up demo Kafka topics..."
+        echo "🚀 Setting up demo Kafka topics on 3-broker cluster..."
 
-        # Create demo topics
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --partitions 6 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic users --partitions 3 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic inventory --partitions 3 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic payments --partitions 6 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic notifications --partitions 3 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic audit-logs --partitions 1 --replication-factor 1
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic click-events --partitions 12 --replication-factor 1
+        BOOTSTRAP="kafka-1:9092,kafka-2:9092,kafka-3:9092"
 
-        echo "Demo topics created!"
-        kafka-topics --bootstrap-server kafka:9092 --list
+        # Create demo topics with replication factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic orders --partitions 12 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic payments --partitions 6 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic users --partitions 6 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic inventory --partitions 6 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic notifications --partitions 3 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic audit-logs --partitions 3 --replication-factor 3
+        kafka-topics --bootstrap-server $$BOOTSTRAP --create --if-not-exists --topic click-events --partitions 12 --replication-factor 3
 
-        echo "Producing sample events..."
-
-        # Produce sample order events
-        for i in $$(seq 1 50); do
-          echo "{\"order_id\": \"ORD-$$i\", \"user_id\": \"user-$$((RANDOM % 100))\", \"amount\": $$((RANDOM % 1000 + 10)).$$((RANDOM % 100)), \"status\": \"pending\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
-            kafka-console-producer --bootstrap-server kafka:9092 --topic orders 2>/dev/null
-        done
-
-        # Produce sample user events
-        for i in $$(seq 1 20); do
-          echo "{\"user_id\": \"user-$$i\", \"email\": \"user$$i@example.com\", \"action\": \"login\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
-            kafka-console-producer --bootstrap-server kafka:9092 --topic users 2>/dev/null
-        done
-
-        # Produce sample inventory events
-        for i in $$(seq 1 30); do
-          echo "{\"product_id\": \"SKU-$$((RANDOM % 500))\", \"quantity\": $$((RANDOM % 100)), \"warehouse\": \"WH-$$((RANDOM % 5 + 1))\", \"timestamp\": \"$$(date -Iseconds)\"}" | \
-            kafka-console-producer --bootstrap-server kafka:9092 --topic inventory 2>/dev/null
-        done
-
-        echo "Demo data produced!"
-        echo "Demo Kafka cluster is ready!"
         echo ""
-        echo "Connect to: kafka:9092 (internal) or localhost:9094 (external)"
+        echo "✅ Demo topics created!"
+        kafka-topics --bootstrap-server $$BOOTSTRAP --list
+        echo ""
+        echo "📊 Topic details:"
+        kafka-topics --bootstrap-server $$BOOTSTRAP --describe
+        echo ""
+        echo "🎉 Kafka demo cluster is ready!"
+        echo "   Connect via: localhost:9094 (broker-1), localhost:9095 (broker-2), localhost:9096 (broker-3)"
     restart: "no"
 
-  # Demo consumer group simulator
-  kafka-demo-consumer:
+  # Continuous producer - generates realistic demo data
+  kafka-demo-producer:
     profiles: ["demo"]
     image: confluentinc/cp-kafka:7.7.1
     depends_on:
@@ -177,35 +267,330 @@ services:
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
-        echo "Starting demo consumer groups..."
+        echo "🏭 Starting continuous demo producer..."
 
-        # Start a consumer for orders (simulates order-processor service)
-        kafka-console-consumer --bootstrap-server kafka:9092 \
+        BOOTSTRAP="kafka-1:9092,kafka-2:9092,kafka-3:9092"
+
+        # Product catalog for realistic data
+        PRODUCTS=("Laptop" "Phone" "Tablet" "Headphones" "Monitor" "Keyboard" "Mouse" "Camera" "Speaker" "Watch")
+        STATUSES=("pending" "processing" "shipped" "delivered" "cancelled")
+        ACTIONS=("login" "logout" "view_product" "add_to_cart" "checkout" "search")
+        WAREHOUSES=("NYC-01" "LAX-02" "CHI-03" "DAL-04" "SEA-05")
+        NOTIFICATION_TYPES=("order_confirmation" "shipping_update" "promotion" "account_alert" "password_reset")
+
+        ORDER_ID=1000
+        PAYMENT_ID=5000
+        USER_SEQ=1
+
+        while true; do
+          TIMESTAMP=$$(date -Iseconds)
+
+          # Orders (~2/sec) - E-commerce order events
+          for i in 1 2; do
+            ORDER_ID=$$((ORDER_ID + 1))
+            USER_ID=$$((RANDOM % 500 + 1))
+            PRODUCT=$${PRODUCTS[$$((RANDOM % 10))]}
+            AMOUNT=$$(awk "BEGIN {printf \"%.2f\", ($$RANDOM % 99900 + 100) / 100}")
+            STATUS=$${STATUSES[$$((RANDOM % 5))]}
+            QTY=$$((RANDOM % 5 + 1))
+            echo "{\"order_id\": \"ORD-$$ORDER_ID\", \"user_id\": \"user-$$USER_ID\", \"product\": \"$$PRODUCT\", \"quantity\": $$QTY, \"amount\": $$AMOUNT, \"status\": \"$$STATUS\", \"timestamp\": \"$$TIMESTAMP\"}" | \
+              kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic orders 2>/dev/null
+          done
+
+          # Payments (~1/sec) - Financial transactions
+          PAYMENT_ID=$$((PAYMENT_ID + 1))
+          ORDER_REF=$$((ORDER_ID - RANDOM % 50))
+          AMOUNT=$$(awk "BEGIN {printf \"%.2f\", ($$RANDOM % 99900 + 100) / 100}")
+          PAY_STATUS=$$([ $$((RANDOM % 10)) -lt 8 ] && echo "success" || echo "failed")
+          PAY_METHOD=$$([ $$((RANDOM % 2)) -eq 0 ] && echo "credit_card" || echo "paypal")
+          echo "{\"payment_id\": \"PAY-$$PAYMENT_ID\", \"order_id\": \"ORD-$$ORDER_REF\", \"amount\": $$AMOUNT, \"status\": \"$$PAY_STATUS\", \"method\": \"$$PAY_METHOD\", \"timestamp\": \"$$TIMESTAMP\"}" | \
+            kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic payments 2>/dev/null
+
+          # Users (~0.5/sec, every other iteration)
+          if [ $$((USER_SEQ % 2)) -eq 0 ]; then
+            USER_ID=$$((RANDOM % 500 + 1))
+            ACTION=$${ACTIONS[$$((RANDOM % 6))]}
+            SESSION="sess-$$((RANDOM % 10000))"
+            echo "{\"user_id\": \"user-$$USER_ID\", \"action\": \"$$ACTION\", \"session_id\": \"$$SESSION\", \"ip\": \"192.168.$$((RANDOM % 255)).$$((RANDOM % 255))\", \"timestamp\": \"$$TIMESTAMP\"}" | \
+              kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic users 2>/dev/null
+          fi
+
+          # Inventory (~1/sec) - Stock level changes
+          PRODUCT=$${PRODUCTS[$$((RANDOM % 10))]}
+          SKU="SKU-$$((RANDOM % 1000 + 1000))"
+          WAREHOUSE=$${WAREHOUSES[$$((RANDOM % 5))]}
+          DELTA=$$([ $$((RANDOM % 3)) -eq 0 ] && echo "-$$((RANDOM % 10 + 1))" || echo "+$$((RANDOM % 50 + 1))")
+          STOCK=$$((RANDOM % 500 + 10))
+          echo "{\"sku\": \"$$SKU\", \"product\": \"$$PRODUCT\", \"warehouse\": \"$$WAREHOUSE\", \"delta\": \"$$DELTA\", \"current_stock\": $$STOCK, \"timestamp\": \"$$TIMESTAMP\"}" | \
+            kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic inventory 2>/dev/null
+
+          # Notifications (~0.3/sec, every 3rd iteration)
+          if [ $$((USER_SEQ % 3)) -eq 0 ]; then
+            USER_ID=$$((RANDOM % 500 + 1))
+            NOTIF_TYPE=$${NOTIFICATION_TYPES[$$((RANDOM % 5))]}
+            CHANNEL=$$([ $$((RANDOM % 2)) -eq 0 ] && echo "email" || echo "push")
+            echo "{\"user_id\": \"user-$$USER_ID\", \"type\": \"$$NOTIF_TYPE\", \"channel\": \"$$CHANNEL\", \"sent\": true, \"timestamp\": \"$$TIMESTAMP\"}" | \
+              kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic notifications 2>/dev/null
+          fi
+
+          # Audit logs (~0.5/sec)
+          if [ $$((USER_SEQ % 2)) -eq 0 ]; then
+            SERVICES=("order-service" "payment-service" "user-service" "inventory-service" "notification-service")
+            SERVICE=$${SERVICES[$$((RANDOM % 5))]}
+            OPERATIONS=("CREATE" "UPDATE" "DELETE" "READ")
+            OPERATION=$${OPERATIONS[$$((RANDOM % 4))]}
+            echo "{\"service\": \"$$SERVICE\", \"operation\": \"$$OPERATION\", \"entity_id\": \"$$((RANDOM % 10000))\", \"user\": \"admin-$$((RANDOM % 10 + 1))\", \"timestamp\": \"$$TIMESTAMP\"}" | \
+              kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic audit-logs 2>/dev/null
+          fi
+
+          # Click events (~5/sec) - Analytics stream
+          for i in 1 2 3 4 5; do
+            USER_ID=$$((RANDOM % 500 + 1))
+            PAGES=("/home" "/products" "/cart" "/checkout" "/account" "/search" "/product/$$((RANDOM % 100))")
+            PAGE=$${PAGES[$$((RANDOM % 7))]}
+            ELEMENTS=("button" "link" "image" "nav" "card" "form")
+            ELEMENT=$${ELEMENTS[$$((RANDOM % 6))]}
+            echo "{\"user_id\": \"user-$$USER_ID\", \"page\": \"$$PAGE\", \"element\": \"$$ELEMENT\", \"x\": $$((RANDOM % 1920)), \"y\": $$((RANDOM % 1080)), \"timestamp\": \"$$TIMESTAMP\"}" | \
+              kafka-console-producer --bootstrap-server $$BOOTSTRAP --topic click-events 2>/dev/null
+          done
+
+          USER_SEQ=$$((USER_SEQ + 1))
+          sleep 1
+        done
+    restart: unless-stopped
+
+  # Consumer Group: Order Processor (3 instances simulating scaled service)
+  kafka-consumer-orders-1:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📦 Starting order-processor instance 1..."
+        # Small delay to stagger startup and create realistic consumer assignments
+        sleep 2
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
           --topic orders \
           --group order-processor \
-          --from-beginning \
-          --max-messages 10 &
+          --from-beginning
+    restart: unless-stopped
 
-        # Start a consumer for payments (simulates payment-service)
-        kafka-console-consumer --bootstrap-server kafka:9092 \
+  kafka-consumer-orders-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📦 Starting order-processor instance 2..."
+        sleep 4
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic orders \
+          --group order-processor \
+          --from-beginning
+    restart: unless-stopped
+
+  kafka-consumer-orders-3:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📦 Starting order-processor instance 3..."
+        sleep 6
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic orders \
+          --group order-processor \
+          --from-beginning
+    restart: unless-stopped
+
+  # Consumer Group: Payment Service (2 instances)
+  kafka-consumer-payments-1:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "💳 Starting payment-service instance 1..."
+        sleep 3
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
           --topic payments \
           --group payment-service \
-          --from-beginning \
-          --max-messages 5 &
+          --from-beginning
+    restart: unless-stopped
 
-        # Start a consumer for notifications (simulates notification-service)
-        kafka-console-consumer --bootstrap-server kafka:9092 \
+  kafka-consumer-payments-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "💳 Starting payment-service instance 2..."
+        sleep 5
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic payments \
+          --group payment-service \
+          --from-beginning
+    restart: unless-stopped
+
+  # Consumer Group: Notification Service (2 instances)
+  kafka-consumer-notifications-1:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "🔔 Starting notification-service instance 1..."
+        sleep 4
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
           --topic notifications \
           --group notification-service \
-          --from-beginning \
-          --max-messages 5 &
+          --from-beginning
+    restart: unless-stopped
 
-        # Keep container alive to maintain consumer group registrations
-        sleep infinity
+  kafka-consumer-notifications-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "🔔 Starting notification-service instance 2..."
+        sleep 6
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic notifications \
+          --group notification-service \
+          --from-beginning
+    restart: unless-stopped
+
+  # Consumer Group: Analytics Pipeline (3 instances for click-events)
+  kafka-consumer-analytics-1:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📊 Starting analytics-pipeline instance 1..."
+        sleep 5
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic click-events \
+          --group analytics-pipeline \
+          --from-beginning
+    restart: unless-stopped
+
+  kafka-consumer-analytics-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📊 Starting analytics-pipeline instance 2..."
+        sleep 7
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic click-events \
+          --group analytics-pipeline \
+          --from-beginning
+    restart: unless-stopped
+
+  kafka-consumer-analytics-3:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📊 Starting analytics-pipeline instance 3..."
+        sleep 9
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic click-events \
+          --group analytics-pipeline \
+          --from-beginning
+    restart: unless-stopped
+
+  # Consumer Group: Audit Service (1 instance - compliance logging)
+  kafka-consumer-audit:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📋 Starting audit-service..."
+        sleep 8
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic audit-logs \
+          --group audit-service \
+          --from-beginning
+    restart: unless-stopped
+
+  # Consumer Group: Inventory Processor (2 instances)
+  kafka-consumer-inventory-1:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📦 Starting inventory-service instance 1..."
+        sleep 3
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic inventory \
+          --group inventory-service \
+          --from-beginning
+    restart: unless-stopped
+
+  kafka-consumer-inventory-2:
+    profiles: ["demo"]
+    image: confluentinc/cp-kafka:7.7.1
+    depends_on:
+      kafka-demo-setup:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        echo "📦 Starting inventory-service instance 2..."
+        sleep 5
+        kafka-console-consumer --bootstrap-server kafka-1:9092,kafka-2:9092,kafka-3:9092 \
+          --topic inventory \
+          --group inventory-service \
+          --from-beginning
     restart: unless-stopped
 
 volumes:
   kgpt_data:
   qdrant_data:
   ollama_data:
-  kafka_data:
+  kafka_data_1:
+  kafka_data_2:
+  kafka_data_3:

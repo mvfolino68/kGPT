@@ -261,6 +261,17 @@
 		}
 	}
 
+	async function handleClusterDelete(clusterId: number) {
+		if (!confirm('Are you sure you want to delete this cluster connection?')) return;
+		try {
+			await deleteCluster(clusterId);
+			await loadClusterData();
+			showSuccess('Cluster connection deleted');
+		} catch (e) {
+			clusterError = e instanceof Error ? e.message : 'Failed to delete cluster';
+		}
+	}
+
 	function connectDemoCluster() {
 		clusterFormName = 'Demo Cluster';
 		clusterFormBootstrap = 'localhost:9094';
@@ -377,6 +388,7 @@
 				onformnamechange={(v) => clusterFormName = v}
 				onformbootstrapchange={(v) => clusterFormBootstrap = v}
 				onformprotocolchange={(v) => clusterFormProtocol = v}
+				ondelete={handleClusterDelete}
 			/>
 
 			<EmbeddingsSection

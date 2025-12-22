@@ -52,9 +52,7 @@
 	<div class="{sizeClasses[size].label} font-bold uppercase tracking-wider text-surface-500 mb-1">
 		{label}
 	</div>
-	{#if children}
-		{@render children()}
-	{:else}
+	<div class="flex flex-col">
 		<div class="flex items-baseline gap-1.5">
 			<span class="{sizeClasses[size].value} {variantClasses[variant]}">
 				{value ?? '—'}
@@ -66,5 +64,8 @@
 				<span class="text-sm {trendColors[trend]}">{trendIcons[trend]}</span>
 			{/if}
 		</div>
-	{/if}
+		{#if children}
+			{@render children()}
+		{/if}
+	</div>
 </div>

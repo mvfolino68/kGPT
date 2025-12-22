@@ -962,6 +962,13 @@ export async function getClusterInfo(): Promise<ClusterInfo> {
 	return response.json();
 }
 
+export async function deleteCluster(clusterId: number): Promise<void> {
+	const response = await fetch(`${API_BASE}/cluster/${clusterId}`, {
+		method: 'DELETE'
+	});
+	if (!response.ok) throw new Error(`Failed to delete cluster: ${response.statusText}`);
+}
+
 export async function getClusterDetails(): Promise<ClusterDetailsResponse> {
 	const response = await fetch(`${API_BASE}/cluster/details`);
 	if (!response.ok) throw new Error(`Failed to get cluster details: ${response.statusText}`);
