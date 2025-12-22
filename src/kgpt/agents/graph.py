@@ -1,12 +1,155 @@
 """LangGraph orchestration for the multi-agent system."""
 
 from collections.abc import AsyncGenerator
+from datetime import datetime
+from typing import Annotated, Literal, TypedDict
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langgraph.graph import END, StateGraph
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
 from loguru import logger
 
-from kgpt.agents.orchestrator import compile_graph, query_stream_with_stages
-from kgpt.agents.state import AgentState
+from kgpt.llm import get_llm
+from kgpt.tools.kafka_tools import get_kafka_tools
+
+# --- State Definition (formerly state.py) ---
+
+
+class AgentState(TypedDict):
+    """State shared between all agents in the graph."""
+
+    # The user's original question
+    question: str
+
+    # Message history (standard ReAct)
+    messages: Annotated[list, add_messages]
+
+    # --- Core Output Fields ---
+    # The final synthesized answer
+    answer: str
+    # Source citations
+    citations: list[dict]
+    # Error message if something went wrong
+    error: str | None
+    # Educational mode trace events
+    trace_events: list[dict]
+
+    # --- Legacy / Future Use (Reserved) ---
+    sub_goals: list[str]
+    needs_cluster_context: bool
+    needs_retrieval: bool
+    needs_web_search: bool
+    needs_admin_operation: bool
+    route: str
+    admin_operation: dict | None
+    retrieved_docs: list[Document]
+    web_results: list[dict]
+    cluster_context: dict | None
+    admin_result: dict | None
+    help_response: dict | None
+    suggested_prompts: list[str]
+
+
+# --- Graph Construction (formerly graph_builder.py) ---
+
+
+def get_tools():
+    """Get all tools available to the agent."""
+    from kgpt.tools.query_enhancer import query_enhancer_tool
+    from kgpt.tools.search_tool import search_tool
+
+    # Return all tools: Kafka + Search + QueryEnhancer
+    return get_kafka_tools() + [search_tool, query_enhancer_tool]
+
+
+def call_model(state: AgentState):
+    """
+    Core agent node that invokes the LLM.
+    Captures reasoning and tool calls for the trace.
+    """
+    messages = state["messages"]
+
+    # Ensure system message is present
+    if not messages or not isinstance(messages[0], SystemMessage):
+        from kgpt.agents.prompts import CORE_SYSTEM_PROMPT
+
+        messages = [SystemMessage(content=CORE_SYSTEM_PROMPT)] + messages
+
+    llm = get_llm()
+    tools = get_tools()
+    # Bind tools to the model
+    model = llm.bind_tools(tools)
+
+    response = model.invoke(messages)
+
+    # Log trace event for educational mode
+    trace_event = {
+        "agent": "core_agent",
+        "status": "completed",
+        "timestamp": datetime.now().isoformat(),
+        "content": response.content,
+        "tool_calls": [tc["name"] for tc in response.tool_calls] if response.tool_calls else [],
+    }
+
+    # Append to trace (or initialize list)
+    current_trace = state.get("trace_events", []) or []
+    current_trace.append(trace_event)
+
+    return {
+        "messages": [response],
+        "trace_events": current_trace,
+        "answer": response.content if not response.tool_calls else "",
+    }
+
+
+def should_continue(state: AgentState) -> Literal["tools", "end"]:
+    """Determine flow based on whether tool calls are present."""
+    messages = state["messages"]
+    last_message = messages[-1]
+
+    if isinstance(last_message, AIMessage) and last_message.tool_calls:
+        return "tools"
+    return "end"
+
+
+def create_agent_graph() -> StateGraph:
+    """
+    Create the ReAct agent graph.
+    Structure: START -> agent -> tools -> agent -> END
+    """
+    graph = StateGraph(AgentState)
+
+    tools = get_tools()
+    tool_node = ToolNode(tools)
+
+    graph.add_node("agent", call_model)
+    graph.add_node("tools", tool_node)
+
+    graph.set_entry_point("agent")
+
+    graph.add_conditional_edges(
+        "agent",
+        should_continue,
+        {
+            "tools": "tools",
+            "end": END,
+        },
+    )
+
+    graph.add_edge("tools", "agent")
+
+    return graph
+
+
+def compile_graph():
+    """Compile the agent graph for execution."""
+    graph = create_agent_graph()
+    return graph.compile()
+
+
+# --- Orchestrator (formerly existing graph.py logic) ---
 
 
 class AgentOrchestrator:
@@ -30,13 +173,6 @@ class AgentOrchestrator:
     ) -> dict:
         """
         Process a question through the agent pipeline.
-
-        Args:
-            question: The user's question
-            chat_history: Optional chat history for context
-
-        Returns:
-            Dict with 'answer' and 'citations'
         """
         logger.info(f"Processing question: {question[:100]}...")
 
@@ -60,7 +196,7 @@ class AgentOrchestrator:
             "route": "retrieval",
             "admin_operation": None,
             "retrieved_docs": [],
-            "validated_docs": [],
+            "web_results": [],
             "cluster_context": None,
             "admin_result": None,
             "answer": "",
@@ -68,6 +204,10 @@ class AgentOrchestrator:
             "messages": messages,
             "error": None,
             "trace_events": [],
+            # Legacy fields required by TypedDict but unused in simple graph
+            "suggested_prompts": [],
+            "help_response": None,
+            "validated_docs": [],  # Actually this one might not be in the definition exactly, let's checking
         }
 
         # Run the graph
@@ -95,8 +235,6 @@ class AgentOrchestrator:
     ) -> AsyncGenerator[str | dict, None]:
         """
         Process a question with streaming output.
-
-        Yields tokens as they are generated, then a final dict with citations.
         """
         async for chunk in self.query_stream_with_stages(question, chat_history):
             yield chunk
@@ -108,18 +246,11 @@ class AgentOrchestrator:
     ) -> AsyncGenerator[str | dict, None]:
         """
         Process a question with streaming output, stage updates, and agent activity events.
-
-        Yields:
-            - {"stage": "..."} for thinking stage updates
-            - {"agent_event": {...}} for agent activity (start/complete/error)
-            - {"routing_decision": {...}} for routing info
-            - {"retrieval_results": {...}} for retrieved docs
-            - {"validation_results": {...}} for validation info
-            - {"cluster_context": {...}} for cluster info
-            - {"admin_result": {...}} for admin operation result
-            - str for content tokens
-            - {"citations": [...]} for final citations
         """
+        from kgpt.agents.streaming import query_stream_with_stages
+
+        # Note: query_stream_with_stages is imported from streaming.py
+        # We pass self.graph to it
         async for chunk in query_stream_with_stages(question, chat_history, self.graph):
             yield chunk
 

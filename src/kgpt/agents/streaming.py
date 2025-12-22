@@ -6,7 +6,7 @@ from datetime import datetime
 from langchain_core.messages import AIMessage, HumanMessage
 from loguru import logger
 
-from kgpt.agents.state import AgentState
+from kgpt.agents.graph import AgentState
 
 
 async def query_stream_with_stages(
@@ -97,10 +97,8 @@ async def query_stream_with_stages(
                 # Map tools to "agents" for frontend UI compatibility
                 if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
                     agent_type = "kafka"
-                elif tool_name in ["search", "search_tool", "search_knowledge_base_tool"]:
+                elif tool_name in ["search", "enhance_query"]:
                     agent_type = "retrieval"
-                elif "search_web" in tool_name:
-                    agent_type = "web_search"
 
                 yield {
                     "agent_event": {
@@ -143,16 +141,10 @@ async def query_stream_with_stages(
                     except Exception as e:
                         logger.error(f"Failed to parse artifacts: {e}")
 
-                agent_type = "unknown"
                 if "topic" in tool_name or "cluster" in tool_name or "consumer" in tool_name:
                     agent_type = "kafka"
-                elif tool_name in ["search", "search_tool", "search_knowledge_base_tool"]:
+                elif tool_name in ["search", "enhance_query"]:
                     agent_type = "retrieval"
-                    if artifacts:
-                        citations.extend(artifacts)
-                        yield {"citations": citations}
-                elif "search_web" in tool_name:
-                    agent_type = "web_search"
                     if artifacts:
                         citations.extend(artifacts)
                         yield {"citations": citations}

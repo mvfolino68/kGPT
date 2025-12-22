@@ -20,8 +20,8 @@ from langchain_core.tools import tool
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from kgpt.agents.retrieval import search_documents
-from kgpt.agents.web_search import is_web_search_enabled, web_search
+from kgpt.tools.internals.retrieval import search_documents
+from kgpt.tools.internals.web_search import is_web_search_enabled, web_search
 from kgpt.tools.rrf import reciprocal_rank_fusion
 
 
